@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # 1. Rails Application Service
+  web:
+    build: .
+    # FIX 1: Override CMD to ensure database is created and migrated (db:prepare)
+    # The /rails path is used because the Dockerfile sets WORKDIR /rails
+    command: bash -c "rm -f /rails/tmp/pids/server.pid && /rails/bin/rails db:prepare && /rails/bin/rails s -b 0.0.0.0"
+    volumes:
+      # FIX 2: Mismatched WORKDIR/Volume Path. MUST match the Dockerfile WORKDIR of /rails
+      - .:/rails 
+      - bundle_data:/usr/local/bundle
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      # Use same variables here as defined in the db service
+      RAILS_ENV: development
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: development_password
+      # We will set the JWT secrets in .env later
+      # JWT_SERVICE_SECRET: ...
+
+  # 2. PostgreSQL Database Service
+  db:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      # These must match the settings in your config/database.yml
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: development_password
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
+  bundle_data:
