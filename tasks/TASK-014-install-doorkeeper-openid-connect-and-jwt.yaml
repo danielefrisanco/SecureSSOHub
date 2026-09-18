@@ -1,7 +1,7 @@
 id: TASK-014
 title: Install Doorkeeper, doorkeeper-openid_connect and doorkeeper-jwt behind a service layer
 type: feat
-status: in_progress
+status: review
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -76,3 +76,26 @@ plan:
 notes:
 - at: 2026-09-18 16:51
   text: started on task/014-install-doorkeeper-doorkeeper-openid-con
+- at: 2026-09-18 16:59
+  text: 'DONE (commits 8997147 + Gemfile order fix). Installed doorkeeper 5.9.7, doorkeeper-openid_connect
+    1.10.5, doorkeeper-jwt 0.4.5; migrations 20260918160001 (Doorkeeper tables) + 20260918160002 (openid
+    requests) applied, schema.rb regenerated. config/initializers/doorkeeper.rb - every option name grep-verified
+    in the installed gem source: resource_owner_authenticator (current_user || warden.authenticate!),
+    admin_authenticator (is_admin), hash_token_secrets, hash_application_secrets, access_token_expires_in
+    10.minutes, authorization_code_expires_in 1.minute, use_refresh_token, grant_flows authorization_code+client_credentials,
+    force_pkce (present in 5.9.7, so no custom before-action needed), enforce_configured_scopes, default/optional
+    scopes from config/oauth_scopes.yml (single catalogue; YAML because initializers cannot reference
+    autoloaded code), force_ssl_in_redirect_uri outside local envs, access_token_generator ::Doorkeeper::JWT
+    with a minimal {sub, iat, exp} payload; Doorkeeper::JWT secret_key = PEM from config.x.oauth, rs256.
+    Signing key: OIDC_SIGNING_KEY PEM when set, ephemeral RSA-2048 in development/test, raise otherwise,
+    nil under SECRET_KEY_BASE_DUMMY (production eager-load boot verified: ''dummy boot ok''; production
+    without key verified: raises ''OIDC_SIGNING_KEY is not set''). doorkeeper_openid_connect.rb: issuer
+    HUB_ISSUER (required outside local; README + ci.yml + rails_helper set it), signing_key shared PEM,
+    rs256, subject sso_id, resource owner lookup, auth_time, reauthenticate. Service layer: app/services/oauth/{clients,tokens,grants}.rb
+    (list/find/active_for/for) + inflection acronym OAuth. spec/architecture/doorkeeper_isolation_spec.rb:
+    verified it FAILS with a temporary LeakController referencing Doorkeeper::Application (then removed).
+    spec/requests/oauth_smoke_spec.rb: authorize redirects signed-out, 400 ''client_id'' signed-in, discovery
+    issuer, schema tables, configuration values, shared RSA key. Found: doorkeeper-openid_connect 1.10
+    ships RFC 7591 dynamic client registration (options dynamic_client_registration / authorize_dynamic_client_registration)
+    - TASK-025 should build on it; discovery URLs are still request-host based (TASK-021). Verified: rspec
+    31/0, rubocop clean, brakeman 0.'
