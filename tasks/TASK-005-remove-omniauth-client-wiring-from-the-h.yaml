@@ -1,11 +1,11 @@
 id: TASK-005
 title: Remove OmniAuth client wiring from the hub
 type: refactor
-status: todo
+status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/005-remove-omniauth-client-wiring-from-the-h
 depends_on:
 - TASK-004
 context: 'TODO T04 (docs/AUDIT.md §7 E5, §8). The hub is the OAuth provider, but it is wired as an OmniAuth
@@ -29,4 +29,6 @@ acceptance_criteria:
   blocker fixed by TASK-006/TASK-007)'
 - No OAuth *provider* endpoints are added in this task
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:35
+  text: started on task/005-remove-omniauth-client-wiring-from-the-h
