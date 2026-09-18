@@ -27,6 +27,7 @@ Only the current phase and its gate are ever instantiated as harness tasks; late
 | T08 (TASK-009) | Add HomeController#index landing page (signed-out → sign-in CTA, signed-in → account link) and generate/style Devise views with a single minimal stylesheet; remove hello_controller.js | feat | high | [app] | T05 | §7 E1, §5.3 |
 | T09 (TASK-010) | Mount header_guard with a nonce-aware CSP compatible with importmap/Turbo; delete the commented Rails CSP initializer; set Permissions-Policy; request specs asserting headers | feat | high | [app] | T03 | §7 E2, §3.5 |
 | T10 (TASK-011) | GitHub Actions CI: bundle, db:prepare, rspec, rubocop, brakeman, bundler-audit, docker build; add rubocop config and `checks.lint_command` in harness.yaml | ci | high | [app] | T03, T07 | §5.5 |
+| G0 (TASK-012) | Phase 0 gate — verify outcomes, re-plan Phase 1 and create its tasks | docs | high | [app] | T01–T10 | all |
 
 ## Phase 1 — authorization server core
 
