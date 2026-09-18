@@ -64,3 +64,19 @@ plan:
 notes:
 - at: 2026-09-18 17:13
   text: started on task/016-oauth-client-registry-on-top-of-doorkeep
+- at: 2026-09-18 17:21
+  text: 'closing: migration 20260918170000 (client_type, approval_state+index, registered_via, owner_id
+    FK users, software_id/version, client_uri, logo_uri, contacts jsonb, last_used_at; secret nullable
+    for public clients). OAuth::ClientRules included from the Doorkeeper initializer (after_initialize).
+    Redirect-URI allow-list: absolute only; https any host; http only loopback (localhost/127.0.0.1/::1);
+    private-use schemes only for public clients; no fragment, no userinfo, no OOB urn, no opaque scheme:x.
+    Doorkeeper force_ssl_in_redirect_uri set false because ClientRules owns the policy in every env. client_type
+    is source of truth; confidential must agree; public => no secret (PKCE only). approval: pending->approved,
+    pending->revoked, approved->revoked (final), validated on update. OAuth::Scopes added over the catalogue;
+    introspect flagged machine: true so register_dynamic never grants admin/machine scopes. OAuth::Clients:
+    list(state:)/find/usable?/create/update/rotate_secret/approve/revoke (admin-only via by:, Forbidden/NotFound/Invalid/InvalidTransition)
+    + register_dynamic(policy: :approval|:open). revoke calls OAuth::Tokens.revoke_all(client_uid:) (new).
+    update cannot change client_type (register a new client). Rotating a secret keeps issued tokens valid.
+    Factory :oauth_client with :public/:pending/:revoked. Known: until TASK-019 adds jti, two tokens with
+    identical claims in the same second collide (spec uses different users). rspec 108/0, rubocop, brakeman
+    clean.'
