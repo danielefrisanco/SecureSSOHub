@@ -1,7 +1,7 @@
 id: TASK-018
 title: Consent screen, scope catalogue and persisted consents
 type: feat
-status: in_progress
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -144,3 +144,7 @@ notes:
     Allow, Deny, subset skip, superset re-ask with highlight, revoked re-ask, other user, admin scopes),
     rubocop clean, brakeman 0, isolation spec green, dev boot verified. Commits a7fe653, e5409bc, 99b08c4,
     c18e6ae, b44252a.'
+- at: 2026-09-18 19:24
+  text: 'review: PASS (no findings). rspec 182/0, rubocop, brakeman clean. Flagged for the user: per-controller
+    CSP widening on the consent page (img-src https:, form-action to the validated redirect origin); service
+    API uses client_uid:. Machine-client scope allow-list left to TASK-024.'
