@@ -1,7 +1,7 @@
 id: TASK-003
 title: Record authorization-server core decision (Doorkeeper) in ARCHITECTURE.md
 type: docs
-status: in_progress
+status: review
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -30,3 +30,8 @@ plan: []
 notes:
 - at: 2026-09-18 15:42
   text: started on task/003-record-authorization-server-core-decisio
+- at: 2026-09-18 15:42
+  text: 'DONE: docs/ARCHITECTURE.md gained s4 (Doorkeeper + doorkeeper-openid_connect now, own gem open,
+    service-layer isolation rule, per-gem role table for all five own gems) and a dated decisions-log
+    entry. No Gemfile or code changes. Verified: git diff develop...HEAD --stat = docs/ARCHITECTURE.md
+    + task file; rspec green.'
