@@ -90,3 +90,12 @@ plan:
 notes:
 - at: 2026-09-18 14:52
   text: started on task/001-audit-sso-hub-codebase-and-write-a-produ
+- at: 2026-09-18 15:02
+  text: 'DONE (pending review): docs/AUDIT.md (10 sections: exec summary, gem inventory for all 5 gems
+    with versions/paths/usage/gaps, per-area Current->Desired->Gap, MCP + agent-auth analysis with token-model
+    changes, E1-E5 required findings, rollups, gem follow-ups, open questions) and TODO.md (46 items T01-T46,
+    5 phases, each with type/priority/placement tag/deps/audit ref). Commit fe241e7. Verification: git
+    show --stat confirms only docs/AUDIT.md and TODO.md changed; bundle show rewrote Gemfile.lock during
+    investigation and was restored via git checkout. Test command bundle exec rspec CANNOT run here: bundle
+    not installed (Bundler::GemNotFound puma-6.6.1 etc.) - pre-existing, documented in audit s2/s5.5,
+    fix is T03. User must: decide AS core (T02), run bundle install after T03.'
