@@ -28,7 +28,7 @@ layout) that *intends* to be a JWT-issuing SSO hub. Today it cannot serve that p
    headers are not set (the `header_guard` gem is in the Gemfile but unused), credentials have
    hardcoded development fallbacks, and the JWT is handed to clients in a URL query string.
 5. **There is effectively no test suite** (one `pending` spec; the Minitest files cannot run: no
-   `test_helper.rb`, test railtie disabled), no CI, and the bundle is not installable locally.
+   `test_helper.rb`, test railtie disabled), no CI, and the lock file was out of sync with the Gemfile.
 6. Three of the five self-developed gems are **out of date in the lock file** (`jwt_auth_client`
    0.1.0→0.2.0, `rack-jwt-verifier` 0.1.0→0.3.0, `header_guard` 0.1.1→0.3.1), and three of them
    (`header_guard`, `omniauth_syncer`, `rack-jwt-verifier`) are declared but never referenced.
@@ -52,9 +52,12 @@ the hub itself as its OAuth authorization server**. Sections 6–7 detail this; 
 - Read the source and README of each self-developed gem from its sibling repository
   (`../jwt_auth_client`, `../rack_jwt_verifier`, `../omniauth-ssoprovider`, `../omniauth_syncer`,
   `../headerguard`) and compared the local version with `Gemfile.lock` and rubygems.org.
-- `bundle show <gem>` fails in this environment (`Could not find puma-6.6.1, bigdecimal-3.3.1, …`):
-  the bundle is not installed, so nothing below was verified by *running* the app. Findings are from
-  reading code. Decisions taken with the user before the audit are recorded in the task file.
+- At the start of the audit the bundle was not installed (`bundle show` → `Could not find puma-6.6.1,
+  bigdecimal-3.3.1, …`), so the gem analysis was done from the sibling source repositories. The user
+  ran `bundle install` during the task; after that `bundle show` resolved the *locked* versions (paths
+  in §3) and `bundle exec rspec` was run once — it boots far enough to hit the `LoadError` documented
+  in §3.3, which is the only runtime verification in this document. Everything else is from reading
+  code. Decisions taken with the user before the audit are recorded in the task file.
 
 ---
 
@@ -68,7 +71,20 @@ the hub itself as its OAuth authorization server**. Sections 6–7 detail this; 
 | `omniauth_syncer` | 0.1.0 | 0.1.0 | **no** | Syncs an OmniAuth auth hash into a local AR model (client side) |
 | `header_guard` | 0.1.1 | **0.3.1** | **no** | Rack middleware for HSTS, CSP, X-Frame-Options, COOP/CORP, Permissions-Policy |
 
+Install paths (`bundle show <gem>`, after `bundle install` on 2026-09-18 — the *locked* versions, i.e.
+what the app currently loads) and the source repositories read for this audit (the *current* versions):
+
+| Gem | `bundle show` (locked) | Source repo read (current) |
+|---|---|---|
+| `jwt_auth_client` | `~/.rbenv/versions/3.1.4/lib/ruby/gems/3.1.0/gems/jwt_auth_client-0.1.0` | `../jwt_auth_client` @ `a1aa5e3` (0.2.0) |
+| `rack-jwt-verifier` | `~/.rbenv/versions/3.1.4/lib/ruby/gems/3.1.0/gems/rack-jwt-verifier-0.1.0` | `../rack_jwt_verifier` @ `963974a` (0.3.0) |
+| `omniauth-ssoprovider` | `~/.rbenv/versions/3.1.4/lib/ruby/gems/3.1.0/gems/omniauth-ssoprovider-0.1.2` | `../omniauth-ssoprovider` @ `3c25193` (0.1.2) |
+| `omniauth_syncer` | `~/.rbenv/versions/3.1.4/lib/ruby/gems/3.1.0/gems/omniauth_syncer-0.1.0` | `../omniauth_syncer` @ `ec10706` (0.1.0) |
+| `header_guard` | `~/.rbenv/versions/3.1.4/lib/ruby/gems/3.1.0/gems/header_guard-0.1.1` | `../headerguard` @ `4513be8` (0.3.1) |
+
 All five are published on rubygems.org at the same version as the local repos; only the lock file is stale.
+The per-gem sections below describe the **current** (repo/rubygems) version, since that is what the
+app must target; where the locked version behaves differently it is called out.
 
 ### 3.1 `jwt_auth_client` (0.2.0)
 
@@ -302,7 +318,8 @@ wrong client-side wiring, add the AS, then UI, then MCP.
   `rails/test_unit/railtie` is disabled → the suite cannot run at all.
 - No CI, no coverage, no lint (`rubocop` absent), no security scanners (`brakeman`,
   `bundler-audit`), no system/browser tests.
-- The bundle does not install in this environment (stale lock, missing platform gems).
+- The lock file was out of sync with the Gemfile (`omniauth-oauth2`), so a deployment install failed
+  until it was regenerated; with the bundle installed, `bundle exec rspec` stops at the boot `LoadError` (§3.3).
 
 **Desired state** (RSpec canonical — decided)
 - Model specs (User validations, sso_id, admin flag), request specs for every OAuth endpoint

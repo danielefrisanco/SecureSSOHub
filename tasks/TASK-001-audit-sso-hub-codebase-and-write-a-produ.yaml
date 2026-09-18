@@ -1,7 +1,7 @@
 id: TASK-001
 title: Audit SSO hub codebase and write a production-readiness TODO plan
 type: docs
-status: in_progress
+status: review
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -109,3 +109,11 @@ notes:
     boots but fails with the documented LoadError from config/initializers/omniauth_ssoprovider.rb:9 (0
     examples run) - pre-existing app bug, out of scope for a docs task, fixed by T04. Tree clean after
     each rspec run.'
+- at: 2026-09-18 15:10
+  text: 'Test gate waived by the user on 2026-09-18 for this docs-only task: bundle exec rspec fails at
+    boot with the pre-existing LoadError in config/initializers/omniauth_ssoprovider.rb:9 (documented
+    in AUDIT s3.3, fixed by T04/T44); no code changed on this branch.'
+- at: 2026-09-18 15:14
+  text: 'review FAIL (round 1): gem inventory lacked bundle show install paths and s2 claimed bundle show
+    fails (stale after user''s bundle install). Fixed: s3 install-path table added, s2/s1/s5.5 wording
+    corrected.'
