@@ -38,3 +38,7 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-010 done: Mount header_guard with a nonce-aware CSP and security headers
 - header_guard for HSTS/frame/nosniff/referrer/COOP/CORP/permissions; Rails CSP enforced with per-request nonce (header_guard 0.3.1 has no nonce support → T46). Specs verify nonce on every inline script. Commit b870b84. Merged into develop.
+
+## 2026-09-18 — TASK-011 done: Add GitHub Actions CI, rubocop and security scanners
+- ci.yml (rspec w/ Postgres, rubocop, brakeman --except EOL checks, bundler-audit non-blocking, docker build); .rubocop.yml + safe autocorrects; harness lint_command set. T30 (Ruby/Rails upgrade) raised to critical. Commit 90e371a. Merged into develop.
+- Phase 0 complete (TASK-002..011). Next: TASK-012 Phase 0 gate. User must merge develop → main and push; first CI run happens then.
