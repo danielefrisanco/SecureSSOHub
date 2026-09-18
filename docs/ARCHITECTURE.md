@@ -66,3 +66,24 @@ written against the HTTP contract, not against Doorkeeper internals, so they sur
 | 2026-09-18 | **Shared cache backend: Redis** (rate limiting, replay guard, later jobs). (TASK-012) | Proven atomic counters/TTLs; one extra compose service. | If operating Redis proves a burden, Solid Cache is the fallback. |
 | 2026-09-18 | **Dynamic client registration is approval-gated** by default, behind a policy switch (`OAUTH_REGISTRATION_POLICY` approval/open/closed) so open mode can be enabled later. (TASK-012, TASK-025) | Safe default for a security product; MCP clients can still self-onboard pending approval. | When agent onboarding friction matters more than manual review. |
 | 2026-09-18 | **Ruby/Rails upgrade (Ruby 3.4, Rails 8.x) is the first Phase 1 task** (TASK-013). | EOL runtime + ~75 advisories; fewer moving parts before Doorkeeper. | — |
+
+## 6. Future directions (not scheduled)
+
+- **Multiple realms (Keycloak-style).** Isolated user pools with their own clients, consents,
+  signing keys, branding and issuer (`https://hub.example/realms/<name>`), administered separately.
+  Not planned for Phases 1–4, but Phase 1 code must not preclude it: one implicit *default* realm,
+  issuer and keys resolved through a single accessor rather than global constants, no schema that
+  assumes exactly one tenant. Adding realms later then means a `realms` table, a realm foreign key
+  on users/clients/consents/keys, realm-scoped routes and discovery documents.
+- **Kubernetes deployment.** The decided target for now is Docker on a single host (§5). A later
+  move to Kubernetes (manifests or a Helm chart; liveness/readiness probes; HPA on the web
+  deployment; secrets from the cluster's secret store or an external KMS; managed Postgres/Redis)
+  needs nothing the app does not already plan: 12-factor env-only config, the readiness endpoint
+  and JSON logs from T29, stateless web processes (cookie sessions, shared state in Redis), signing
+  keys injected as secrets with rotation via the PREVIOUS key (TASK-015). Keep the Dockerfile and
+  compose files the single source of runtime truth so a chart can be derived from them.
+- **Own authorization-server gem** replacing Doorkeeper behind the service layer (§4).
+- **Open dynamic registration** by flipping `OAUTH_REGISTRATION_POLICY` (TASK-025).
+- **Federation** (the hub as a client of upstream identity providers) — that is where
+  `omniauth_syncer` would come back into the hub.
+

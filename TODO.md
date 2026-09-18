@@ -91,6 +91,14 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 | T42 | MCP admin tools: clients CRUD + rotate + approve, users list/get/disable/set_admin, tokens list/revoke, `search_audit_log`, `introspect_token`; MCP resources for discovery/JWKS/clients; specs | feat | high | [app] | T41 | §6.1 |
 | T43 | Agent onboarding docs: how an MCP client registers, authorizes and calls the hub (in docs/ and the developer page) | docs | medium | [app] | T42 | §6 |
 
+## Future (not scheduled — see docs/ARCHITECTURE.md §6)
+
+| id | title | type | prio | placement | after | ref |
+|---|---|---|---|---|---|---|
+| T49 | Multiple realms (Keycloak-style): `realms` table, realm FK on users/clients/consents/keys, per-realm issuer `…/realms/<name>`, keys, branding, discovery; Phase 1 keeps one implicit default realm behind single accessors so this stays additive | feat | low | [app] | Phase 4 | ARCH §6 |
+| T50 | Kubernetes deployment (manifests/Helm, probes, HPA, secrets store, managed Postgres/Redis) derived from the Dockerfile/compose; prerequisites are T29's readiness endpoint, JSON logs and env-only config | chore | low | [app] | T29 | ARCH §6 |
+| T51 | Federation: the hub as OmniAuth client of upstream IdPs (where `omniauth_syncer` returns) | feat | low | [app] | T49 | ARCH §6 |
+
 ## Gem follow-ups (other repos, not blocking the hub)
 
 | id | title | type | prio | placement | after | ref |
