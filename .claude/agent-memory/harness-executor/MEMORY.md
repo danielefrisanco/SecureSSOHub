@@ -1,1 +1,2 @@
 - [Doorkeeper extension points](project_doorkeeper_extension_points.md) — how to hook hub rules into Doorkeeper (authorize, consent, token endpoint), env/DB quirks for rspec and rails
+- [API guard and spec quirks](project_api_guard_and_spec_quirks.md) — rack-jwt-verifier in-process key trick, Api::BaseController pattern, HubAccessToken helper, WebMock to_rack session fix
