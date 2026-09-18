@@ -77,3 +77,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - DONE: TASK-016 and TASK-017 merged into develop (db02f51); alignment notes on TASK-018..025 and two criteria reworded; rspec 147/0, rubocop, brakeman clean.
 - NEXT: /harness:run-task TASK-018 (start-task steps first), then 019 -> 020/021/022 -> 023/024/025; stop before TASK-026. Local env: POSTGRES_HOST=localhost for rspec; JWT_SERVICE_SECRET exported for bin/rails until TASK-019.
 - BLOCKERS/QUESTIONS: none. User merges develop -> main and pushes.
+
+## 2026-09-18 — TASK-018 done: Consent screen, scope catalogue and persisted consents
+- OAuth::Scopes now exposes description/admin?/default?/machine?/admin_names over config/oauth_scopes.yml (completeness spec). Migration 20260918190000 oauth_consents (one live row per user+client, partial unique index), OAuthConsent model, OAuth::Consents (covers?/granted_scopes/grant merges/revoke closes + OAuth::Tokens.revoke_for/for). Doorkeeper skip_authorization → Consents.covers?; OAuth::ConsentScreen prepended into the authorizations controller (application layout, consent helper, records consent after authorization); app/views/doorkeeper/authorizations/new.html.erb carries resource + nonce, data-turbo=false. Admin scopes → invalid_scope for non-admins.
+- CSP decision to confirm: the authorizations controller alone widens img-src to https: (client logo) and form-action to the validated redirect target (browsers check form-action against the post-submit redirect). Not done (context only): machine-client scope allow-list for the machine grant flow.
+- Commits a7fe653, e5409bc, 99b08c4, c18e6ae, b44252a. rspec 182/0, rubocop, brakeman clean.

@@ -119,3 +119,28 @@ notes:
     collide on the unique token column — use distinct users/clients or Timecop.travel in specs.'
 - at: 2026-09-18 18:14
   text: started on task/018-consent-screen-scope-catalogue-and-persi
+- at: 2026-09-18 18:27
+  text: 'closing: (1) OAuth::Scopes extended (description/known?/admin?/default?/machine?/admin_names)
+    over config/oauth_scopes.yml; spec/services/oauth/scopes_spec.rb fails if any scope lacks a description.
+    (2) Migration 20260918190000 CreateOAuthConsents (user_id, oauth_application_id FKs, scopes, granted_at,
+    revoked_at, partial unique index on user+client where revoked_at IS NULL) + OAuthConsent model (belongs_to
+    :user only; the client side is resolved in the service) + OAuth::Consents covers?/granted_scopes/grant
+    (merges)/revoke (closes row, calls OAuth::Tokens.revoke_for)/for; OAuth::Tokens.revoke_for(user:,
+    client_uid:) implemented (TASK-022 reuses it). API uses client_uid: like the rest of the service layer,
+    not client:. (3) skip_authorization block in the initializer consults OAuth::Consents.covers? with
+    pre_auth.scopes; OAuth::ConsentScreen prepended into the authorizations controller after_initialize:
+    layout application, helper consent (client struct, permissions with descriptions and new? flag, request_params
+    with blank values dropped because an empty resource is invalid_target), after_successful_authorization
+    records the consent. View app/views/doorkeeper/authorizations/new.html.erb + _authorization_params
+    partial carry resource and nonce (Doorkeeper''s own template drops both), forms use data-turbo=false
+    (Turbo cannot follow the cross-origin redirect). Locale keys under doorkeeper.authorizations.new;
+    styles appended to application.css. (4) CSP: for the authorizations controller only, img-src adds
+    https: (logo, https only) and form-action adds the validated redirect target origin/scheme — browsers
+    check form-action against the redirect that follows a form submit, so ''self'' alone would block Allow/Deny
+    in Chrome. Error page keeps form-action ''self''. Decision to flag for the user. (5) Admin scopes:
+    OAuth::AuthorizationRules#validate_scopes -> invalid_scope for non-admins (nil owner = non-admin).
+    (6) Machine-client scope restriction (client_credentials allow-list) mentioned in context only, not
+    in criteria: not done. Verified: rspec 182/0 (consent_spec 18 examples: first visit incl. layout/CSP/forms,
+    Allow, Deny, subset skip, superset re-ask with highlight, revoked re-ask, other user, admin scopes),
+    rubocop clean, brakeman 0, isolation spec green, dev boot verified. Commits a7fe653, e5409bc, 99b08c4,
+    c18e6ae, b44252a.'
