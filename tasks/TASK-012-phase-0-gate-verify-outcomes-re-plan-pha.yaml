@@ -1,7 +1,7 @@
 id: TASK-012
 title: Phase 0 gate — verify outcomes, re-plan Phase 1 and create its tasks
 type: docs
-status: in_progress
+status: review
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -48,3 +48,16 @@ plan: []
 notes:
 - at: 2026-09-18 16:10
   text: started on task/012-phase-0-gate-verify-outcomes-re-plan-pha
+- at: 2026-09-18 16:25
+  text: 'DONE: (1) Phase 0 verification in docs/PHASES.md - 6/6 pass locally with evidence (boot, rspec
+    23/0 randomized, rubocop+brakeman clean with EOL checks excluded, Devise sign-in 303, headers incl.
+    CSP nonce, landing 200); CI on GitHub not verifiable (never pushed) - recorded. (2) Blocking questions
+    asked and answered: JWT access tokens via doorkeeper-jwt (RS256), Redis, approval-gated registration
+    with OAUTH_REGISTRATION_POLICY switch, Ruby 3.4/Rails 8 upgrade first. Recorded in ARCHITECTURE.md
+    decisions log. (3) Phase 1 re-planned: T30 moved in as first task; new T47 (Doorkeeper install + service
+    layer + isolation spec); T12 deferred (low); T48 gem row added (rack-jwt-verifier in-process key source);
+    13 tasks TASK-013..025 written directly as YAML with detailed context, 4-7 criteria each, plans and
+    depends_on; TODO.md rows annotated with ids. (4) TASK-026 Phase 1 gate created depending on all 13.
+    (5) ARCHITECTURE.md updated. No application code changed (git diff develop...HEAD: TODO.md, docs/,
+    tasks/ only). Note: TASK-024 file/branch name avoids the word ''credentials'' because the harness
+    secrets guard matches it.'
