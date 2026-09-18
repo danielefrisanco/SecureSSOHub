@@ -1,7 +1,7 @@
 id: TASK-017
 title: Authorization endpoint with PKCE, redirect allow-list and resource indicator
 type: feat
-status: in_progress
+status: review
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -77,3 +77,12 @@ notes:
     passes; rspec 142/0, rubocop clean, brakeman 0 warnings. Decisions: a resource sent more than once
     (array) is dropped by Doorkeeper''s scalar param permit and treated as absent; aud default to client_id
     is left to TASK-019 as the task states. Nothing for the user to do; branch ready for review.'
+- at: 2026-09-18 18:04
+  text: 'review FAIL: token endpoint still redeems codes of clients revoked / users disabled after issuance
+    (allow_grant_flow_for_client is not consulted by AuthorizationCodeRequest); no token_spec'
+- at: 2026-09-18 18:06
+  text: 'correction after review: allow_grant_flow_for_client does NOT guard the authorization_code/refresh_token
+    exchanges. Added OAuth::TokenRules (prepended into Doorkeeper::OAuth::AuthorizationCodeRequest and
+    RefreshTokenRequest): unusable client -> invalid_client, disabled resource owner -> invalid_grant,
+    for codes and refresh tokens issued before the change. spec/requests/oauth/token_spec.rb (5 examples).
+    rspec 147/0, rubocop, brakeman clean. Commit 6a61c78.'
