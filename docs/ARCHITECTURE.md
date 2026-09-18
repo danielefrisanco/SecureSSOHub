@@ -43,6 +43,16 @@ never `Doorkeeper::Application`, `Doorkeeper::AccessToken` or Doorkeeper helpers
 services expose hub-level concepts (client, grant, token, consent). Specs for the OAuth endpoints are
 written against the HTTP contract, not against Doorkeeper internals, so they survive a replacement.
 
+**Client registry (TASK-016):** clients are `Doorkeeper::Application` rows extended with the hub's
+columns (`client_type`, `approval_state`, `registered_via`, `owner_id`, RFC 7591 metadata,
+`last_used_at`). The rules live in `OAuth::ClientRules` (included from the Doorkeeper initializer, so
+`app/models` never names Doorkeeper): `client_type` is the source of truth and public clients have no
+secret; redirect URIs must be absolute https, http only on loopback hosts, private-use schemes only
+for public clients, no fragments/userinfo/OOB; scopes come from `config/oauth_scopes.yml`; approval
+moves pending → approved, pending → revoked, approved → revoked (final). `OAuth::Clients` is the
+only API (admin-only mutation with one-time secrets; `register_dynamic` is the single no-actor path,
+for RFC 7591, and never grants `admin`/`machine` scopes). Rotating a secret leaves issued tokens valid.
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |
