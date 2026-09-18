@@ -1,11 +1,11 @@
 id: TASK-011
 title: Add GitHub Actions CI, rubocop and security scanners
 type: chore
-status: todo
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/011-add-github-actions-ci-rubocop-and-securi
 depends_on:
 - TASK-004
 - TASK-008
@@ -33,4 +33,22 @@ acceptance_criteria:
 - harness.yaml checks.lint_command is `bundle exec rubocop`
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 16:02
+  text: started on task/011-add-github-actions-ci-rubocop-and-securi
+- at: 2026-09-18 16:05
+  text: 'DONE (commit 90e371a): .github/workflows/ci.yml with jobs test (postgres:14 service, db:prepare,
+    rspec), lint (rubocop), security (brakeman --except EOLRuby,EOLRails blocking; bundler-audit --update
+    continue-on-error) and docker build. New dev/test deps approved by the task: rubocop, rubocop-rails,
+    rubocop-rspec, brakeman, bundler-audit. .rubocop.yml: permissive style, Metrics off, lint/security/rails
+    cops on; rubocop -a applied safe fixes in 11 files (whitespace, gem ordering, %w[], symbol arrays,
+    all matcher) - two ugly alignments hand-reformatted. harness.yaml checks.lint_command = bundle exec
+    rubocop. Verified locally: rubocop no offenses; brakeman ''No warnings found'' with the two EOL checks
+    excluded (they fire on Ruby 3.1.4 / Rails 7.1.5.2 -> T30); bundler-audit reports ~75 advisories, most
+    in Rails 7.1.5.2 - non-blocking in CI until T30, whose priority is raised to critical in TODO.md;
+    rspec 23/0; ci.yml parses as YAML. Not verified: an actual GitHub Actions run (no push from the harness).
+    CI env uses a test-only JWT_SERVICE_SECRET literal (not a secret) because bin/rails db:prepare boots
+    the app.'
+- at: 2026-09-18 16:07
+  text: done — reviewer PASS; rubocop clean, brakeman clean (EOL checks excluded -> T30), rspec 23/0.
+    Actual GitHub Actions run not verified (nothing pushed).

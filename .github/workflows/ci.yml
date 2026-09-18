@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+env:
+  RAILS_ENV: test
+  POSTGRES_HOST: localhost
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/secure_sso_hub_test
+  # Test-only signing key; the suite generates a random one when unset, but
+  # bin/rails commands (db:prepare) boot the app and need it present.
+  JWT_SERVICE_SECRET: ci-only-signing-key-not-a-secret-0123456789abcdef
+
+jobs:
+  test:
+    name: RSpec
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - run: bin/rails db:prepare
+      - run: bundle exec rspec
+
+  lint:
+    name: RuboCop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - run: bundle exec rubocop
+
+  security:
+    name: Brakeman & bundler-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      # EOLRuby/EOLRails are skipped until the Ruby/Rails upgrade (TODO T30);
+      # every other check is blocking.
+      - run: bundle exec brakeman -q --no-pager --except EOLRuby,EOLRails
+      # Most open advisories are in Rails 7.1 itself and close with T30. Until
+      # then this step reports but does not block; flip continue-on-error off
+      # once the upgrade lands.
+      - run: bundle exec bundler-audit check --update
+        continue-on-error: true
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false

@@ -1,0 +1,51 @@
+id: TASK-024
+title: Machine token grant (RFC 6749 §4.4) for service clients
+type: feat
+status: todo
+priority: medium
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-019]
+context: |
+  TODO T21 (audit §6.2). Machine-only agents and services (no human) obtain tokens with the OAuth
+  client_credentials grant (RFC 6749 §4.4). Doorkeeper supports it (enabled in TASK-014's
+  grant_flows); this task defines the hub's rules for it. (File/branch name avoid the word
+  "credentials" only because the harness secrets guard matches it.)
+
+  Rules
+  - Only confidential, approved clients (TASK-016) with an explicit per-client allow-list of
+    machine scopes (`oauth_applications.machine_scopes` — new column, or reuse `scopes` with a
+    `machine` flag; pick and document). Public clients and pending/revoked clients →
+    `unauthorized_client`.
+  - Scopes: requested ⊆ client machine allow-list ⊆ {introspect, and later mcp:*}; never
+    `openid`/`profile`/`email`/`offline_access`/`admin:*` (no user behind the token).
+  - Token payload (reuses TASK-019's builder): sub = client uid, azp = client uid, aud = resource
+    (RFC 8707 `resource` parameter accepted here too, same validation as TASK-017) or client uid,
+    no name/email/admin claims, exp 10 minutes; no refresh token (RFC 6749 §4.4.3).
+  - Doorkeeper `revoke_previous_client_credentials_token` — decide (recommended off: a busy service
+    may legitimately hold two tokens during rollover; document).
+  - Audit hook point: call sites go through `OAuth::Tokens.issue_client_token` so T25 can log.
+
+  Specs (spec/requests/oauth/machine_grant_spec.rb): happy path with basic auth and exact payload;
+  scope outside allow-list → invalid_scope; user scopes → invalid_scope; public client →
+  unauthorized_client; pending client → unauthorized_client; wrong secret → invalid_client;
+  resource accepted/invalid_target; no refresh_token in the response; token works on an endpoint
+  that requires `introspect` (introspection call from TASK-022 succeeds with it).
+acceptance_criteria:
+- >-
+  client_credentials issues a 10-minute RS256 JWT with sub = azp = client uid, aud from resource or
+  client uid, no user claims and no refresh token, only for confidential approved clients
+- >-
+  Scopes are restricted to the client's machine allow-list and never include user/admin scopes;
+  each refusal has a spec with the RFC error code
+- >-
+  A machine token can call /oauth/introspect (with the introspect scope) — proven by a spec; the
+  grant path goes through OAuth::Tokens for later audit logging
+- >-
+  Doorkeeper isolation spec passes; rspec/rubocop/brakeman pass
+plan:
+- Schema/flag for machine scopes; ClientRules update; factory trait :machine.
+- Grant configuration + payload rules; OAuth::Tokens.issue_client_token.
+- Request specs; suite; closing note.
+notes: []

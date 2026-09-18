@@ -1,0 +1,94 @@
+id: TASK-014
+title: Install Doorkeeper, doorkeeper-openid_connect and doorkeeper-jwt behind a service layer
+type: feat
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-013]
+context: |
+  New Phase 1 row (T47) added by the Phase 0 gate. Decisions: the OAuth 2.1 / OIDC core is
+  Doorkeeper + doorkeeper-openid_connect (docs/ARCHITECTURE.md §4, TASK-003) and access tokens are
+  RS256 JWTs via doorkeeper-jwt (user decision 2026-09-18, TASK-012). These three gems are the only
+  new runtime dependencies allowed by this task.
+
+  Isolation rule (ARCHITECTURE §4): Doorkeeper is wrapped by the app's own service layer so it can
+  be swapped for an own gem later. Nothing outside `app/services/oauth/**`, `config/initializers/
+  doorkeeper*.rb`, `config/routes.rb` and `db/migrate/**` may reference a `Doorkeeper::` constant.
+  This task creates that layer's skeleton and an architecture spec that enforces the rule with a
+  grep over `app/`.
+
+  Installation
+  - `bin/rails g doorkeeper:install` → config/initializers/doorkeeper.rb, routes `use_doorkeeper`,
+    migration (oauth_applications, oauth_access_grants, oauth_access_tokens). Run
+    `bin/rails g doorkeeper:migration` / `doorkeeper:openid_connect:install` (adds oauth_openid_requests
+    and the migration). Keep migrations' generated timestamps.
+  - Base config (verify every option name against the installed Doorkeeper version's docs; do not
+    guess): `resource_owner_authenticator { current_user || warden.authenticate!(scope: :user) }`,
+    `admin_authenticator { current_user&.is_admin || redirect_to(root_path) }` (admin UI is Phase 3
+    but the block must exist), `hash_token_secrets` and `hash_application_secrets` (SHA-256, with
+    `fallback: :plain` disabled), `grant_flows %w[authorization_code client_credentials]`,
+    `use_refresh_token`, `access_token_expires_in 10.minutes`, `authorization_code_expires_in
+    1.minute`, `force_ssl_in_redirect_uri !Rails.env.local?`, `enforce_configured_scopes`,
+    `default_scopes :openid`, `optional_scopes :profile, :email, :offline_access, :admin`
+    (final scope catalogue is decided in TASK-018; put the list in one place: `config/initializers/
+    oauth_scopes.rb` or `OAuth::Scopes`), PKCE enforcement for public clients (Doorkeeper `force_pkce`
+    if the installed version has it; else note it for TASK-017 to implement in a before-action).
+    `access_token_generator "::Doorkeeper::JWT"` is wired here but the payload/key come from
+    TASK-015/TASK-019 — for this task use a minimal payload {sub, exp} signed with a temporary
+    test-only RSA key generated at boot in development/test and REFUSED in production
+    (`raise` unless TASK-015's key is configured — leave a clearly labelled TODO-free guard).
+  - doorkeeper-openid_connect: `issuer` from `ENV.fetch("HUB_ISSUER")` (canonical https URL of the
+    hub, e.g. https://sso.example.com — README documents it), `subject { |user| user.sso_id }`,
+    `resource_owner_from_access_token { |t| User.find_by(id: t.resource_owner_id) }`,
+    `auth_time_from_resource_owner { |u| u.current_sign_in_at }`, `reauthenticate_resource_owner`
+    (sign out and redirect to sign-in), `claims` minimal (email/name only with the matching scopes —
+    filled in TASK-019). Signing key: temporary until TASK-015 (same guard as above).
+  - Service layer skeleton in app/services/oauth/: `OAuth::Clients` (find/list; create/rotate/
+    revoke/approve added in TASK-016), `OAuth::Tokens` (revoke_all_for(user) added in TASK-022),
+    `OAuth::Grants`. Plain Ruby modules/classes with keyword args; return app-level structs or the
+    Doorkeeper record only through those modules.
+  - Routes: `use_doorkeeper` and `use_doorkeeper_openid_connect`. Doorkeeper's default views are
+    NOT generated here (TASK-018 does consent).
+  - Specs: `spec/architecture/doorkeeper_isolation_spec.rb` greps app/ (excluding app/services/oauth)
+    for /Doorkeeper::/ and expects no hits; `spec/requests/oauth_smoke_spec.rb` asserts
+    GET /oauth/authorize without params → 400/redirect error (endpoint mounted), GET
+    /.well-known/openid-configuration → 200 JSON with issuer == HUB_ISSUER; model specs that
+    Doorkeeper tables exist (schema).
+
+  Non-goals: consent UI, real key management, client registry fields, token claims — those are
+  TASK-015..019. Do not add doorkeeper-grants_assertion or other extras.
+acceptance_criteria:
+- >-
+  Gemfile adds exactly doorkeeper, doorkeeper-openid_connect and doorkeeper-jwt (runtime group);
+  migrations for oauth_applications, oauth_access_grants, oauth_access_tokens, oauth_openid_requests
+  are applied and db/schema.rb regenerated
+- >-
+  config/initializers/doorkeeper.rb sets: Devise-backed resource_owner_authenticator, admin
+  authenticator on is_admin, hashed token and application secrets, grant flows authorization_code +
+  client_credentials, refresh tokens on, access tokens 10 minutes, codes 1 minute,
+  enforce_configured_scopes with a single scope catalogue, force_ssl_in_redirect_uri outside
+  development/test, access_token_generator Doorkeeper::JWT; every option name verified against the
+  installed version (note lists the version)
+- >-
+  Production refuses to boot when no signing key is configured (guard raising a clear error);
+  development/test use an ephemeral RSA key generated at boot (never written to disk)
+- >-
+  doorkeeper-openid_connect is configured with issuer from HUB_ISSUER (documented in README),
+  subject = sso_id, resource owner lookup, auth_time, reauthentication
+- >-
+  app/services/oauth/{clients,tokens,grants}.rb exist with at least find/list operations and specs;
+  spec/architecture/doorkeeper_isolation_spec.rb passes and would fail if a controller referenced
+  Doorkeeper:: directly (demonstrate with a temporary violation in the note, then remove it)
+- >-
+  Request smoke specs: /oauth/authorize mounted, /.well-known/openid-configuration returns issuer;
+  `bundle exec rspec`, rubocop, brakeman pass
+plan:
+- >-
+  Add gems, bundle, run the three generators, migrate, commit "chore(oauth): install doorkeeper".
+- Write the initializer with verified option names; add the signing-key guard + ephemeral dev/test key.
+- Configure openid_connect; add HUB_ISSUER to README and CI env.
+- Create the service layer skeleton and the isolation spec; add smoke request specs.
+- Run suite/rubocop/brakeman; closing note with Doorkeeper version and any option that differed from the plan.
+notes: []

@@ -1,11 +1,11 @@
 id: TASK-006
 title: Fix Devise schema and modules
 type: fix
-status: todo
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/006-fix-devise-schema-and-modules
 depends_on:
 - TASK-004
 context: 'TODO T05 (docs/AUDIT.md §1 item 3, §5.1). The users table (db/schema.rb) has no encrypted_password
@@ -35,4 +35,19 @@ acceptance_criteria:
   in a request spec
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:43
+  text: started on task/006-fix-devise-schema-and-modules
+- at: 2026-09-18 15:44
+  text: 'DONE (commit a7116b2): migration 20260918160000 adds encrypted_password, reset_password_*, confirmation_*,
+    unconfirmed_email, failed_attempts, unlock_token, locked_at, disabled_at with unique indexes; schema.rb
+    regenerated. User: :database_authenticatable :recoverable :rememberable :validatable :trackable :lockable
+    :timeoutable, :registerable removed, :confirmable NOT enabled (TASK-011/T26 mailer). Extra in scope:
+    config/database.yml host from POSTGRES_HOST (default db) so specs run locally - planned in TASK-005
+    note. Specs: spec/factories/users.rb real factory; spec/models/user_spec.rb (6 examples: validity,
+    sso_id UUID, uniqueness, valid_password?, modules); spec/requests/sessions_spec.rb signs in via POST
+    user_session_path (sign_in_count 1) and rejects bad password (failed_attempts 1); rails_helper includes
+    FactoryBot syntax + Devise integration helpers (TASK-008 completes the rest). Verified: bundle exec
+    rspec -> 8 examples, 0 failures.'
+- at: 2026-09-18 15:45
+  text: done — reviewer PASS; verified by migration/schema inspection and rspec 8/0.

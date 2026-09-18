@@ -1,0 +1,61 @@
+id: TASK-020
+title: Userinfo endpoints protected by rack-jwt-verifier
+type: feat
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-019]
+context: |
+  TODO T17 (audit §3.2, §3.3, §5.4). Two userinfo endpoints:
+  - `GET /oauth/userinfo` — standard OIDC, provided by doorkeeper-openid_connect (claims per scope).
+  - `GET /api/v1/userinfo` — the contract `omniauth-ssoprovider` 0.1.2 hard-codes
+    (`raw_info['id']` → uid, `name`, `email`). Served by the hub's own `Api::V1::UserinfoController`
+    behind rack-jwt-verifier, returning `{id: sso_id, sub: sso_id, name, email, email_verified,
+    roles: ["admin"] or []}` with `name`/`email` gated by the `profile`/`email` scopes (id/sub/roles
+    always). This is also the first hub API endpoint, so it sets the pattern for `/api/**`.
+
+  rack-jwt-verifier on `/api/**` (own gem, 0.3.x) — mount in config/application.rb or an
+  initializer scoped by `skip:` to everything except `/api/`:
+  - key source: the hub verifies its OWN tokens, so use `public_key:` from SigningKey (in-process,
+    no self-HTTP) — but rotation means two keys; if the gem's `public_key` cannot take a key set,
+    implement a tiny in-process JWKS source (the gem's `jwks_url` + `cache_store` pointing at a
+    Rack::Test-served URL is NOT acceptable in production). Record the limitation as a gem
+    follow-up in TODO.md (`[gem: rack-jwt-verifier]`: accept a callable/in-process JWKS provider).
+  - `decode_options: { iss: HUB_ISSUER, aud: OAuth::Resources.hub_api }` — tokens minted for another
+    audience (a client's own aud, the MCP resource) are refused with 401 invalid_token.
+  - `require_token: true`, `json_errors: true`, `algorithms: ["RS256"]`, leeway 30.
+  - replay_cache is left off until Redis (T23); note it.
+  The controller reads `env["rack_jwt_verifier.payload"]`, loads the user by `sub` (sso_id),
+  refuses disabled users (401, `invalid_token`) and revoked tokens (check Doorkeeper token by jti
+  via OAuth::Tokens — JWTs are self-contained, so revocation must be checked explicitly here; keep
+  it one indexed query).
+
+  Specs (spec/requests/api/v1/userinfo_spec.rb): 401 with WWW-Authenticate Bearer when no token;
+  401 for wrong aud, wrong iss, expired, tampered signature; 200 with exact JSON for a token with
+  openid+profile+email; name/email absent without those scopes; roles ["admin"] for admins; 401 for
+  disabled user and for a revoked token; `/oauth/userinfo` returns OIDC claims for the same token.
+  Plus an interop spec that `RackJwtVerifier::Middleware` in a standalone Rack app configured with
+  the hub's JWKS document (public_key from SigningKey, and jwks mode via WebMock `to_rack`) accepts
+  a hub token and exposes the payload — this is the proof that downstream services can use the gem
+  unchanged.
+acceptance_criteria:
+- >-
+  GET /api/v1/userinfo returns {id, sub, name, email, email_verified, roles} with scope gating,
+  exactly what omniauth-ssoprovider expects, and GET /oauth/userinfo returns OIDC claims
+- >-
+  /api/** is protected by rack-jwt-verifier (in-process key source, iss + hub-API aud required,
+  RS256 only); tokens for other audiences, tampered/expired tokens and missing tokens get 401 with
+  the RFC 6750 challenge; disabled users and revoked tokens get 401
+- >-
+  Interop spec proves a standalone Rack app with RackJwtVerifier::Middleware (JWKS mode) accepts the
+  hub's access token; any gem limitation found is recorded in TODO.md as [gem: rack-jwt-verifier]
+- >-
+  Doorkeeper isolation spec passes; rspec/rubocop/brakeman pass
+plan:
+- Mount rack-jwt-verifier with the in-process key source; write the 401 specs first.
+- Api::V1::UserinfoController + revocation/disabled checks + specs.
+- Interop spec with the gem in JWKS mode; record limitations.
+- Suite; closing note.
+notes: []

@@ -10,7 +10,7 @@ tasks:
   require_acceptance_criteria: true   # /create-task asks for criteria if missing
 
 git:
-  base_branch: main             # branch tasks start from
+  base_branch: develop          # branch tasks start from; main is merged by the user
   protected_branches: [main, master]
   branch_pattern: "task/{num}-{slug}"        # placeholders: {id} TASK-001, {id_lower}, {num} 001, {slug}, {type}
   allow_commit_on_protected: false
@@ -67,7 +67,7 @@ secrets:
 
 checks:
   test_command: "bundle exec rspec"   # run before completing a task
-  lint_command: ""              # e.g. "ruff check ."
+  lint_command: "bundle exec rubocop"
   format_on_edit: ""            # e.g. "ruff format {file}" — run after every Edit/Write ({file} = path)
   format_extensions: []         # e.g. [".py"] — only run format_on_edit for these
 

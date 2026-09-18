@@ -1,11 +1,11 @@
 id: TASK-009
 title: Add landing page and styled Devise views
 type: feat
-status: todo
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/009-add-landing-page-and-styled-devise-views
 depends_on:
 - TASK-006
 context: 'TODO T08 (docs/AUDIT.md §7 E1, §5.3). config/routes.rb has `root "home#index"` but no
@@ -31,4 +31,18 @@ acceptance_criteria:
 - hello_controller.js is removed
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:55
+  text: started on task/009-add-landing-page-and-styled-devise-views
+- at: 2026-09-18 15:57
+  text: 'DONE (commit): HomeController#index + app/views/home/index.html.erb (signed-out: description
+    + Sign in link; signed-in: greeting, account placeholder, admin placeholder for is_admin). Layout:
+    header (brand, email, Sign out button_to / Sign in link), flash rendering (.flash-<type>), main container.
+    Devise views generated (sessions, passwords, unlocks, shared) - unmodified generator output styled
+    via .field/.actions in app/assets/stylesheets/application.css (single stylesheet, no framework, focus-visible
+    outlines). hello_controller.js removed. Specs: spec/requests/home_spec.rb (200 signed-out/in, admin
+    entry only for admins), spec/requests/devise_views_spec.rb (sign-in/password/unlock pages render in
+    the layout with the stylesheet, no Sign up link, flash on failed sign-in, sign-out redirects with
+    notice). Verified: bundle exec rspec -> 20 examples, 0 failures.'
+- at: 2026-09-18 15:58
+  text: done — reviewer PASS; rspec 20/0.

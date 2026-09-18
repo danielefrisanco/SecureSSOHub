@@ -1,11 +1,11 @@
 id: TASK-010
 title: Mount header_guard with a nonce-aware CSP and security headers
 type: feat
-status: todo
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/010-mount-header-guard-with-a-nonce-aware-cs
 depends_on:
 - TASK-004
 context: 'TODO T09 (docs/AUDIT.md §7 E2, §3.5, §5.1). config/initializers/content_security_policy.rb is
@@ -40,4 +40,18 @@ acceptance_criteria:
   explaining why
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:58
+  text: started on task/010-mount-header-guard-with-a-nonce-aware-cs
+- at: 2026-09-18 16:01
+  text: 'DONE (commit): config/initializers/header_guard.rb mounts HeaderGuard::Middleware with content_security_policy:
+    false (all other headers = gem defaults; HSTS kept in every env since browsers ignore it over plain
+    HTTP, which lets the suite assert the production header set). config/initializers/content_security_policy.rb
+    is no longer commented out: it now holds the enforced policy (default/base/font/form/frame-ancestors
+    none/img data/object none/connect/script/style all self, upgrade-insecure-requests in production)
+    with a fresh SecureRandom nonce per request on script-src - kept in Rails because header_guard 0.3.1
+    has no per-request nonce support (gem follow-up T46, documented in both files). spec/requests/security_headers_spec.rb:
+    header set on /, CSP nonce present and equal on every inline <script> and the csp-nonce meta tag,
+    same headers on Devise pages. Verified: rspec 23 examples 0 failures; headers printed via rails runner.'
+- at: 2026-09-18 16:02
+  text: done — reviewer PASS; rspec 23/0.

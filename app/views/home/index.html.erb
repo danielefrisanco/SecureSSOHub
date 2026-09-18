@@ -1,0 +1,15 @@
+<% if user_signed_in? %>
+  <h1>Hello, <%= current_user.name.presence || current_user.email %></h1>
+  <p>You are signed in to the SSO hub. Applications that trust this hub will recognise you.</p>
+
+  <ul class="dashboard">
+    <li><span class="muted">Account settings — coming soon</span></li>
+    <% if current_user.is_admin %>
+      <li><span class="muted">Administration — coming soon</span></li>
+    <% end %>
+  </ul>
+<% else %>
+  <h1>Secure SSO Hub</h1>
+  <p>One account for every application in the ecosystem. Sign in here once; the apps you use will recognise you.</p>
+  <p><%= link_to "Sign in", new_user_session_path, class: "button" %></p>
+<% end %>

@@ -1,11 +1,11 @@
 id: TASK-007
 title: Align User with jwt_auth_client 0.2.0 and add its initializer
 type: fix
-status: todo
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/007-align-user-with-jwt-auth-client-0-2-0-an
 depends_on:
 - TASK-004
 context: 'TODO T06 (docs/AUDIT.md §3.1). app/models/user.rb includes JwtAuthClient::Issuable but defines
@@ -37,4 +37,18 @@ acceptance_criteria:
 - README documents JWT_SERVICE_SECRET and JWT_ISSUER as required env vars (names only)
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:45
+  text: started on task/007-align-user-with-jwt-auth-client-0-2-0-an
+- at: 2026-09-18 15:46
+  text: 'DONE (commit 8ffa274): User#jwt_claims {user_id: sso_id, email, name, admin}; jwt_payload/jwt_secret
+    and Rails.application.credentials usage removed. config/initializers/jwt_auth_client.rb: JwtAuthClient.configure
+    with shared key from ENV.fetch JWT_SERVICE_SECRET (no fallback -> KeyError at boot when missing, verified),
+    issuer from JWT_ISSUER (default secure-sso-hub), HS256, 300s expiry; skipped under SECRET_KEY_BASE_DUMMY
+    so the Dockerfile''s assets:precompile still works (verified). spec/rails_helper sets a random per-run
+    key. Specs: to_jwt 3 segments, JWT.decode with the test key -> sub==user_id==sso_id, iss, exp ~ now+300,
+    jti, email, name, admin; wrong key raises VerificationError. README documents JWT_SERVICE_SECRET/JWT_ISSUER
+    by name with generation hint. Verified: bundle exec rspec -> 10 examples, 0 failures. Note for later:
+    docker-compose.yml still has JWT_SERVICE_SECRET commented; dev boot needs it exported (README).'
+- at: 2026-09-18 15:52
+  text: done — reviewer PASS; stale test/models/user_test.rb flagged, removed by TASK-008.
