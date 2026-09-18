@@ -43,8 +43,12 @@ context: |
   `revoke(uid, by:)` → revokes all its tokens (via OAuth::Tokens) and blocks authorize/token,
   `usable?(uid)` = approved and not revoked. Authorization: every mutating call takes `by:` (a User)
   and raises `OAuth::Clients::Forbidden` unless `by.is_admin` (owner-based permissions come later
-  with the account UI). No audit log yet (T25) — but call sites go through the service so T25 can
-  hook in.
+  with the account UI). Exception: `register_dynamic(name:, redirect_uris:, client_type:, scopes:,
+  metadata:, policy:)` is the ONE entry point that takes no `by:` — it is used only by the
+  unauthenticated RFC 7591 endpoint (TASK-025), always sets `registered_via: dynamic`, sets
+  `approval_state` from the policy (pending under approval, approved under open), never accepts
+  admin/machine scopes, and is the only way to create a client without an admin actor.
+  No audit log yet (T25) — but call sites go through the service so T25 can hook in.
 
   Specs: migration/schema, ClientRules validations (each rule), service specs for every operation
   including forbidden calls and state transitions, secret hashing (plain secret not stored;
@@ -58,8 +62,9 @@ acceptance_criteria:
   subset, approval-state transitions) each have a failing-case spec
 - >-
   OAuth::Clients implements list/find/create/update/rotate_secret/approve/revoke/usable? with
-  keyword args, admin-only mutation (Forbidden otherwise), one-time secret return, and specs for
-  every operation
+  keyword args, admin-only mutation (Forbidden otherwise), one-time secret return, plus the
+  no-actor register_dynamic entry point restricted to pending/policy-limited clients — with specs
+  for every operation
 - >-
   spec/factories/oauth_clients.rb provides :oauth_client with :public, :pending and :revoked traits
   used by later tasks

@@ -42,7 +42,8 @@ context: |
 acceptance_criteria:
 - >-
   .ruby-version, Gemfile and Dockerfile agree on a Ruby 3.4.x version; Gemfile.lock resolves rails 8.x
-  (newest stable at execution time) and no gem is pinned to a Rails 7 constraint
+  (newest stable at execution time) and no gem is pinned to a Rails 7 constraint; README's
+  building-blocks table states the new Ruby/Rails/Postgres versions
 - >-
   `bin/rails app:update` has been run and every resulting change is either applied or consciously
   rejected with a line in the task note; config.load_defaults is 8.0 (or 8.1) with no leftover
@@ -60,9 +61,6 @@ acceptance_criteria:
 - >-
   docker-compose.yml and ci.yml use postgres:17-alpine; `docker compose build` succeeds locally
   (record the command output tail in the note)
-- >-
-  The app boots and signs in (spec/requests/sessions_spec.rb) under the new versions; README's
-  building-blocks table states the new Ruby/Rails/Postgres versions
 plan:
 - >-
   Baseline: run rspec/rubocop/brakeman/bundler-audit on develop and paste the summary into the note.
