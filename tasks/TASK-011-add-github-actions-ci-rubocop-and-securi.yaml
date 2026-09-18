@@ -1,11 +1,11 @@
 id: TASK-011
 title: Add GitHub Actions CI, rubocop and security scanners
 type: chore
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/011-add-github-actions-ci-rubocop-and-securi
 depends_on:
 - TASK-004
 - TASK-008
@@ -33,4 +33,6 @@ acceptance_criteria:
 - harness.yaml checks.lint_command is `bundle exec rubocop`
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 16:02
+  text: started on task/011-add-github-actions-ci-rubocop-and-securi
