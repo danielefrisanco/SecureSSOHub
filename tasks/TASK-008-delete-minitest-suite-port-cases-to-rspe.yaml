@@ -1,11 +1,11 @@
 id: TASK-008
 title: Delete Minitest suite, port cases to RSpec, complete test setup
 type: test
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/008-delete-minitest-suite-port-cases-to-rspe
 depends_on:
 - TASK-006
 - TASK-007
@@ -31,4 +31,6 @@ acceptance_criteria:
 - rails_helper includes FactoryBot syntax, Devise integration + controller helpers, WebMock disable_net_connect
 - '`bundle exec rspec` passes with random ordering enabled'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:52
+  text: started on task/008-delete-minitest-suite-port-cases-to-rspe
