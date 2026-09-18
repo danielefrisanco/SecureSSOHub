@@ -1,11 +1,11 @@
 id: TASK-015
 title: Signing keys with kid and rotation, JWKS endpoint, dev key tooling
 type: feat
-status: todo
+status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/015-signing-keys-with-kid-and-rotation-jwks-e
 depends_on:
 - TASK-014
 context: "TODO T11 (audit §5.1, §5.2, §6.3). Access tokens (doorkeeper-jwt) and id_tokens\n(doorkeeper-openid_connect)\
@@ -60,3 +60,5 @@ notes:
     accessor (e.g. SigningKey.for(realm: :default)) rather than a global constant, so Keycloak-style multiple
     realms (ARCHITECTURE s6) can add per-realm keys/issuers later without rewriting callers. Single default
     realm for now.'
+- at: 2026-09-18 17:02
+  text: started on task/015-signing-keys-with-kid-and-rotation-jwks-e
