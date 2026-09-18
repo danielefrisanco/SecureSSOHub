@@ -18,7 +18,7 @@ default: &default
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  host: db # CHANGE 1: Use the Docker service name 'db'
+  host: <%= ENV.fetch("POSTGRES_HOST") { "db" } %> # Docker service name; override for a local Postgres
   username: postgres # CHANGE 2: Set explicit username inside the container environment
   password: <%= ENV['POSTGRES_PASSWORD'] || 'development_password' %> # CHANGE 3: Use an environment variable for the password
 

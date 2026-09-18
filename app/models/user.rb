@@ -1,9 +1,8 @@
 class User < ApplicationRecord
-  # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
-         # User model configured with Devise and extended to act as a JWT token issuer.
+  # Accounts are created by an admin, so :registerable is deliberately off.
+  # :confirmable waits for a configured mailer (its columns already exist).
+  devise :database_authenticatable, :recoverable, :rememberable, :validatable,
+         :trackable, :lockable, :timeoutable
   
   # === JWT INTEGRATION ===
   
