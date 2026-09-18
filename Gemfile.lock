@@ -363,6 +363,7 @@ DEPENDENCIES
   jwt (~> 2.8)
   jwt_auth_client
   omniauth (~> 2.1)
+  omniauth-oauth2
   omniauth-rails_csrf_protection
   omniauth-ssoprovider (~> 0.1.2)
   omniauth_syncer
