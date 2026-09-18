@@ -1,0 +1,38 @@
+id: TASK-006
+title: Fix Devise schema and modules
+type: fix
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on:
+- TASK-004
+context: 'TODO T05 (docs/AUDIT.md §1 item 3, §5.1). The users table (db/schema.rb) has no encrypted_password
+
+  or reset_password_token/reset_password_sent_at although User enables :database_authenticatable and
+
+  :recoverable, so nobody can sign in. Trackable columns already exist but :trackable is off.
+
+  Add a migration with: encrypted_password (null: false, default ""), reset_password_token (unique
+
+  index) + reset_password_sent_at, confirmation_token (unique index) / confirmed_at /
+
+  confirmation_sent_at / unconfirmed_email, failed_attempts (default 0) / unlock_token (unique index)
+
+  / locked_at, disabled_at. In app/models/user.rb enable :trackable, :lockable, :timeoutable and
+
+  remove :registerable (accounts are admin-created; the UI for that is a later task). Do NOT enable
+
+  :confirmable yet (needs mailer config, TODO T26) — columns only. Keep sso_id logic. Add model specs
+
+  for validations and sso_id generation (a real users factory is T07; a minimal one may be added here).'
+acceptance_criteria:
+- Migration adds all columns and unique indexes listed in context; db/schema.rb is regenerated
+- 'User model: :database_authenticatable :recoverable :rememberable :validatable :trackable :lockable
+  :timeoutable enabled; :registerable removed'
+- A model spec creates a user with email + password and signs it in via Devise test helpers or Warden
+  in a request spec
+- '`bundle exec rspec` passes'
+plan: []
+notes: []

@@ -1,0 +1,40 @@
+id: TASK-007
+title: Align User with jwt_auth_client 0.2.0 and add its initializer
+type: fix
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on:
+- TASK-004
+context: 'TODO T06 (docs/AUDIT.md §3.1). app/models/user.rb includes JwtAuthClient::Issuable but defines
+
+  jwt_payload/jwt_secret (0.1.x-era names) instead of the 0.2.0 contract `#jwt_claims`; it also
+
+  hardcodes exp/iss which 0.2.0 overrides. There is no config/initializers/jwt_auth_client.rb, so
+
+  JwtAuthClient.configure never runs and TokenIssuer raises ConfigurationError. Implement:
+
+  User#jwt_claims => { user_id: sso_id, email:, name:, admin: is_admin }; delete jwt_payload and
+
+  jwt_secret and the Rails credentials lookup. Initializer: JwtAuthClient.configure with shared_secret
+
+  = ENV.fetch("JWT_SERVICE_SECRET"), issuer = ENV.fetch("JWT_ISSUER", "secure-sso-hub"),
+
+  default_expiry_seconds = 300 — NO literal fallback for the key; test env may set it via
+
+  spec/rails_helper or .env.test-style ENV stub. Note: HMAC is a stopgap; asymmetric signing comes
+
+  with T11/T12. Reference these env vars by name only in docs/README.'
+acceptance_criteria:
+- User#jwt_claims defined; jwt_payload, jwt_secret and Rails.application.credentials usage removed from
+  the model
+- config/initializers/jwt_auth_client.rb configures shared_secret from ENV JWT_SERVICE_SECRET with no
+  fallback value, and issuer from ENV JWT_ISSUER
+- 'Model spec: user.to_jwt returns a 3-segment JWT that JWT.decode verifies with the test key and whose
+  payload has sub == sso_id, iss, exp, jti, user_id, email'
+- README documents JWT_SERVICE_SECRET and JWT_ISSUER as required env vars (names only)
+- '`bundle exec rspec` passes'
+plan: []
+notes: []

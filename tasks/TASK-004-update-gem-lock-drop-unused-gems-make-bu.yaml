@@ -1,0 +1,33 @@
+id: TASK-004
+title: Update gem lock, drop unused gems, make bundle install succeed
+type: chore
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: []
+context: 'TODO T03 (docs/AUDIT.md §3, §5.5). Gemfile.lock pins jwt_auth_client 0.1.0, rack-jwt-verifier
+
+  0.1.0, header_guard 0.1.1 while 0.2.0 / 0.3.0 / 0.3.1 are published and are what the code needs.
+
+  omniauth_syncer is a client-side gem the hub never uses. omniauth-ssoprovider is only needed as the
+
+  reference client in the test suite (and later the developer page), so move it (and omniauth-oauth2)
+
+  to the development/test group. Keep omniauth + omniauth-rails_csrf_protection only if still
+
+  required after T04 — if unsure, keep them and note it. jwt_auth_client 0.2.0 has breaking config
+
+  changes (validated configure block, issuer required, 32-byte key) — the model/initializer fix is
+
+  T06, so after this task the app may still not boot; that is expected and must be noted.'
+acceptance_criteria:
+- Gemfile.lock resolves jwt_auth_client 0.2.0, rack-jwt-verifier 0.3.0, header_guard 0.3.1
+- omniauth_syncer is removed from Gemfile and Gemfile.lock
+- omniauth-ssoprovider and omniauth-oauth2 are in the development/test group
+- '`bundle install` succeeds locally and `BUNDLE_DEPLOYMENT=1 bundle install` succeeds (lock in sync with
+  Gemfile)'
+- A task note states whether the app boots after this change and which follow-up task fixes it if not
+plan: []
+notes: []

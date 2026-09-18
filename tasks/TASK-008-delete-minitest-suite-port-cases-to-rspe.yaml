@@ -1,0 +1,34 @@
+id: TASK-008
+title: Delete Minitest suite, port cases to RSpec, complete test setup
+type: test
+status: todo
+priority: high
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on:
+- TASK-006
+- TASK-007
+context: 'TODO T07 (docs/AUDIT.md §7 E3, §5.5). RSpec is canonical (harness test_command). test/ contains
+
+  two Minitest files that cannot run (no test_helper.rb, rails/test_unit/railtie disabled). Port the
+
+  three cases in test/models/user_test.rb (sso_id generated, sso_id unique, signed JWT) into
+
+  spec/models/user_spec.rb (some may already exist from TASK-006/007 — do not duplicate), delete
+
+  test/. Complete spec/rails_helper.rb: FactoryBot::Syntax::Methods, Devise::Test::IntegrationHelpers
+
+  for request specs, Devise::Test::ControllerHelpers, WebMock.disable_net_connect!(allow_localhost:
+
+  true), Timecop safe mode. Make spec/factories/users.rb a real factory (email sequence, password,
+
+  name, trait :admin). Enable the commented example_status/random-order block in spec_helper.'
+acceptance_criteria:
+- test/ directory no longer exists
+- 'spec/models/user_spec.rb covers: sso_id generated on create, sso_id uniqueness, to_jwt structure/claims'
+- spec/factories/users.rb builds a valid user with :admin trait
+- rails_helper includes FactoryBot syntax, Devise integration + controller helpers, WebMock disable_net_connect
+- '`bundle exec rspec` passes with random ordering enabled'
+plan: []
+notes: []

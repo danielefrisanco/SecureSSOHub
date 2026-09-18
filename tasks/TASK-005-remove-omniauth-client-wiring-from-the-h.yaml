@@ -1,0 +1,32 @@
+id: TASK-005
+title: Remove OmniAuth client wiring from the hub
+type: refactor
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on:
+- TASK-004
+context: 'TODO T04 (docs/AUDIT.md §7 E5, §8). The hub is the OAuth provider, but it is wired as an OmniAuth
+
+  *client* of itself: config/initializers/omniauth_ssoprovider.rb mounts the omniauth-ssoprovider
+
+  strategy (and fails to boot: LoadError, no camelization for :ssoprovider), config/routes.rb has
+
+  `/auth/:provider` and `/auth/:provider/callback`, app/controllers/omniauth_callbacks_controller.rb
+
+  implements a bespoke redirect-with-JWT-in-query flow, and test/initializers/omniauth_ssoprovider_test.rb
+
+  asserts the client strategy is mounted. Remove all of it. Devise''s own routes stay. If
+
+  omniauth-rails_csrf_protection is no longer referenced, remove it from the Gemfile and say so.'
+acceptance_criteria:
+- config/initializers/omniauth_ssoprovider.rb, app/controllers/omniauth_callbacks_controller.rb and test/initializers/omniauth_ssoprovider_test.rb
+  are deleted
+- config/routes.rb has no /auth/:provider routes; devise_for :users and /up remain
+- '`bundle exec rails runner ''puts Rails.env''` boots without error (or the note names the exact remaining
+  blocker fixed by TASK-006/TASK-007)'
+- No OAuth *provider* endpoints are added in this task
+plan: []
+notes: []

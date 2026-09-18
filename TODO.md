@@ -11,16 +11,16 @@ Placement: `[app]` this repo · `[gem: x]` change in that gem · `[new gem]` ext
 
 | id | title | type | prio | placement | after | ref |
 |---|---|---|---|---|---|---|
-| T01 | Remove stray file `a`, README transcript and the TODO stub; add docs/ARCHITECTURE.md skeleton with the "licensing/tenancy is a separate service" note | chore | high | [app] | — | §4, §7 E4 |
-| T02 | Record the AS-core decision in docs/ARCHITECTURE.md: **Doorkeeper + doorkeeper-openid_connect now, own gem left open** — keep Doorkeeper behind the app's service layer so it can be swapped | docs | critical | [app] | — | §5.4, §10 Q1 |
-| T03 | Update Gemfile.lock to jwt_auth_client 0.2.0, rack-jwt-verifier 0.3.0, header_guard 0.3.1; drop omniauth_syncer; move omniauth-ssoprovider to the development/test group; make `bundle install` succeed | chore | critical | [app] | — | §3, §5.5 |
-| T04 | Remove the OmniAuth *client* wiring: omniauth_ssoprovider initializer, `/auth/*` routes, OmniauthCallbacksController, test/initializers spec; keep omniauth-rails_csrf_protection only if still needed | refactor | critical | [app] | T03 | §7 E5, §8 |
-| T05 | Fix Devise schema: migration adding `encrypted_password`, `reset_password_token`/`sent_at`, `confirmation_*`, `failed_attempts`/`unlock_token`/`locked_at`, `disabled_at`; enable `:trackable :lockable :timeoutable`; disable `:registerable` | fix | critical | [app] | T03 | §1 (3), §5.1 |
-| T06 | Rewrite `User` for jwt_auth_client 0.2.0: `#jwt_claims`, remove `jwt_payload`/`jwt_secret`; add `config/initializers/jwt_auth_client.rb` reading `JWT_SERVICE_SECRET`/`JWT_ISSUER` from env (no fallbacks); add model specs | fix | critical | [app] | T03 | §3.1 |
-| T07 | Delete `test/`, port its three cases to RSpec; extend `rails_helper` (FactoryBot syntax, Devise helpers, WebMock); real `users` factory | test | high | [app] | T05, T06 | §7 E3, §5.5 |
-| T08 | Add HomeController#index landing page (signed-out → sign-in CTA, signed-in → account link) and generate/style Devise views with a single minimal stylesheet; remove hello_controller.js | feat | high | [app] | T05 | §7 E1, §5.3 |
-| T09 | Mount header_guard with a nonce-aware CSP compatible with importmap/Turbo; delete the commented Rails CSP initializer; set Permissions-Policy; request specs asserting headers | feat | high | [app] | T03 | §7 E2, §3.5 |
-| T10 | GitHub Actions CI: bundle, db:prepare, rspec, rubocop, brakeman, bundler-audit, docker build; add rubocop config and `checks.lint_command` in harness.yaml | ci | high | [app] | T03, T07 | §5.5 |
+| T01 (TASK-002) | Remove stray file `a`, README transcript and the TODO stub; add docs/ARCHITECTURE.md skeleton with the "licensing/tenancy is a separate service" note | chore | high | [app] | — | §4, §7 E4 |
+| T02 (TASK-003) | Record the AS-core decision in docs/ARCHITECTURE.md: **Doorkeeper + doorkeeper-openid_connect now, own gem left open** — keep Doorkeeper behind the app's service layer so it can be swapped | docs | critical | [app] | — | §5.4, §10 Q1 |
+| T03 (TASK-004) | Update Gemfile.lock to jwt_auth_client 0.2.0, rack-jwt-verifier 0.3.0, header_guard 0.3.1; drop omniauth_syncer; move omniauth-ssoprovider to the development/test group; make `bundle install` succeed | chore | critical | [app] | — | §3, §5.5 |
+| T04 (TASK-005) | Remove the OmniAuth *client* wiring: omniauth_ssoprovider initializer, `/auth/*` routes, OmniauthCallbacksController, test/initializers spec; keep omniauth-rails_csrf_protection only if still needed | refactor | critical | [app] | T03 | §7 E5, §8 |
+| T05 (TASK-006) | Fix Devise schema: migration adding `encrypted_password`, `reset_password_token`/`sent_at`, `confirmation_*`, `failed_attempts`/`unlock_token`/`locked_at`, `disabled_at`; enable `:trackable :lockable :timeoutable`; disable `:registerable` | fix | critical | [app] | T03 | §1 (3), §5.1 |
+| T06 (TASK-007) | Rewrite `User` for jwt_auth_client 0.2.0: `#jwt_claims`, remove `jwt_payload`/`jwt_secret`; add `config/initializers/jwt_auth_client.rb` reading `JWT_SERVICE_SECRET`/`JWT_ISSUER` from env (no fallbacks); add model specs | fix | critical | [app] | T03 | §3.1 |
+| T07 (TASK-008) | Delete `test/`, port its three cases to RSpec; extend `rails_helper` (FactoryBot syntax, Devise helpers, WebMock); real `users` factory | test | high | [app] | T05, T06 | §7 E3, §5.5 |
+| T08 (TASK-009) | Add HomeController#index landing page (signed-out → sign-in CTA, signed-in → account link) and generate/style Devise views with a single minimal stylesheet; remove hello_controller.js | feat | high | [app] | T05 | §7 E1, §5.3 |
+| T09 (TASK-010) | Mount header_guard with a nonce-aware CSP compatible with importmap/Turbo; delete the commented Rails CSP initializer; set Permissions-Policy; request specs asserting headers | feat | high | [app] | T03 | §7 E2, §3.5 |
+| T10 (TASK-011) | GitHub Actions CI: bundle, db:prepare, rspec, rubocop, brakeman, bundler-audit, docker build; add rubocop config and `checks.lint_command` in harness.yaml | ci | high | [app] | T03, T07 | §5.5 |
 
 ## Phase 1 — authorization server core
 

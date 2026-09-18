@@ -1,0 +1,36 @@
+id: TASK-011
+title: Add GitHub Actions CI, rubocop and security scanners
+type: chore
+status: todo
+priority: high
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on:
+- TASK-004
+- TASK-008
+context: 'TODO T10 (docs/AUDIT.md §5.5). No CI, lint or scanners exist. Add .github/workflows/ci.yml running
+
+  on push/PR: Postgres service, Ruby from .ruby-version, bundle install (cached), db:prepare,
+
+  `bundle exec rspec`, `bundle exec rubocop`, `bundle exec brakeman -q --no-pager`,
+
+  `bundle exec bundler-audit check --update`, and a docker build job. Add rubocop (rubocop-rails,
+
+  rubocop-rspec) with a .rubocop.yml that is permissive enough to pass now (inherit rails-omakase or
+
+  disable Style/Documentation and Metrics cops), brakeman and bundler-audit to the development/test
+
+  group — these are new dependencies; the user has approved them via this task. Set
+
+  checks.lint_command in harness.yaml to `bundle exec rubocop`. Required env for CI:
+
+  JWT_SERVICE_SECRET (test value in the workflow only; name it, do not reuse a real key).'
+acceptance_criteria:
+- .github/workflows/ci.yml runs rspec, rubocop, brakeman, bundler-audit and docker build
+- '`bundle exec rubocop` passes locally with the committed .rubocop.yml'
+- '`bundle exec brakeman` reports no high-confidence warnings'
+- harness.yaml checks.lint_command is `bundle exec rubocop`
+- '`bundle exec rspec` passes'
+plan: []
+notes: []

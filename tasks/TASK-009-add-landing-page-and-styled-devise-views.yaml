@@ -1,0 +1,34 @@
+id: TASK-009
+title: Add landing page and styled Devise views
+type: feat
+status: todo
+priority: high
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on:
+- TASK-006
+context: 'TODO T08 (docs/AUDIT.md §7 E1, §5.3). config/routes.rb has `root "home#index"` but no
+
+  HomeController/views exist, so / raises. Add HomeController#index: signed-out → short description
+
+  + "Sign in" link; signed-in → greeting + links to account (placeholder path until T31) and, for
+
+  is_admin, admin (placeholder). Generate Devise views (`rails g devise:views`) for sessions,
+
+  passwords, unlocks (registrations are off) and style them with ONE minimal stylesheet
+
+  (app/assets/stylesheets/application.css — no CSS framework), consistent layout with a header
+
+  (app name, sign in/out) and flash messages. Remove app/javascript/controllers/hello_controller.js
+
+  and its registration. Keep Turbo/Stimulus.'
+acceptance_criteria:
+- GET / returns 200 signed-out and signed-in (request specs)
+- Devise sign-in, sign-out, forgot-password and unlock pages render inside the application layout with
+  the shared stylesheet
+- Flash messages are rendered in the layout
+- hello_controller.js is removed
+- '`bundle exec rspec` passes'
+plan: []
+notes: []

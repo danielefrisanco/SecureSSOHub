@@ -1,0 +1,30 @@
+id: TASK-003
+title: Record authorization-server core decision (Doorkeeper) in ARCHITECTURE.md
+type: docs
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on:
+- TASK-002
+context: 'TODO T02 (docs/AUDIT.md §5.4, §10 Q1). Decision taken 2026-09-18: use Doorkeeper +
+
+  doorkeeper-openid_connect as the OAuth 2.1 / OIDC core now; building an own gem stays an open option
+
+  for later. Consequence to record: Doorkeeper must stay behind the app''s own service layer
+
+  (see TODO T37) — views, MCP tools and jobs call app services, never Doorkeeper models directly — so
+
+  it can be swapped. Also record the client-side gems'' role (omniauth-ssoprovider = reference client,
+
+  rack-jwt-verifier = resource-server middleware, header_guard = headers, jwt_auth_client =
+
+  hub→service calls). No gem is added in this task; T03/T13 do that.'
+acceptance_criteria:
+- 'docs/ARCHITECTURE.md ''decisions log'' has a dated entry: Doorkeeper + doorkeeper-openid_connect chosen,
+  own gem left open, with the service-layer isolation rule'
+- docs/ARCHITECTURE.md lists each self-developed gem and its role in the target architecture
+- No Gemfile or code changes
+plan: []
+notes: []

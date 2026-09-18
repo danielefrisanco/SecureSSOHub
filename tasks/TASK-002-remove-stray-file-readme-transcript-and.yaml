@@ -1,0 +1,30 @@
+id: TASK-002
+title: Remove stray file, README transcript and TODO stub; add ARCHITECTURE.md
+type: chore
+status: todo
+priority: high
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: []
+context: 'TODO T01 (docs/AUDIT.md §4, §7 E4). Repo hygiene from the audit: the root file `a` is 2.2 KB
+  of
+
+  pasted chat about licensing/multi-tenancy; README.md''s second half is a pasted assistant transcript
+
+  (Vue.js E2E crypto, "Phase 1/2/3") that does not match the code. Keep the one useful idea from `a`:
+
+  licensing / multi-tenancy / complex authorization live in a separate service that trusts the hub''s
+
+  tokens — record it in a new docs/ARCHITECTURE.md skeleton (sections: purpose, roles = hub as OAuth
+
+  2.1/OIDC provider, trust boundaries, decisions log). TODO.md itself stays (it is the backlog now).'
+acceptance_criteria:
+- '`a` is deleted from the repo'
+- README.md contains only accurate project description, setup and the SSO flow; the pasted 'Part 2 / Phase
+  1-3' transcript is gone
+- docs/ARCHITECTURE.md exists with the sections purpose, roles, trust boundaries, decisions log, and records
+  the 'licensing/tenancy is a separate service trusting hub tokens' note
+- No files under app/, config/, db/, lib/, spec/ are changed
+plan: []
+notes: []

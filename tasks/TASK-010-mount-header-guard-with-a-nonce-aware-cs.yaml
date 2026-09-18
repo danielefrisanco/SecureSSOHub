@@ -1,0 +1,43 @@
+id: TASK-010
+title: Mount header_guard with a nonce-aware CSP and security headers
+type: feat
+status: todo
+priority: high
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on:
+- TASK-004
+context: 'TODO T09 (docs/AUDIT.md §7 E2, §3.5, §5.1). config/initializers/content_security_policy.rb is
+  fully
+
+  commented out; no HSTS/frame/referrer headers are sent; header_guard 0.3.1 (own gem) is in the
+
+  bundle but unused. Mount HeaderGuard::Middleware in config/application.rb (or an initializer) with:
+
+  defaults for HSTS (no preload), X-Frame-Options DENY, Referrer-Policy, COOP default
+
+  (same-origin-allow-popups — redirect flows), Permissions-Policy defaults; a CSP that works with
+
+  importmap + Turbo: script-src ''self'' plus a per-request nonce (Rails'' content_security_policy_nonce
+
+  / csp_meta_tag already in the layout), style-src ''self'', connect-src ''self'', object-src ''none'',
+
+  frame-ancestors ''none'', form-action ''self''. Relax HSTS in development/test per the gem README.
+
+  Delete the Rails CSP initializer (or leave it as the nonce generator only if header_guard needs it —
+
+  document which). If header_guard cannot express a per-request nonce, note it as a gem follow-up
+
+  (TODO T46) and use report-only for script-src until then.'
+acceptance_criteria:
+- Request spec asserts responses carry strict-transport-security (production config), x-frame-options
+  DENY, x-content-type-options nosniff, referrer-policy, permissions-policy and a content-security-policy
+  header
+- The landing page and Devise pages load with no CSP violations in a system/request check (importmap and
+  Turbo scripts allowed)
+- config/initializers/content_security_policy.rb is deleted or reduced to nonce configuration with a comment
+  explaining why
+- '`bundle exec rspec` passes'
+plan: []
+notes: []
