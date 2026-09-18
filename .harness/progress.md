@@ -20,3 +20,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-002 done: Remove stray file, README transcript and TODO stub; add ARCHITECTURE.md
 - `a` deleted; README rewritten; docs/ARCHITECTURE.md (purpose, roles, trust boundaries, decisions log). Commits 5063777 + fix. Merged into develop.
+
+## 2026-09-18 — TASK-003 done: Record authorization-server core decision (Doorkeeper) in ARCHITECTURE.md
+- docs/ARCHITECTURE.md §4: Doorkeeper + doorkeeper-openid_connect behind the service layer, own gem open; per-gem role table; decisions-log entry. Merged into develop.

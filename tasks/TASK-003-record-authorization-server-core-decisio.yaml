@@ -1,7 +1,7 @@
 id: TASK-003
 title: Record authorization-server core decision (Doorkeeper) in ARCHITECTURE.md
 type: docs
-status: review
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -35,3 +35,5 @@ notes:
     service-layer isolation rule, per-gem role table for all five own gems) and a dated decisions-log
     entry. No Gemfile or code changes. Verified: git diff develop...HEAD --stat = docs/ARCHITECTURE.md
     + task file; rspec green.'
+- at: 2026-09-18 15:43
+  text: done — reviewer PASS; verified by diff stat (docs only) and rspec green.
