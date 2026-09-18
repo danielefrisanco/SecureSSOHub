@@ -134,12 +134,13 @@ end
 # The hub's client-registry rules (client type, approval workflow, redirect
 # allow-list), authorization-request rules (PKCE, resource indicator, admin
 # scopes), the disabled-account guard, the consent page and the token-endpoint
-# rules (replay, refresh reuse and lifetime, id_token at_hash, last_used_at) —
-# kept out of app/models and app/controllers so nothing there names
-# Doorkeeper. Wired once, after boot (a to_prepare hook would re-register the
-# validations on every code reload in development).
+# rules (replay, refresh reuse and lifetime, id_token at_hash, last_used_at)
+# and the token record's `jti` — kept out of app/models and app/controllers
+# so nothing there names Doorkeeper. Wired once, after boot (a to_prepare
+# hook would re-register the validations on every code reload in development).
 Rails.application.config.after_initialize do
   Doorkeeper::Application.include(OAuth::ClientRules)
+  Doorkeeper::AccessToken.prepend(OAuth::TokenRecord)
   Doorkeeper::OAuth::PreAuthorization.prepend(OAuth::AuthorizationRules)
   Doorkeeper::AuthorizationsController.prepend(OAuth::AuthorizationGuard)
   Doorkeeper::AuthorizationsController.prepend(OAuth::ConsentScreen)

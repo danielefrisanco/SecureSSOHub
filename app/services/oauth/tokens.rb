@@ -1,6 +1,7 @@
 module OAuth
   # Issued access/refresh tokens as the application sees them (the payload
-  # itself is OAuth::TokenPayload). Per-token revocation and "sign out
+  # itself is OAuth::TokenPayload; `jti` is the claim of the same name, put on
+  # the row by OAuth::TokenRecord). Per-token revocation and "sign out
   # everywhere" arrive with TASK-022.
   #
   # Token family: every access/refresh token remembers the authorization code
@@ -24,6 +25,20 @@ module OAuth
         .includes(:application)
         .map { |token| wrap(token) }
         .reject { |token| token.expires_at && token.expires_at <= Time.current }
+    end
+
+    # Whether the access token with this `jti` is still live: a row exists and
+    # was not revoked. One indexed query — the check a resource server needs
+    # after verifying a self-contained JWT (the hub's own API does it in
+    # Api::BaseController). Expiry is the token's own `exp`, already checked by
+    # whoever verified the signature, so it is not re-derived here.
+    #
+    # @param jti [String, nil] the `jti` claim
+    # @return [Boolean]
+    def active?(jti:)
+      return false if jti.blank?
+
+      Doorkeeper::AccessToken.exists?(jti: jti, revoked_at: nil)
     end
 
     # Revokes every live access token, refresh token and authorization code of
@@ -109,7 +124,7 @@ module OAuth
 
     def wrap(token)
       Token.new(
-        jti: token.token,
+        jti: token.jti,
         client_uid: token.application&.uid,
         subject_id: token.resource_owner_id,
         scopes: token.scopes.to_a,

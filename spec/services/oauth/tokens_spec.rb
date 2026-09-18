@@ -13,6 +13,24 @@ RSpec.describe OAuth::Tokens do
                                     redirect_uri: client.redirect_uri)
   end
 
+  describe ".active?" do
+    it "is true only for a stored, unrevoked token with that jti" do
+      token = token_for(user, client)
+      expect(token.jti).to match(/\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/)
+      expect(described_class.active?(jti: token.jti)).to be(true)
+      expect(described_class.active?(jti: "unknown")).to be(false)
+      expect(described_class.active?(jti: nil)).to be(false)
+
+      token.revoke
+      expect(described_class.active?(jti: token.jti)).to be(false)
+    end
+
+    it "exposes the same jti on the wrapped token" do
+      token = token_for(user, client)
+      expect(described_class.active_for(user: user).map(&:jti)).to eq([token.jti])
+    end
+  end
+
   describe ".revoke_for" do
     it "revokes only the tokens and codes the client holds for that user" do
       mine = token_for(user, client)

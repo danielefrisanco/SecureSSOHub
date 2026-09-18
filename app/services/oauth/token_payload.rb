@@ -1,5 +1,3 @@
-require "securerandom"
-
 module OAuth
   # The claims of an access token (RFC 9068 JWT profile), built for
   # doorkeeper-jwt from the attributes Doorkeeper hands its token generator
@@ -10,7 +8,7 @@ module OAuth
   #   aud        the RFC 8707 resource of the grant, else the client uid
   #   azp        the client the token was issued to
   #   scope      space-delimited (OAuth); `scopes` array for rack-jwt-verifier
-  #   jti        unique per token
+  #   jti        unique per token, chosen by OAuth::TokenRecord and stored on the row
   #   iat/nbf    issue time; exp = iat + Doorkeeper's access_token_expires_in
   #   name       with the `profile` scope
   #   email,
@@ -23,7 +21,7 @@ module OAuth
 
     # @param attributes [Hash] Doorkeeper's token-generator attributes:
     #   :resource_owner_id, :application, :scopes, :expires_in, :created_at,
-    #   :resource (custom attribute copied from the grant)
+    #   :resource (custom attribute copied from the grant), :jti (the row's)
     # @return [Hash] the claims
     def self.build(attributes)
       new(attributes).claims
@@ -61,7 +59,7 @@ module OAuth
         azp: client_uid,
         scope: scopes.join(" "),
         scopes: scopes,
-        jti: SecureRandom.uuid,
+        jti: attributes.fetch(:jti),
         iat: issued_at,
         nbf: issued_at,
         exp: issued_at + attributes[:expires_in].to_i

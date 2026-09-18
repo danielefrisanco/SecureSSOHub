@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_18_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_18_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -36,6 +36,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_18_200000) do
     t.bigint "application_id", null: false
     t.datetime "created_at", null: false
     t.integer "expires_in"
+    t.string "jti"
     t.string "refresh_token"
     t.string "resource"
     t.bigint "resource_owner_id"
@@ -44,6 +45,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_18_200000) do
     t.string "token", null: false
     t.index ["access_grant_id"], name: "index_oauth_access_tokens_on_access_grant_id"
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
+    t.index ["jti"], name: "index_oauth_access_tokens_on_jti", unique: true
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
     t.index ["resource_owner_id"], name: "index_oauth_access_tokens_on_resource_owner_id"
     t.index ["token"], name: "index_oauth_access_tokens_on_token", unique: true
