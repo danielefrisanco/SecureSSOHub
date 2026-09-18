@@ -1,7 +1,7 @@
 id: TASK-015
 title: Signing keys with kid and rotation, JWKS endpoint, dev key tooling
 type: feat
-status: review
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -79,3 +79,5 @@ notes:
     + kid, never writes files), hub:keys:show. README env rows + rotation runbook. Specs: 20 new (signing_key_spec
     10, jwks_spec 8, hub_keys_spec 2) incl. issued access token decoded via JWT::JWK::Set from the served
     JWKS with the active kid. Verified: rspec 51/0, rubocop clean, brakeman 0.'
+- at: 2026-09-18 17:10
+  text: done — reviewer PASS; rspec 51/0, rubocop, brakeman clean.

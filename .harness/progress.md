@@ -53,3 +53,7 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-014 done: Install Doorkeeper, doorkeeper-openid_connect and doorkeeper-jwt behind a service layer
 - Gems + migrations; config verified against gem source (PKCE forced, hashed secrets, 10 min tokens, JWT generator); signing-key boot guard; OIDC issuer from HUB_ISSUER, subject = sso_id; app/services/oauth skeleton + isolation spec; 31 specs. Merged into develop.
+
+## 2026-09-18 — TASK-015 done: Signing keys with kid and rotation, JWKS endpoint, dev key tooling
+- OAuth::SigningKey (env PEM/base64, RFC 7638 kid, previous key for rotation, realm-ready accessor); ruby-jwt kid generator = Thumbprint; doorkeeper-jwt + openid_connect sign via it; JWKS at /.well-known/jwks.json and /oauth/discovery/keys with cache headers; hub:keys rake tasks; README runbook. 51 specs. Merged into develop.
+- STOPPED HERE at the user's request (handoff + compact). Next: /harness:start-task TASK-016 (client registry). Reminder: develop → main merge/push is the user's step; local test runs need DATABASE_URL pointing at the compose Postgres 17 on localhost.
