@@ -1,7 +1,7 @@
 id: TASK-008
 title: Delete Minitest suite, port cases to RSpec, complete test setup
 type: test
-status: in_progress
+status: review
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -34,3 +34,11 @@ plan: []
 notes:
 - at: 2026-09-18 15:52
   text: started on task/008-delete-minitest-suite-port-cases-to-rspe
+- at: 2026-09-18 15:54
+  text: 'DONE (commit bbad4cd): test/ deleted; its three cases are covered by spec/models/user_spec.rb
+    (TASK-006/007), none duplicated. rails_helper: FactoryBot syntax, Devise IntegrationHelpers (request+system),
+    ControllerHelpers, WebMock.disable_net_connect!(allow_localhost: true), Timecop.safe_mode. spec_helper:
+    recommended block enabled (random order, examples.txt persisted and gitignored, focus filter). Factory
+    :admin trait + spec. Verified: bundle exec rspec -> 11 examples, 0 failures, randomized. Env note:
+    the compose db container was destroyed/recreated by something outside this session twice during the
+    task (docker events); restarted with docker compose up -d db, named volume kept data.'
