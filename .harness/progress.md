@@ -42,3 +42,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 ## 2026-09-18 — TASK-011 done: Add GitHub Actions CI, rubocop and security scanners
 - ci.yml (rspec w/ Postgres, rubocop, brakeman --except EOL checks, bundler-audit non-blocking, docker build); .rubocop.yml + safe autocorrects; harness lint_command set. T30 (Ruby/Rails upgrade) raised to critical. Commit 90e371a. Merged into develop.
 - Phase 0 complete (TASK-002..011). Next: TASK-012 Phase 0 gate. User must merge develop → main and push; first CI run happens then.
+
+## 2026-09-18 — TASK-012 done: Phase 0 gate — verify outcomes, re-plan Phase 1 and create its tasks
+- docs/PHASES.md: Phase 0 6/6 verified (CI only local — nothing pushed). Decisions: RS256 JWT access tokens via doorkeeper-jwt, Redis, approval-gated registration with policy switch, Ruby 3.4/Rails 8 upgrade first.
+- Phase 1 = TASK-013..025 (detailed specs) + gate TASK-026; TODO.md and ARCHITECTURE.md updated. Merged into develop.
+- Next: `/harness:start-task TASK-013` (upgrade). User must merge develop → main and push.

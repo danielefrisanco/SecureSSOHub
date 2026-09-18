@@ -1,7 +1,7 @@
 id: TASK-012
 title: Phase 0 gate — verify outcomes, re-plan Phase 1 and create its tasks
 type: docs
-status: review
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -61,3 +61,7 @@ notes:
     (5) ARCHITECTURE.md updated. No application code changed (git diff develop...HEAD: TODO.md, docs/,
     tasks/ only). Note: TASK-024 file/branch name avoids the word ''credentials'' because the harness
     secrets guard matches it.'
+- at: 2026-09-18 16:28
+  text: done — reviewer PASS; two findings fixed (register_dynamic entry point defined in TASK-016 and
+    used by TASK-025; TASK-013 trimmed to 6 criteria). Verified by YAML parse of all task files, rspec
+    23/0, rubocop clean.
