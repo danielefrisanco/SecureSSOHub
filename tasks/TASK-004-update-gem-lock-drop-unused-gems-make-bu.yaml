@@ -1,7 +1,7 @@
 id: TASK-004
 title: Update gem lock, drop unused gems, make bundle install succeed
 type: chore
-status: in_progress
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -43,3 +43,10 @@ notes:
     that initializer would also NameError in production until TASK-005 lands - no regression, production
     did not boot either. omniauth + omniauth-rails_csrf_protection kept (still loaded by the initializer
     until TASK-005 decides). Test gate: rspec cannot run until TASK-005.'
+- at: 2026-09-18 15:30
+  text: 'Test gate waived by the user on 2026-09-18: bundle exec rspec fails at boot with the pre-existing
+    LoadError from config/initializers/omniauth_ssoprovider.rb:9 (removed by TASK-005); no application
+    code changed on this branch.'
+- at: 2026-09-18 15:32
+  text: done — reviewer PASS; verified by bundle check, frozen deployment install into scratch path, lock/Gemfile
+    inspection; test gate waived (boot LoadError fixed by TASK-005).
