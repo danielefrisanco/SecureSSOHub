@@ -1,11 +1,11 @@
 id: TASK-010
 title: Mount header_guard with a nonce-aware CSP and security headers
 type: feat
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/010-mount-header-guard-with-a-nonce-aware-cs
 depends_on:
 - TASK-004
 context: 'TODO T09 (docs/AUDIT.md §7 E2, §3.5, §5.1). config/initializers/content_security_policy.rb is
@@ -40,4 +40,6 @@ acceptance_criteria:
   explaining why
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:58
+  text: started on task/010-mount-header-guard-with-a-nonce-aware-cs
