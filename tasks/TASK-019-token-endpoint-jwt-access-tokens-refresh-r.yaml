@@ -1,7 +1,7 @@
 id: TASK-019
 title: Token endpoint — JWT access tokens, refresh rotation, id_token, client auth
 type: feat
-status: in_progress
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -168,3 +168,9 @@ notes:
     expiry, id_token nonce/auth_time/at_hash/JWKS, replay + revocation, wrong verifier/redirect_uri/client/secret,
     public with secret, pending client, TASK-017 cases kept without the Timecop workaround); token_payload_spec
     (client-only token). rspec 214/0, rubocop clean, brakeman clean, isolation spec green.'
+- at: 2026-09-18 19:43
+  text: 'review: PASS (no findings; reviewer traced refresh/replay locking in doorkeeper 5.9.7 source).
+    rspec 214/0, rubocop, brakeman clean. Decisions for the user: strict rotation without grace window;
+    OAUTH_REFRESH_TOKEN_TTL in seconds, absolute from the code; email_verified = confirmed_at present;
+    admin:false on client-only tokens; refreshed id_token has at_hash but no nonce. Reviewer note: a benign
+    concurrent refresh race is refused by Doorkeeper''s lock (invalid_grant) without family revocation.'
