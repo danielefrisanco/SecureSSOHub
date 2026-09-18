@@ -32,7 +32,28 @@ service in the ecosystem trusts. It does **not** own business authorization data
 - Tokens are never placed in URLs; they travel through the back-channel token endpoint or the
   `Authorization` header.
 
-## 4. Decisions log
+## 4. Authorization-server core and the own gems
+
+**Decision (2026-09-18):** the OAuth 2.1 / OIDC core is [Doorkeeper](https://github.com/doorkeeper-gem/doorkeeper)
+plus `doorkeeper-openid_connect`. Building an own authorization-server gem stays an open option.
+
+**Isolation rule that makes the swap possible:** Doorkeeper is wrapped by the app's own service
+layer (`app/services/…`, TODO T37). Controllers, views, MCP tools and jobs call those services —
+never `Doorkeeper::Application`, `Doorkeeper::AccessToken` or Doorkeeper helpers directly — and the
+services expose hub-level concepts (client, grant, token, consent). Specs for the OAuth endpoints are
+written against the HTTP contract, not against Doorkeeper internals, so they survive a replacement.
+
+**Role of each self-developed gem in the target architecture**
+
+| Gem | Where | Role |
+|---|---|---|
+| `jwt_auth_client` | hub (and services calling each other) | signs tokens the hub issues (`Issuable` on `User`, `TokenIssuer` for the token endpoint claims until Doorkeeper's JWT layer takes over); hub → service calls with `HttpClient`. Needs asymmetric signing (0.3.0) to serve the JWKS. |
+| `rack-jwt-verifier` | hub's own API and MCP endpoint; every downstream service | verifies bearer tokens against the hub's JWKS with mandatory `iss`/`aud`, scopes and replay guard. |
+| `header_guard` | hub | HSTS, CSP (nonce-aware), frame/referrer/COOP/CORP/permissions headers. |
+| `omniauth-ssoprovider` | client applications; hub test suite and developer page | the reference login client — defines the contract the hub must honour (`/oauth/authorize`, `/oauth/token`, `/api/v1/userinfo`). |
+| `omniauth_syncer` | client applications only | syncs the auth hash into the client's local user model; not used by the hub. |
+
+## 5. Decisions log
 
 | Date | Decision | Why | Revisit when |
 |---|---|---|---|
@@ -40,3 +61,4 @@ service in the ecosystem trusts. It does **not** own business authorization data
 | 2026-09-18 | RSpec is the canonical test suite; `test/` is to be removed (TASK-008). | Matches `harness.yaml`; the Minitest files could not run. | — |
 | 2026-09-18 | Deployment target: Docker on a single host. | Only Dockerfile/compose exist; keeps infra advice concrete. | Scaling beyond one host. |
 | 2026-09-18 | Licensing / tenancy / fine-grained authorization are a separate service. | Keeps the hub small and auditable (see §3). | — |
+| 2026-09-18 | **Authorization-server core: Doorkeeper + doorkeeper-openid_connect**, behind the app's service layer; own gem left open (TASK-003). | Audit §5.4: an AS is the wrong thing to hand-roll first; Doorkeeper is mature and audited. | When the service layer is stable and an own gem would add real value (e.g. MCP-native features). |
