@@ -26,3 +26,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-006 done: Fix Devise schema and modules
 - Migration adds encrypted_password, recoverable/confirmable/lockable columns, disabled_at; User modules trackable/lockable/timeoutable, registerable off; database.yml host via POSTGRES_HOST; factory + model + sign-in request specs (8 green). Commit a7116b2. Merged into develop.
+
+## 2026-09-18 — TASK-007 done: Align User with jwt_auth_client 0.2.0 and add its initializer
+- User#jwt_claims; initializer reads JWT_SERVICE_SECRET (no fallback, boot fails without it; skipped only under SECRET_KEY_BASE_DUMMY) and JWT_ISSUER; to_jwt specs (10 green). Commit 8ffa274. Merged into develop.
