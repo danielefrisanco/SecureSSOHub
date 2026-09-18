@@ -1,76 +1,92 @@
 id: TASK-001
 title: Audit SSO hub codebase and write a production-readiness TODO plan
 type: docs
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/001-audit-sso-hub-codebase-and-write-a-produ
 depends_on: []
-context: |
-  Investigation / planning task, no feature code.
-
-  SecureSSOHub (Rails 7.1, Ruby 3.1.4, RSpec) is meant to be an SSO hub built on gems the user
-  wrote themselves: jwt_auth_client (0.1.0), rack-jwt-verifier (0.1.0), omniauth-ssoprovider
-  (0.1.2), omniauth_syncer (0.1.0), header_guard (0.1.1). All five resolve from rubygems.org in
-  Gemfile.lock (no git/path override), so the audit must locate each gem's installed source
-  (`bundle show <gem>`) to see what it actually implements. These gems are NOT to be replaced; the
-  user can modify them, so gaps are flagged as "change in gem X" items.
-
-  Reuse rule: whenever a finding implies code that is generic (not specific to this app), the
-  audit must say whether it belongs in an existing gem, a new gem/library, or the app — and the
-  TODO item must be tagged accordingly (e.g. `[gem: rack-jwt-verifier]`, `[new gem]`, `[app]`).
-  Prefer putting reusable logic in a gem; at minimum signal the possibility.
-
-  Verified from the tree (grounds the audit, does not replace it):
-  - config/routes.rb has `root "home#index"` but there is no HomeController and no
-    app/views/home/ — the root path is currently broken.
-  - config/initializers/omniauth_ssoprovider.rb configures OmniAuth as a *consumer* pointing at an
-    external hub (client_options site/authorize_url/token_url), while README/routes describe this
-    app as *being* the hub. No provider-side /oauth/authorize or /oauth/token exists here. This
-    role ambiguity must be surfaced with a recommendation, not resolved in this task.
-  - config/initializers/content_security_policy.rb is fully commented out (no CSP).
-  - Two parallel test suites: spec/ (rspec-rails, factory_bot; harness test_command is
-    `bundle exec rspec`) and test/ (Minitest). No CI (.github/ absent).
-  - app/models/user.rb builds a JWT with 1-hour expiry, signing key from
-    Rails credentials sso_hub_client_secret; no refresh or revocation.
-  - Repo root has a stray file `a` (pasted chat text) and a 3-byte TODO.md.
-  - README.md documents the intended SSO flow then trails into an unimplemented Phase 1/2/3 plan
-    (Vue.js E2E crypto, header_guard integration).
-  - Nothing MCP-related exists anywhere in the repo today.
-
-  Decisions taken with the user (2026-09-18):
-  - Protocol: the custom `ssoprovider` OAuth2-style protocol implied by the gems is the baseline;
-    the audit flags where it should converge toward standard OAuth 2.1 / OIDC.
-  - MCP: designed from scratch in the audit. Principle: anything a user can do in the UI, an agent
-    must be able to do via MCP — MCP is a first-class interface. The audit must also analyse
-    agents authenticating via the hub: the MCP authorization spec is OAuth 2.1 based (MCP server
-    = resource server, delegating to an authorization server); the hub could be that
-    authorization server so agents obtain tokens through the same SSO flow as humans. State what
-    this requires of the token model (scopes, client registration for agents, lifetimes,
-    revocation).
-  - Tests: RSpec in spec/ is canonical; test/ is flagged for migration/removal.
-  - Deployment: Docker / single host (docker-compose.yml + Dockerfile are the only artifacts).
-
-  Target end state the plan must drive towards: a production-ready SSO hub — security, speed,
-  ease of use, functionality incl. MCP endpoint, a simple-but-complete UI, tests.
-
-  Non-goals: no application/feature code changes, no gem replacement, no fixing any bug found
-  (root route, CSP, etc.) — those become TODO.md items. This task only produces the two documents.
+context: "Investigation / planning task, no feature code.\n\nSecureSSOHub (Rails 7.1, Ruby 3.1.4, RSpec)\
+  \ is meant to be an SSO hub built on gems the user\nwrote themselves: jwt_auth_client (0.1.0), rack-jwt-verifier\
+  \ (0.1.0), omniauth-ssoprovider\n(0.1.2), omniauth_syncer (0.1.0), header_guard (0.1.1). All five resolve\
+  \ from rubygems.org in\nGemfile.lock (no git/path override), so the audit must locate each gem's installed\
+  \ source\n(`bundle show <gem>`) to see what it actually implements. These gems are NOT to be replaced;\
+  \ the\nuser can modify them, so gaps are flagged as \"change in gem X\" items.\n\nReuse rule: whenever\
+  \ a finding implies code that is generic (not specific to this app), the\naudit must say whether it\
+  \ belongs in an existing gem, a new gem/library, or the app — and the\nTODO item must be tagged accordingly\
+  \ (e.g. `[gem: rack-jwt-verifier]`, `[new gem]`, `[app]`).\nPrefer putting reusable logic in a gem;\
+  \ at minimum signal the possibility.\n\nVerified from the tree (grounds the audit, does not replace\
+  \ it):\n- config/routes.rb has `root \"home#index\"` but there is no HomeController and no\n  app/views/home/\
+  \ — the root path is currently broken.\n- config/initializers/omniauth_ssoprovider.rb configures OmniAuth\
+  \ as a *consumer* pointing at an\n  external hub (client_options site/authorize_url/token_url), while\
+  \ README/routes describe this\n  app as *being* the hub. No provider-side /oauth/authorize or /oauth/token\
+  \ exists here. This\n  role ambiguity must be surfaced with a recommendation, not resolved in this task.\n\
+  - config/initializers/content_security_policy.rb is fully commented out (no CSP).\n- Two parallel test\
+  \ suites: spec/ (rspec-rails, factory_bot; harness test_command is\n  `bundle exec rspec`) and test/\
+  \ (Minitest). No CI (.github/ absent).\n- app/models/user.rb builds a JWT with 1-hour expiry, signing\
+  \ key from\n  Rails credentials sso_hub_client_secret; no refresh or revocation.\n- Repo root has a\
+  \ stray file `a` (pasted chat text) and a 3-byte TODO.md.\n- README.md documents the intended SSO flow\
+  \ then trails into an unimplemented Phase 1/2/3 plan\n  (Vue.js E2E crypto, header_guard integration).\n\
+  - Nothing MCP-related exists anywhere in the repo today.\n\nDecisions taken with the user (2026-09-18):\n\
+  - Protocol: the custom `ssoprovider` OAuth2-style protocol implied by the gems is the baseline;\n  the\
+  \ audit flags where it should converge toward standard OAuth 2.1 / OIDC.\n- MCP: designed from scratch\
+  \ in the audit. Principle: anything a user can do in the UI, an agent\n  must be able to do via MCP\
+  \ — MCP is a first-class interface. The audit must also analyse\n  agents authenticating via the hub:\
+  \ the MCP authorization spec is OAuth 2.1 based (MCP server\n  = resource server, delegating to an authorization\
+  \ server); the hub could be that\n  authorization server so agents obtain tokens through the same SSO\
+  \ flow as humans. State what\n  this requires of the token model (scopes, client registration for agents,\
+  \ lifetimes,\n  revocation).\n- Tests: RSpec in spec/ is canonical; test/ is flagged for migration/removal.\n\
+  - Deployment: Docker / single host (docker-compose.yml + Dockerfile are the only artifacts).\n\nTarget\
+  \ end state the plan must drive towards: a production-ready SSO hub — security, speed,\nease of use,\
+  \ functionality incl. MCP endpoint, a simple-but-complete UI, tests.\n\nNon-goals: no application/feature\
+  \ code changes, no gem replacement, no fixing any bug found\n(root route, CSP, etc.) — those become\
+  \ TODO.md items. This task only produces the two documents.\n"
 acceptance_criteria:
-- 'docs/AUDIT.md is committed and contains at minimum: (1) Executive summary; (2) Self-developed gem inventory — for each of jwt_auth_client, rack-jwt-verifier, omniauth-ssoprovider, omniauth_syncer, header_guard: version, install path from `bundle show`, what it provides, where/how the app uses it (file:line), and any gap between what it provides and what the app needs; (3) one section per area — Security, Performance, Ease of use / UX-UI, Functionality (incl. MCP), Tests — each as Current state -> Desired state -> Gap with file:line evidence; (4) a Wrong / Needs improvement / Missing / Should be removed rollup per area.'
-- 'docs/AUDIT.md explicitly documents, each with a recommendation (not a fix): the root-route/HomeController gap, the disabled CSP, the duplicate spec/ vs test/ suites, the stray `a` file, and the OmniAuth consumer-vs-provider role ambiguity.'
-- 'docs/AUDIT.md has an MCP section that (a) lists the UI capabilities that must be mirrored as MCP tools/resources, (b) analyses agent authentication through the hub acting as OAuth 2.1 authorization server for MCP clients, and (c) states the required changes to the token model (scopes, agent client registration, lifetimes, revocation).'
-- 'Every finding that implies generic/reusable code states where it belongs — an existing gem (named), a new gem/library, or the app — and the matching TODO.md item carries a `[gem: <name>]`, `[new gem]` or `[app]` tag.'
-- 'TODO.md is replaced with an ordered, numbered backlog; each item has a short id (T01, T02, ...), a one-line title sized for a single harness task, a type (feat/fix/chore/docs/refactor/test/perf), a priority (low/medium/high/critical), a placement tag ([gem: x] / [new gem] / [app]), and explicit dependency hints (e.g. "after T03") where applicable.'
-- 'Every TODO.md item traces back to a finding in docs/AUDIT.md (no undocumented requirements introduced in TODO.md).'
-- 'No files under app/, config/, db/, lib/, spec/, test/, or Gemfile* are modified by this task; the stray `a` file is left in place and only referenced as a TODO.md item.'
+- 'docs/AUDIT.md is committed and contains at minimum: (1) Executive summary; (2) Self-developed gem inventory
+  — for each of jwt_auth_client, rack-jwt-verifier, omniauth-ssoprovider, omniauth_syncer, header_guard:
+  version, install path from `bundle show`, what it provides, where/how the app uses it (file:line), and
+  any gap between what it provides and what the app needs; (3) one section per area — Security, Performance,
+  Ease of use / UX-UI, Functionality (incl. MCP), Tests — each as Current state -> Desired state -> Gap
+  with file:line evidence; (4) a Wrong / Needs improvement / Missing / Should be removed rollup per area.'
+- 'docs/AUDIT.md explicitly documents, each with a recommendation (not a fix): the root-route/HomeController
+  gap, the disabled CSP, the duplicate spec/ vs test/ suites, the stray `a` file, and the OmniAuth consumer-vs-provider
+  role ambiguity.'
+- docs/AUDIT.md has an MCP section that (a) lists the UI capabilities that must be mirrored as MCP tools/resources,
+  (b) analyses agent authentication through the hub acting as OAuth 2.1 authorization server for MCP clients,
+  and (c) states the required changes to the token model (scopes, agent client registration, lifetimes,
+  revocation).
+- 'Every finding that implies generic/reusable code states where it belongs — an existing gem (named),
+  a new gem/library, or the app — and the matching TODO.md item carries a `[gem: <name>]`, `[new gem]`
+  or `[app]` tag.'
+- 'TODO.md is replaced with an ordered, numbered backlog; each item has a short id (T01, T02, ...), a
+  one-line title sized for a single harness task, a type (feat/fix/chore/docs/refactor/test/perf), a priority
+  (low/medium/high/critical), a placement tag ([gem: x] / [new gem] / [app]), and explicit dependency
+  hints (e.g. "after T03") where applicable.'
+- Every TODO.md item traces back to a finding in docs/AUDIT.md (no undocumented requirements introduced
+  in TODO.md).
+- No files under app/, config/, db/, lib/, spec/, test/, or Gemfile* are modified by this task; the stray
+  `a` file is left in place and only referenced as a TODO.md item.
 plan:
-- 'Inventory the 5 self-developed gems: versions from Gemfile/Gemfile.lock, `bundle show <gem>` for install paths, read each gem''s lib/ source, cross-reference with usage in app/controllers/omniauth_callbacks_controller.rb, app/models/user.rb, config/initializers/omniauth_ssoprovider.rb, config/initializers/devise.rb. Note per gem what it provides vs what the hub needs.'
-- 'Map current functionality end to end: config/routes.rb, app/controllers/*, app/models/*, app/views/**, config/initializers/*, config/application.rb, config/environments/*, db/schema.rb + db/migrate/*, docker-compose.yml, Dockerfile, README.md, TODO.md, spec/** and test/**. Record what exists, what is a stub, what is referenced but absent (HomeController, provider-side /oauth/* endpoints, admin UI, client-app registration, MCP endpoint, CI).'
-- 'For each area (Security, Performance, Ease of use/UX-UI, Functionality incl. MCP, Tests) write Current -> Desired -> Gap with file:line evidence; classify each finding as wrong / needs improvement / missing / should be removed; for each finding decide placement: existing gem (which), new gem, or app.'
-- 'MCP + agent auth analysis: enumerate UI capabilities to mirror as MCP tools/resources; describe the hub as OAuth 2.1 authorization server for MCP clients (agent client registration, scopes, token lifetimes, revocation, introspection); list required token-model changes and which gem they belong in.'
-- 'Write docs/AUDIT.md following the structure in the acceptance criteria.'
-- 'Derive TODO.md from docs/AUDIT.md: one ordered, prioritised, dependency-annotated, placement-tagged item per harness-task-sized unit of work; verify every item traces to an audit finding.'
-- 'Verify with `git status` that only docs/AUDIT.md, TODO.md and the task file changed.'
-notes: []
+- 'Inventory the 5 self-developed gems: versions from Gemfile/Gemfile.lock, `bundle show <gem>` for install
+  paths, read each gem''s lib/ source, cross-reference with usage in app/controllers/omniauth_callbacks_controller.rb,
+  app/models/user.rb, config/initializers/omniauth_ssoprovider.rb, config/initializers/devise.rb. Note
+  per gem what it provides vs what the hub needs.'
+- 'Map current functionality end to end: config/routes.rb, app/controllers/*, app/models/*, app/views/**,
+  config/initializers/*, config/application.rb, config/environments/*, db/schema.rb + db/migrate/*, docker-compose.yml,
+  Dockerfile, README.md, TODO.md, spec/** and test/**. Record what exists, what is a stub, what is referenced
+  but absent (HomeController, provider-side /oauth/* endpoints, admin UI, client-app registration, MCP
+  endpoint, CI).'
+- 'For each area (Security, Performance, Ease of use/UX-UI, Functionality incl. MCP, Tests) write Current
+  -> Desired -> Gap with file:line evidence; classify each finding as wrong / needs improvement / missing
+  / should be removed; for each finding decide placement: existing gem (which), new gem, or app.'
+- 'MCP + agent auth analysis: enumerate UI capabilities to mirror as MCP tools/resources; describe the
+  hub as OAuth 2.1 authorization server for MCP clients (agent client registration, scopes, token lifetimes,
+  revocation, introspection); list required token-model changes and which gem they belong in.'
+- Write docs/AUDIT.md following the structure in the acceptance criteria.
+- 'Derive TODO.md from docs/AUDIT.md: one ordered, prioritised, dependency-annotated, placement-tagged
+  item per harness-task-sized unit of work; verify every item traces to an audit finding.'
+- Verify with `git status` that only docs/AUDIT.md, TODO.md and the task file changed.
+notes:
+- at: 2026-09-18 14:52
+  text: started on task/001-audit-sso-hub-codebase-and-write-a-produ
