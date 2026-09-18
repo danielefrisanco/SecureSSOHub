@@ -1,11 +1,11 @@
 id: TASK-003
 title: Record authorization-server core decision (Doorkeeper) in ARCHITECTURE.md
 type: docs
-status: todo
+status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/003-record-authorization-server-core-decisio
 depends_on:
 - TASK-002
 context: 'TODO T02 (docs/AUDIT.md §5.4, §10 Q1). Decision taken 2026-09-18: use Doorkeeper +
@@ -27,4 +27,6 @@ acceptance_criteria:
 - docs/ARCHITECTURE.md lists each self-developed gem and its role in the target architecture
 - No Gemfile or code changes
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:42
+  text: started on task/003-record-authorization-server-core-decisio
