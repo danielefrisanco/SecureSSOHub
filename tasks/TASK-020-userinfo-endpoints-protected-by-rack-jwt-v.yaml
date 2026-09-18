@@ -1,11 +1,11 @@
 id: TASK-020
 title: Userinfo endpoints protected by rack-jwt-verifier
 type: feat
-status: todo
+status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/020-userinfo-endpoints-protected-by-rack-jwt
 depends_on:
 - TASK-019
 context: "TODO T17 (audit §3.2, §3.3, §5.4). Two userinfo endpoints:\n- `GET /oauth/userinfo` — standard\
@@ -56,3 +56,5 @@ notes:
     (OAuth::Tokens::Token#jti is currently the raw token string — align it). Doorkeeper isolation spec
     allows Doorkeeper:: only under app/services/oauth, config/initializers and config/routes.rb — the
     API controller must go through OAuth::Tokens.'
+- at: 2026-09-18 19:44
+  text: started on task/020-userinfo-endpoints-protected-by-rack-jwt
