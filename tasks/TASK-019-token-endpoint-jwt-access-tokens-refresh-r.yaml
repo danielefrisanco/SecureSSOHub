@@ -1,11 +1,11 @@
 id: TASK-019
 title: Token endpoint — JWT access tokens, refresh rotation, id_token, client auth
 type: feat
-status: todo
+status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/019-token-endpoint-jwt-access-tokens-refresh
 depends_on:
 - TASK-015
 - TASK-017
@@ -136,3 +136,5 @@ notes:
     exists (TASK-016). (8) Removing the jwt_auth_client wiring also means dropping the JWT_SERVICE_SECRET
     line in spec/rails_helper.rb, the mention in README/.github/workflows/ci.yml if any, and updating
     .claude/agent-memory/harness-executor notes that say bin/rails needs it.'
+- at: 2026-09-18 19:24
+  text: started on task/019-token-endpoint-jwt-access-tokens-refresh
