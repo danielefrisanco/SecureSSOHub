@@ -199,9 +199,6 @@ GEM
     omniauth-oauth2 (1.8.0)
       oauth2 (>= 1.4, < 3)
       omniauth (~> 2.0)
-    omniauth-rails_csrf_protection (1.0.2)
-      actionpack (>= 4.2)
-      omniauth (~> 2.0)
     omniauth-ssoprovider (0.1.2)
       omniauth (~> 2.1)
       omniauth-oauth2 (~> 1.8)
@@ -359,9 +356,7 @@ DEPENDENCIES
   jbuilder
   jwt (~> 2.8)
   jwt_auth_client (~> 0.2)
-  omniauth (~> 2.1)
   omniauth-oauth2
-  omniauth-rails_csrf_protection
   omniauth-ssoprovider (~> 0.1.2)
   pg (~> 1.1)
   pry-rails

@@ -18,8 +18,6 @@ gem "sassc-rails"
 # --- Authentication & Security Gems ---
 # User management framework
 gem "devise", "~> 4.9" 
-# Core OmniAuth framework (required by the providers)
-gem "omniauth", "~> 2.1" 
 # Own gems (published on rubygems.org). The hub is the OAuth *provider*: it issues
 # tokens (jwt_auth_client), verifies bearer tokens on its own API (rack-jwt-verifier)
 # and hardens responses (header_guard). Client-side gems live in the test group below.
@@ -28,9 +26,6 @@ gem "rack-jwt-verifier", "~> 0.3"
 gem "header_guard", "~> 0.3"
 # Cross-Origin Resource Sharing (essential for SSO architecture)
 gem "rack-cors"
-# Essential security gem for all OmniAuth setups
-
-gem "omniauth-rails_csrf_protection"
 # --- Testing & Development ---
 group :development, :test do
   # Reference OAuth *client* used only to exercise the hub end to end in specs.
