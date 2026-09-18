@@ -10,7 +10,7 @@ class DeviseCreateUsers < ActiveRecord::Migration[7.1]
       ## Profile Fields
       t.string :name
       t.string :email,              null: false, default: ""
-      
+
       ## Authorization (Basic App Role)
       t.boolean :is_admin, default: false
 
@@ -30,6 +30,6 @@ class DeviseCreateUsers < ActiveRecord::Migration[7.1]
     # Index sso_id as the primary unique identifier for login
     add_index :users, :sso_id, unique: true
     # Keep email indexed for lookup purposes
-    add_index :users, :email,  unique: true 
+    add_index :users, :email,  unique: true
   end
 end

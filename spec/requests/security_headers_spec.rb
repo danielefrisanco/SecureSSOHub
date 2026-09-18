@@ -21,7 +21,7 @@ RSpec.describe "Security headers", type: :request do
 
     inline_scripts = response.body.scan(/<script\b[^>]*>/).reject { |tag| tag.include?("src=") }
     expect(inline_scripts).not_to be_empty
-    inline_scripts.each { |tag| expect(tag).to include(%(nonce="#{nonce}")) }
+    expect(inline_scripts).to all(include(%(nonce="#{nonce}")))
     expect(response.body).to include(%(<meta name="csp-nonce" content="#{nonce}"))
   end
 

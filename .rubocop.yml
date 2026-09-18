@@ -1,0 +1,67 @@
+# Lint baseline for the hub. Deliberately permissive on style so it passes on
+# the current code; tighten cop by cop as the app grows. Safety and correctness
+# cops (Lint/*, Security/*, Rails/*) stay on.
+plugins:
+  - rubocop-rails
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "bin/**/*"
+    - "db/schema.rb"
+    - "node_modules/**/*"
+    - "tmp/**/*"
+    - "vendor/**/*"
+
+Style/Documentation:
+  Enabled: false
+Style/StringLiterals:
+  Enabled: false
+Style/FrozenStringLiteralComment:
+  Enabled: false
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Layout/LineLength:
+  Max: 120
+  Exclude:
+    - "config/initializers/devise.rb"  # generator comments with sample values
+
+Metrics:
+  Enabled: false
+
+Rails/FilePath:
+  Enabled: false
+
+RSpec/ExampleLength:
+  Enabled: false
+RSpec/MultipleExpectations:
+  Enabled: false
+RSpec/DescribeClass:
+  Enabled: false
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+# Judgement calls kept as-is for now
+Style/RedundantFetchBlock:
+  Enabled: false
+Style/GlobalStdStream:
+  Enabled: false
+Rails/Blank:
+  Enabled: false
+Rails/ThreeStateBooleanColumn:
+  Exclude:
+    - "db/migrate/20251025175249_devise_create_users.rb"  # legacy; fixed by a later migration
+
+RSpec/IncludeExamples:
+  Enabled: false
+RSpec/MultipleDescribes:
+  Enabled: false
+RSpec/DescribeMethod:
+  Enabled: false

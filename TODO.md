@@ -57,7 +57,7 @@ Only the current phase and its gate are ever instantiated as harness tasks; late
 | T27 | TOTP 2FA for admins (enrolment UI + sign-in step); specs | feat | medium | [app] | T26 | §5.1 |
 | T28 | rack-cors initializer restricted to token/userinfo/MCP endpoints; specs | feat | medium | [app] | T17 | §5.1 |
 | T29 | Production deployment: `docker-compose.prod.yml` (web, db, cache, TLS-terminating proxy), env-only configuration, remove hardcoded dev DB password from the dev compose, readiness endpoint (DB + cache + signing key), JSON request logs | chore | high | [app] | T23 | §5.2, §4 |
-| T30 | Upgrade Ruby (≥ 3.3) and Rails (≥ 7.2/8.0) and Postgres image; run the suite | chore | medium | [app] | T10 | §4, §10 Q5 |
+| T30 | Upgrade Ruby (≥ 3.3) and Rails (≥ 7.2/8.0) and Postgres image; run the suite. **Raised to critical by TASK-011: brakeman reports Ruby 3.1/Rails 7.1 EOL and bundler-audit lists ~75 advisories, most in Rails 7.1.5.2; CI skips the two EOL checks and runs bundler-audit non-blocking until this lands** | chore | critical | [app] | T10 | §4, §10 Q5 |
 
 ## Phase 3 — user, admin and developer UI
 

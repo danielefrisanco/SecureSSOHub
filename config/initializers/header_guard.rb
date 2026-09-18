@@ -14,5 +14,7 @@
 # HSTS is left on in every environment: browsers ignore it over plain HTTP, so
 # it is harmless in development and lets the test suite assert the production
 # header set.
-Rails.application.config.middleware.use HeaderGuard::Middleware,
+Rails.application.config.middleware.use(
+  HeaderGuard::Middleware,
   content_security_policy: false
+)

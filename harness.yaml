@@ -67,7 +67,7 @@ secrets:
 
 checks:
   test_command: "bundle exec rspec"   # run before completing a task
-  lint_command: ""              # e.g. "ruff check ."
+  lint_command: "bundle exec rubocop"
   format_on_edit: ""            # e.g. "ruff format {file}" — run after every Edit/Write ({file} = path)
   format_extensions: []         # e.g. [".py"] — only run format_on_edit for these
 
