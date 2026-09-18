@@ -1,7 +1,7 @@
 id: TASK-017
 title: Authorization endpoint with PKCE, redirect allow-list and resource indicator
 type: feat
-status: review
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -86,3 +86,7 @@ notes:
     RefreshTokenRequest): unusable client -> invalid_client, disabled resource owner -> invalid_grant,
     for codes and refresh tokens issued before the change. spec/requests/oauth/token_spec.rb (5 examples).
     rspec 147/0, rubocop, brakeman clean. Commit 6a61c78.'
+- at: 2026-09-18 18:09
+  text: done — criteria verified by spec/requests/oauth/authorize_spec.rb (31), spec/requests/oauth/token_spec.rb
+    (5), spec/services/oauth/resources_spec.rb; suite 147/0, rubocop, brakeman clean, isolation spec green.
+    Reviewer FAIL (token endpoint gap) then PASS after 6a61c78.
