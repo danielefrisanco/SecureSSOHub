@@ -1,11 +1,11 @@
 id: TASK-006
 title: Fix Devise schema and modules
 type: fix
-status: todo
+status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/006-fix-devise-schema-and-modules
 depends_on:
 - TASK-004
 context: 'TODO T05 (docs/AUDIT.md §1 item 3, §5.1). The users table (db/schema.rb) has no encrypted_password
@@ -35,4 +35,6 @@ acceptance_criteria:
   in a request spec
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:43
+  text: started on task/006-fix-devise-schema-and-modules
