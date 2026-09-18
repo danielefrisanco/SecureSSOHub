@@ -6,66 +6,57 @@ priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
 branch: null
-depends_on: [TASK-020, TASK-021]
-context: |
-  TODO T20 (audit §5.5). The proof that the hub honours the contract its own client gems expect:
-  a real `omniauth-ssoprovider` strategy completes a login against the hub inside the test suite,
-  and a real `RackJwtVerifier::Middleware` accepts the resulting token.
-
-  Setup (no new dependencies — omniauth-oauth2 and omniauth-ssoprovider are already in the test
-  group; WebMock is configured):
-  - "Client app": a minimal Rack app built in the spec (`Rack::Builder`) with `Rack::Session::Cookie`
-    (rack-session is present transitively; if not, use OmniAuth's test-mode-free session
-    requirements — do not add gems), `OmniAuth::Builder` mounting the strategy by CLASS
-    (`provider OmniAuth::Strategies::SSOProvider, client_id, secret, client_options: {site:
-    "https://hub.test", …}, user_info_url: "/api/v1/userinfo", scope: "openid profile email",
-    pkce: true`) — mounting by name `:ssoprovider` is broken in the gem (audit §3.3, T44) and
-    must NOT be worked around in the gem here; note it. A callback endpoint that renders the auth
-    hash as JSON.
-  - Routing the strategy's HTTP calls (oauth2 gem → Faraday) to the hub in-process:
-    `stub_request(:any, /hub\.test/).to_rack(Rails.application)` (WebMock `to_rack`). Browser legs
-    (authorize redirect, sign-in, consent) are driven with a `ActionDispatch::Integration::Session`
-    on the hub; the code+state redirect is fed back to the client app's callback with Rack::Test.
-  - The hub side: an approved confidential :oauth_client with redirect_uri = the client app's
-    callback URL; a user with password; consent granted during the flow.
-
-  Flow to assert (spec/integration/omniauth_ssoprovider_flow_spec.rb):
-  1. GET /auth/ssoprovider on the client → 302 to the hub's /oauth/authorize with response_type=code,
-     client_id, redirect_uri, scope, state, code_challenge (S256).
-  2. Hub: not signed in → redirect to sign-in; sign in; consent page shown; Allow.
-  3. Hub → 302 back to the client callback with code + the same state.
-  4. Client callback → strategy exchanges the code at the hub's /oauth/token (through to_rack),
-     fetches /api/v1/userinfo, and the auth hash has uid == user.sso_id, info.name/email, and
-     extra.access_token = a JWT that decodes with the hub's JWKS.
-  5. Negative: tampered state → OmniAuth failure (csrf_detected); consent denied → failure
-     access_denied; a pending client → unauthorized_client.
-
-  rack-jwt-verifier interop (spec/integration/rack_jwt_verifier_flow_spec.rb): a standalone Rack
-  app protected by `RackJwtVerifier::Middleware` with `jwks_url: "https://hub.test/.well-known/jwks.json"`
-  (served through to_rack), `decode_options: {iss: HUB_ISSUER, aud: <resource>}`, `require_scopes:
-  ["email"]`; a token from the flow above for that resource → 200 and `env["rack_jwt_verifier.payload"]`
-  has sub/scopes; wrong audience → 401; missing scope → 403 insufficient_scope; after key rotation
-  (previous key configured) old tokens still verify.
-
-  Findings about the gems (name-lookup bug, anything the strategy needs that the hub does not
-  provide, or vice versa) go into TODO.md gem rows (T44 etc.) — do not modify the gems here.
+depends_on:
+- TASK-020
+- TASK-021
+context: "TODO T20 (audit §5.5). The proof that the hub honours the contract its own client gems expect:\n\
+  a real `omniauth-ssoprovider` strategy completes a login against the hub inside the test suite,\nand\
+  \ a real `RackJwtVerifier::Middleware` accepts the resulting token.\n\nSetup (no new dependencies —\
+  \ omniauth-oauth2 and omniauth-ssoprovider are already in the test\ngroup; WebMock is configured):\n\
+  - \"Client app\": a minimal Rack app built in the spec (`Rack::Builder`) with `Rack::Session::Cookie`\n\
+  \  (rack-session is present transitively; if not, use OmniAuth's test-mode-free session\n  requirements\
+  \ — do not add gems), `OmniAuth::Builder` mounting the strategy by CLASS\n  (`provider OmniAuth::Strategies::SSOProvider,\
+  \ client_id, secret, client_options: {site:\n  \"https://hub.test\", …}, user_info_url: \"/api/v1/userinfo\"\
+  , scope: \"openid profile email\",\n  pkce: true`) — mounting by name `:ssoprovider` is broken in the\
+  \ gem (audit §3.3, T44) and\n  must NOT be worked around in the gem here; note it. A callback endpoint\
+  \ that renders the auth\n  hash as JSON.\n- Routing the strategy's HTTP calls (oauth2 gem → Faraday)\
+  \ to the hub in-process:\n  `stub_request(:any, /hub\\.test/).to_rack(Rails.application)` (WebMock `to_rack`).\
+  \ Browser legs\n  (authorize redirect, sign-in, consent) are driven with a `ActionDispatch::Integration::Session`\n\
+  \  on the hub; the code+state redirect is fed back to the client app's callback with Rack::Test.\n-\
+  \ The hub side: an approved confidential :oauth_client with redirect_uri = the client app's\n  callback\
+  \ URL; a user with password; consent granted during the flow.\n\nFlow to assert (spec/integration/omniauth_ssoprovider_flow_spec.rb):\n\
+  1. GET /auth/ssoprovider on the client → 302 to the hub's /oauth/authorize with response_type=code,\n\
+  \   client_id, redirect_uri, scope, state, code_challenge (S256).\n2. Hub: not signed in → redirect\
+  \ to sign-in; sign in; consent page shown; Allow.\n3. Hub → 302 back to the client callback with code\
+  \ + the same state.\n4. Client callback → strategy exchanges the code at the hub's /oauth/token (through\
+  \ to_rack),\n   fetches /api/v1/userinfo, and the auth hash has uid == user.sso_id, info.name/email,\
+  \ and\n   extra.access_token = a JWT that decodes with the hub's JWKS.\n5. Negative: tampered state\
+  \ → OmniAuth failure (csrf_detected); consent denied → failure\n   access_denied; a pending client →\
+  \ unauthorized_client.\n\nrack-jwt-verifier interop (spec/integration/rack_jwt_verifier_flow_spec.rb):\
+  \ a standalone Rack\napp protected by `RackJwtVerifier::Middleware` with `jwks_url: \"https://hub.test/.well-known/jwks.json\"\
+  `\n(served through to_rack), `decode_options: {iss: HUB_ISSUER, aud: <resource>}`, `require_scopes:\n\
+  [\"email\"]`; a token from the flow above for that resource → 200 and `env[\"rack_jwt_verifier.payload\"\
+  ]`\nhas sub/scopes; wrong audience → 401; missing scope → 403 insufficient_scope; after key rotation\n\
+  (previous key configured) old tokens still verify.\n\nFindings about the gems (name-lookup bug, anything\
+  \ the strategy needs that the hub does not\nprovide, or vice versa) go into TODO.md gem rows (T44 etc.)\
+  \ — do not modify the gems here.\n"
 acceptance_criteria:
-- >-
-  spec/integration/omniauth_ssoprovider_flow_spec.rb completes a real authorization-code + PKCE
-  login through the omniauth-ssoprovider strategy against the in-process hub and asserts the auth
-  hash (uid = sso_id, name, email, JWT access token verifiable with the JWKS)
-- >-
-  Negative flows are covered: tampered state, denied consent, pending client
-- >-
-  spec/integration/rack_jwt_verifier_flow_spec.rb proves RackJwtVerifier::Middleware (JWKS mode,
-  iss/aud/scopes) accepts the hub's tokens and rejects wrong audience / insufficient scope, and
-  survives a key rotation
-- >-
-  No gem source is modified; every gem gap found is recorded as a TODO.md gem row; rspec/rubocop
-  pass and the suite stays under 30 s locally
+- spec/integration/omniauth_ssoprovider_flow_spec.rb completes a real authorization-code + PKCE login
+  through the omniauth-ssoprovider strategy against the in-process hub and asserts the auth hash (uid
+  = sso_id, name, email, JWT access token verifiable with the JWKS)
+- 'Negative flows are covered: tampered state, denied consent, pending client'
+- spec/integration/rack_jwt_verifier_flow_spec.rb proves RackJwtVerifier::Middleware (JWKS mode, iss/aud/scopes)
+  accepts the hub's tokens and rejects wrong audience / insufficient scope, and survives a key rotation
+- No gem source is modified; every gem gap found is recorded as a TODO.md gem row; rspec/rubocop pass
+  and the suite stays under 30 s locally
 plan:
 - Build the client Rack app + WebMock to_rack plumbing in a spec support file.
 - Write the happy path, then negatives.
 - rack-jwt-verifier interop spec incl. rotation.
 - Record gem findings in TODO.md; suite; closing note.
-notes: []
+notes:
+- at: 2026-09-18 18:11
+  text: 'alignment (after TASK-016/017): pending client -> unauthorized_client and disabled user -> access_denied
+    are implemented (spec/requests/oauth/authorize_spec.rb has reusable helpers); WebMock is configured
+    with allow_localhost and to_rack works; HUB_ISSUER is https://hub.test in specs (rails_helper). Consent
+    page comes from TASK-018, /api/v1/userinfo from TASK-020.'

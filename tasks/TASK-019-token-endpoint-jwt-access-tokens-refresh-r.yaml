@@ -6,75 +6,113 @@ priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
 branch: null
-depends_on: [TASK-015, TASK-017]
-context: |
-  TODO T16 (audit §5.4, §6.3). `POST /oauth/token` is Doorkeeper's TokensController; this task
-  defines what the hub's tokens contain and how refresh and client authentication behave.
+depends_on:
+- TASK-015
+- TASK-017
+context: 'TODO T16 (audit §5.4, §6.3). `POST /oauth/token` is Doorkeeper''s TokensController; this task
+
+  defines what the hub''s tokens contain and how refresh and client authentication behave.
+
 
   Access token (doorkeeper-jwt payload, RS256 via SigningKey/TASK-015, header `kid`, `typ: at+jwt`)
+
   | claim | value |
+
   | iss | HUB_ISSUER |
+
   | sub | user.sso_id for user grants; client uid for client_credentials (TASK-024) |
-  | aud | the grant's `resource` (TASK-017) or the client uid when none |
+
+  | aud | the grant''s `resource` (TASK-017) or the client uid when none |
+
   | azp | client uid (the acting client — needed for audit/MCP) |
+
   | scope | space-delimited string (OAuth) AND `scopes` array (what rack-jwt-verifier reads) |
+
   | jti | Doorkeeper token id / SecureRandom.uuid — must be unique per token |
+
   | iat, nbf, exp | exp = iat + 10 minutes |
+
   | name, email, email_verified | only when `profile` / `email` scopes are granted |
+
   | admin | true only if user.is_admin (boolean) |
+
   No other PII. Document the payload in docs/ARCHITECTURE.md §3 (replace the placeholder list).
 
+
   Refresh tokens: opaque, hashed at rest (TASK-014 config), issued only when `offline_access` is
+
   granted (public clients included — PKCE-bound), rotated on every use (Doorkeeper revokes the
+
   used refresh token and issues a new one — verify `use_refresh_token`/`refresh_token_revoked_on_use`
+
   semantics for the installed version); reuse of an already-rotated refresh token = theft signal →
+
   revoke the whole token family for (user, client) (implement in `OAuth::Tokens.detect_reuse!`
+
   hooked into the refresh flow) and answer `invalid_grant`. Refresh token lifetime 30 days
+
   (absolute), configurable via env `OAUTH_REFRESH_TOKEN_TTL`.
 
+
   id_token (doorkeeper-openid_connect, when `openid` scope): sub = sso_id, iss, aud = client uid,
+
   nonce echoed from the authorize request, auth_time, at_hash; `email`/`name` claims only with the
+
   scopes; signed with SigningKey (kid header).
 
+
   Client authentication: confidential clients via `client_secret_basic` (preferred) or
+
   `client_secret_post`; public clients via PKCE only — a public client presenting a secret is
+
   refused; a confidential client without secret is refused. Authorization code must match the
+
   client, redirect_uri and code_verifier (S256) and be single-use: a replayed code → `invalid_grant`
+
   AND revocation of tokens already issued from that code (RFC 6749 §4.1.2 / OAuth 2.1) — verify
-  Doorkeeper's behaviour and add it if missing. Codes expire after 1 minute (TASK-014).
+
+  Doorkeeper''s behaviour and add it if missing. Codes expire after 1 minute (TASK-014).
+
 
   Also: touch `oauth_applications.last_used_at` on every successful token response;
+
   `User#to_jwt` / JwtAuthClient::Issuable from TASK-007 is now legacy on the OAuth path — remove
+
   the mixin, `jwt_claims`, the initializer and the specs, and keep `jwt_auth_client` in the Gemfile
+
   only if something still uses it (it does not, today) — document in the note; README env table
+
   updated (JWT_SERVICE_SECRET/JWT_ISSUER removed, HUB_ISSUER/OIDC_* present).
 
+
   Specs (spec/requests/oauth/token_spec.rb): full authorization-code + PKCE exchange for a public
+
   and a confidential client; payload claims exactly as the table; JWT verifies against the JWKS;
+
   `scope`/`scopes` both present; aud from resource / fallback; refresh rotation issues a new pair
+
   and invalidates the old; refresh reuse revokes the family; no refresh without offline_access;
+
   id_token claims incl. nonce; wrong verifier, expired code, replayed code (+ revocation of the
+
   first token), wrong redirect_uri, wrong secret, public client with secret, pending client —
+
   each with the exact RFC error code; last_used_at touched.
+
+  '
 acceptance_criteria:
-- >-
-  Access tokens are RS256 JWTs (kid header, typ at+jwt) whose payload matches the claim table
-  exactly (spec asserts the full claim set, including absence of name/email without the scopes)
-  and verify against /.well-known/jwks.json
-- >-
-  Refresh tokens are issued only with offline_access, rotate on use, and reuse of a rotated token
-  revokes the whole (user, client) family with invalid_grant — all covered by specs
-- >-
-  id_token is issued with openid scope, carries nonce/auth_time/at_hash and scope-gated claims,
-  and verifies with the JWKS
-- >-
-  Client authentication rules (basic/post for confidential, PKCE-only for public) and code
-  single-use with revocation on replay are enforced and spec'd with RFC error codes
-- >-
-  JwtAuthClient::Issuable/jwt_claims/initializer removed from the hub (or the note justifies what
-  stays); README env table updated; docs/ARCHITECTURE.md documents the token payload
-- >-
-  Doorkeeper isolation spec passes; rspec/rubocop/brakeman pass
+- Access tokens are RS256 JWTs (kid header, typ at+jwt) whose payload matches the claim table exactly
+  (spec asserts the full claim set, including absence of name/email without the scopes) and verify against
+  /.well-known/jwks.json
+- Refresh tokens are issued only with offline_access, rotate on use, and reuse of a rotated token revokes
+  the whole (user, client) family with invalid_grant — all covered by specs
+- id_token is issued with openid scope, carries nonce/auth_time/at_hash and scope-gated claims, and verifies
+  with the JWKS
+- Client authentication rules (basic/post for confidential, PKCE-only for public) and code single-use
+  with revocation on replay are enforced and spec'd with RFC error codes
+- JwtAuthClient::Issuable/jwt_claims/initializer removed from the hub (or the note justifies what stays);
+  README env table updated; docs/ARCHITECTURE.md documents the token payload
+- Doorkeeper isolation spec passes; rspec/rubocop/brakeman pass
 plan:
 - Verify Doorkeeper refresh/replay semantics for the installed version; note gaps.
 - Implement the JWT payload builder in app/services/oauth/token_payload.rb + doorkeeper-jwt wiring.
@@ -82,4 +120,19 @@ plan:
 - Client auth and replay revocation; last_used_at.
 - Remove the legacy jwt_auth_client wiring; README + ARCHITECTURE docs.
 - Request specs for every listed case; suite; closing note.
-notes: []
+notes:
+- at: 2026-09-18 18:11
+  text: 'alignment (after TASK-016/017): (1) spec/requests/oauth/token_spec.rb already exists (5 examples
+    for OAuth::TokenRules) — extend it, keep those cases. (2) app/services/oauth/token_rules.rb is prepended
+    into Doorkeeper::OAuth::AuthorizationCodeRequest and RefreshTokenRequest (validate_client/validate_grant/validate_token
+    overrides); put refresh-reuse detection and code-replay revocation in the same module/pattern, and
+    note that allow_grant_flow_for_client does NOT run for those two requests. (3) iss comes from Rails.configuration.x.oauth.issuer
+    (OAuth::Resources.issuer), not ENV. (4) oauth_access_tokens.resource is already populated from the
+    grant (custom_access_token_attributes [:resource]); aud = token resource || client uid; verify that
+    doorkeeper-jwt''s token_payload opts carry it (find_or_create_for receives the custom attributes).
+    (5) jti is required first: today two tokens with identical claims in the same second collide on the
+    unique token column. (6) Public clients have secret NULL (ClientRules); Doorkeeper by_uid_and_secret
+    already returns nil when a public client presents a secret — spec it as invalid_client. (7) oauth_applications.last_used_at
+    exists (TASK-016). (8) Removing the jwt_auth_client wiring also means dropping the JWT_SERVICE_SECRET
+    line in spec/rails_helper.rb, the mention in README/.github/workflows/ci.yml if any, and updating
+    .claude/agent-memory/harness-executor notes that say bin/rails needs it.'

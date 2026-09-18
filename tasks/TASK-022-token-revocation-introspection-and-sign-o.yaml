@@ -76,8 +76,9 @@ acceptance_criteria:
   effect) with specs
 - POST /oauth/introspect follows RFC 7662, restricted to authorised confidential clients, returns the
   listed fields for active tokens and only active:false otherwise, with specs
-- OAuth::Tokens implements revoke / revoke_all_for(user) / revoke_for(user, client) / revoke_all_for_client
-  / active_for(user) with service specs; password change and admin disable revoke all of a user's tokens
+- OAuth::Tokens implements revoke / revoke_all_for(user:) / revoke_for(user:, client_uid:) / the existing
+  revoke_all(client_uid:) / active_for(user:) with service specs; password change and admin disable revoke all of
+  a user's tokens
 - docs/ARCHITECTURE.md §3 documents the JWT revocation trade-off and the recommended resource-server behaviour;
   Doorkeeper isolation spec passes; rspec/rubocop/brakeman pass
 plan:
@@ -90,3 +91,11 @@ notes:
   text: 'from TASK-017 review: disabling a user must revoke their tokens and grants (sign out everywhere)
     — OAuth::TokenRules refuses their codes/refresh tokens at the token endpoint as a backstop, but revocation
     at the source belongs here.'
+- at: 2026-09-18 18:11
+  text: 'alignment (after TASK-016/017): OAuth::Tokens already has revoke_all(client_uid:) (used by OAuth::Clients.revoke)
+    and active_for(user:); TASK-018 adds revoke_for(user:, client_uid:). Keep those names (criterion updated)
+    and add revoke(token_or_jti, by:) and revoke_all_for(user:). OAuth::TokenRules already refuses codes/refresh
+    tokens of disabled users at the token endpoint as a backstop; the source-level revocation on disable/password
+    change is this task. Introspection rule: a client holding the introspect scope (catalogue flag machine:
+    true) — TASK-024 later formalises machine scopes on the same flag, so do not add a separate allow_introspection
+    column.'
