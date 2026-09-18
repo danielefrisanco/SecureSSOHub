@@ -28,8 +28,8 @@ gem "rack-jwt-verifier", "~> 0.3"
 # OAuth 2.1 / OpenID Connect authorization server core (ARCHITECTURE §4): kept behind
 # app/services/oauth so it can be swapped for an own gem later.
 gem "doorkeeper", "~> 5.9"
-gem "doorkeeper-openid_connect", "~> 1.10"
 gem "doorkeeper-jwt", "~> 0.4"
+gem "doorkeeper-openid_connect", "~> 1.10"
 # Cross-Origin Resource Sharing (essential for SSO architecture)
 gem "rack-cors"
 # --- Testing & Development ---
