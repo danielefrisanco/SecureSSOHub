@@ -32,3 +32,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-008 done: Delete Minitest suite, port cases to RSpec, complete test setup
 - test/ removed; rails_helper (WebMock, Timecop safe mode, Devise helpers), spec_helper random order, :admin factory trait. Commit bbad4cd. Merged into develop.
+
+## 2026-09-18 — TASK-009 done: Add landing page and styled Devise views
+- HomeController, layout with header/flash, generated + styled Devise views, single stylesheet, hello_controller removed; 20 specs. Commit bb3311b. Merged into develop.

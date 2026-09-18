@@ -1,7 +1,7 @@
 id: TASK-009
 title: Add landing page and styled Devise views
 type: feat
-status: review
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -44,3 +44,5 @@ notes:
     entry only for admins), spec/requests/devise_views_spec.rb (sign-in/password/unlock pages render in
     the layout with the stylesheet, no Sign up link, flash on failed sign-in, sign-out redirects with
     notice). Verified: bundle exec rspec -> 20 examples, 0 failures.'
+- at: 2026-09-18 15:58
+  text: done — reviewer PASS; rspec 20/0.
