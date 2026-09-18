@@ -37,6 +37,6 @@ service in the ecosystem trusts. It does **not** own business authorization data
 | Date | Decision | Why | Revisit when |
 |---|---|---|---|
 | 2026-09-18 | The hub is the **provider**, not an OmniAuth client; the client strategy wiring was removed (TASK-005). | Audit E5: the app was wired as a consumer of itself. | — |
-| 2026-09-18 | RSpec is the canonical test suite; `test/` is removed. | Matches `harness.yaml`; the Minitest files could not run. | — |
+| 2026-09-18 | RSpec is the canonical test suite; `test/` is to be removed (TASK-008). | Matches `harness.yaml`; the Minitest files could not run. | — |
 | 2026-09-18 | Deployment target: Docker on a single host. | Only Dockerfile/compose exist; keeps infra advice concrete. | Scaling beyond one host. |
 | 2026-09-18 | Licensing / tenancy / fine-grained authorization are a separate service. | Keeps the hub small and auditable (see §3). | — |
