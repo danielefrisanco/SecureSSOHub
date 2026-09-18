@@ -1,7 +1,7 @@
 id: TASK-005
 title: Remove OmniAuth client wiring from the hub
 type: refactor
-status: in_progress
+status: review
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -32,3 +32,12 @@ plan: []
 notes:
 - at: 2026-09-18 15:35
   text: started on task/005-remove-omniauth-client-wiring-from-the-h
+- at: 2026-09-18 15:37
+  text: 'DONE: deleted config/initializers/omniauth_ssoprovider.rb, app/controllers/omniauth_callbacks_controller.rb,
+    test/initializers/omniauth_ssoprovider_test.rb; routes now only devise_for :users, /up, root. Removed
+    omniauth and omniauth-rails_csrf_protection from the default Gemfile group (nothing mounts OmniAuth::Builder;
+    omniauth still resolves via omniauth-oauth2 in test group). Verified: RAILS_ENV=test rails runner
+    boots; bundle exec rspec -> 1 example, 0 failures, 1 pending (the pre-existing pending model spec).
+    Test DB: docker compose db started; test run uses DATABASE_URL pointing at localhost because config/database.yml
+    hardcodes host ''db'' - making that env-configurable is folded into TASK-006 (first task that changes
+    db config). No provider endpoints added.'
