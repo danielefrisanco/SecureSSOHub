@@ -1,0 +1,66 @@
+id: TASK-017
+title: Authorization endpoint with PKCE, redirect allow-list and resource indicator
+type: feat
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-016]
+context: |
+  TODO T14 (audit §5.4), re-planned for Doorkeeper: `GET /oauth/authorize` is served by Doorkeeper's
+  AuthorizationsController. This task hardens and extends it; consent rendering is TASK-018.
+
+  Requirements
+  - PKCE: `code_challenge` + `code_challenge_method=S256` mandatory for public clients (plain is
+    never accepted); allowed (and honoured) for confidential clients. Use Doorkeeper's `force_pkce`
+    when available; otherwise a `before_action` in a thin controller subclass registered via
+    `Doorkeeper.configure { base_controller }`/route override — whichever keeps Doorkeeper::
+    references inside app/services/oauth + initializer (isolation spec). Missing/invalid
+    challenge → RFC 6749 `invalid_request` with a description.
+  - redirect_uri: exact match against the registered list (Doorkeeper does this — add negative
+    specs: different path, extra query, trailing slash, different scheme); when it does not match,
+    render the error page — never redirect (open-redirect protection).
+  - `state` is echoed back untouched (spec); `nonce` (OIDC) is carried into the id_token (spec in
+    TASK-019).
+  - Resource indicator (RFC 8707): accept an optional `resource` parameter (absolute URI, no
+    fragment); validate it against `OAuth::Resources.known` (config list: the hub API resource
+    identifier `#{HUB_ISSUER}/api`, the future MCP resource `#{HUB_ISSUER}/mcp`, and per-client
+    registered resources if any); unknown → `invalid_target` error (RFC 8707 §2). Persist it on the
+    grant so the token endpoint sets `aud` (Doorkeeper `custom_access_token_attributes [:resource]`
+    with columns on oauth_access_grants and oauth_access_tokens). When absent, `aud` defaults to
+    the client's own client_id (decided here; TASK-019 implements the claim).
+  - Client state: pending/revoked clients (TASK-016) → `unauthorized_client`; disabled users
+    (`disabled_at`) → sign-out + `access_denied`.
+  - Error responses per RFC 6749 §4.1.2.1 (`invalid_request`, `unauthorized_client`,
+    `access_denied`, `unsupported_response_type`, `invalid_scope`, `server_error`,
+    `temporarily_unavailable`) — Doorkeeper provides most; spec each for both redirectable and
+    non-redirectable cases (bad client_id / bad redirect_uri must render, not redirect).
+  - `response_type=code` only (deny `token`, implicit is out in OAuth 2.1) — spec.
+  - Scope validation: requested scopes ⊆ client scopes ⊆ catalogue; `invalid_scope` otherwise.
+
+  Specs (spec/requests/oauth/authorize_spec.rb): signed-out → redirect to sign-in with return
+  path; signed-in happy path (with TASK-018 consent stubbed/skipped) → 302 to redirect_uri with
+  code+state; every negative case above; PKCE required for public, optional for confidential;
+  resource accepted/rejected. Use the :oauth_client factory traits.
+acceptance_criteria:
+- >-
+  Public clients cannot obtain a code without S256 PKCE (invalid_request); confidential clients may
+  use it; plain method is rejected — all covered by request specs
+- >-
+  redirect_uri mismatches (path, query, trailing slash, scheme, unregistered) render an error page
+  and never redirect; state round-trips unchanged
+- >-
+  `resource` parameter is validated against OAuth::Resources.known, rejected with invalid_target,
+  and persisted on the grant (schema columns present) for the token endpoint
+- >-
+  Pending/revoked clients get unauthorized_client; disabled users get access_denied;
+  response_type=token is refused; out-of-catalogue or out-of-client scopes get invalid_scope
+- >-
+  Doorkeeper isolation spec still passes; rspec/rubocop/brakeman pass
+plan:
+- Read Doorkeeper's authorization request flow for the installed version; decide force_pkce vs before_action; note it.
+- Implement OAuth::Resources + resource validation + grant/token columns.
+- Add client-state and disabled-user checks in the service layer hook Doorkeeper calls.
+- Request specs for all cases; suite; closing note.
+notes: []

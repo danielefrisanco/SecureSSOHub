@@ -1,0 +1,74 @@
+id: TASK-016
+title: OAuth client registry on top of Doorkeeper applications
+type: feat
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-014]
+context: |
+  TODO T13 (audit §5.1, §6.3), re-planned for Doorkeeper: `Doorkeeper::Application` already
+  provides name, uid (client_id), hashed secret (TASK-014 config), redirect_uri (newline-separated,
+  exact-match), scopes and `confidential`. The hub adds the fields it needs for approval-gated
+  registration and admin/MCP management, and exposes everything through `OAuth::Clients` (the
+  only place allowed to touch Doorkeeper::Application — see the isolation spec from TASK-014).
+
+  Schema (migration on oauth_applications)
+  - `client_type` string, not null, default "confidential", in %w[confidential public]
+    (mirrors Doorkeeper's `confidential` boolean — keep the two in sync in the model via a
+    before_validation, or derive one from the other; pick one and document).
+  - `approval_state` string, not null, default "approved" for admin-created, "pending" for
+    dynamically registered (TASK-025); values pending/approved/revoked; index.
+  - `registered_via` string, not null: admin | dynamic.
+  - `owner_id` bigint nullable FK → users (the admin who created it / the user who registered it).
+  - `software_id`, `software_version`, `client_uri`, `logo_uri`, `contacts` (jsonb) — RFC 7591
+    metadata, nullable.
+  - `last_used_at` datetime (touched by the token endpoint later).
+
+  Rules enforced in a thin model extension (`app/models/oauth_client.rb` is NOT allowed — keep
+  Doorkeeper::Application untouched in app/models; put the validations in a module included from
+  the Doorkeeper initializer via `Doorkeeper::Application.include OAuth::ClientRules`, living in
+  app/services/oauth/client_rules.rb): public clients have no secret usable for auth and must use
+  PKCE (TASK-017 enforces at authorize); redirect URIs must be absolute https (http allowed only for
+  localhost/127.0.0.1 and custom schemes for native/MCP clients — document the allow-list);
+  scopes must be a subset of the catalogue; `approval_state` transitions pending→approved,
+  approved→revoked, pending→revoked only.
+
+  `OAuth::Clients` API (keyword args, returns plain `OAuth::Client` Structs or raises
+  `OAuth::Clients::Error` subclasses): `list(state: nil)`, `find(uid)`, `create(name:, redirect_uris:,
+  client_type:, scopes:, owner:, registered_via: :admin)` → returns the client plus the ONE-TIME plain
+  secret (never retrievable again; hashed at rest), `update(uid, ...)`, `rotate_secret(uid)` → new
+  one-time secret, all previous tokens of that client stay valid (document), `approve(uid, by:)`,
+  `revoke(uid, by:)` → revokes all its tokens (via OAuth::Tokens) and blocks authorize/token,
+  `usable?(uid)` = approved and not revoked. Authorization: every mutating call takes `by:` (a User)
+  and raises `OAuth::Clients::Forbidden` unless `by.is_admin` (owner-based permissions come later
+  with the account UI). No audit log yet (T25) — but call sites go through the service so T25 can
+  hook in.
+
+  Specs: migration/schema, ClientRules validations (each rule), service specs for every operation
+  including forbidden calls and state transitions, secret hashing (plain secret not stored;
+  Doorkeeper `secret_matches?`), factory `:oauth_client` with traits :public, :pending, :revoked.
+acceptance_criteria:
+- >-
+  Migration adds client_type, approval_state (indexed), registered_via, owner_id FK, RFC 7591
+  metadata columns and last_used_at to oauth_applications; schema.rb regenerated
+- >-
+  OAuth::ClientRules validations (client type/secret consistency, redirect URI allow-list, scope
+  subset, approval-state transitions) each have a failing-case spec
+- >-
+  OAuth::Clients implements list/find/create/update/rotate_secret/approve/revoke/usable? with
+  keyword args, admin-only mutation (Forbidden otherwise), one-time secret return, and specs for
+  every operation
+- >-
+  spec/factories/oauth_clients.rb provides :oauth_client with :public, :pending and :revoked traits
+  used by later tasks
+- >-
+  The Doorkeeper isolation spec still passes (Doorkeeper::Application referenced only under
+  app/services/oauth and config/initializers); rspec/rubocop/brakeman pass
+plan:
+- Migration + schema; factory.
+- ClientRules module + include from the Doorkeeper initializer; specs per rule.
+- OAuth::Clients service + Client struct + error classes; specs.
+- Suite; closing note listing the redirect-URI allow-list rules chosen.
+notes: []

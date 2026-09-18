@@ -1,0 +1,64 @@
+id: TASK-025
+title: Dynamic client registration (RFC 7591), approval-gated with a policy switch
+type: feat
+status: todo
+priority: medium
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-016, TASK-021]
+context: |
+  TODO T22 (audit §5.4, §6.2). MCP clients (agents) discover the hub and register themselves;
+  Doorkeeper has no RFC 7591 endpoint, so the hub implements it on top of OAuth::Clients.
+  Decision (user, 2026-09-18): approval-gated now; keep it a configurable policy so an "open"
+  mode can be enabled later without code changes.
+
+  Endpoint: `POST /oauth/register` (JSON, no auth) — request fields per RFC 7591: `client_name`
+  (required), `redirect_uris` (required for authorization_code; validated by ClientRules incl. the
+  loopback/custom-scheme allow-list), `token_endpoint_auth_method` (`none` → public client;
+  `client_secret_basic`/`client_secret_post` → confidential), `grant_types` (subset of
+  authorization_code, refresh_token; client_credentials only if approved later by an admin —
+  registration never grants machine scopes), `response_types` ["code"], `scope` (subset of the
+  user-consentable catalogue; `admin:*` never grantable via registration), `software_id`,
+  `software_version`, `client_uri`, `logo_uri`, `contacts`. Unknown fields ignored; invalid →
+  400 `invalid_client_metadata` / `invalid_redirect_uri` with `error_description`.
+  Response 201: `client_id`, `client_secret` (confidential only, one-time), `client_id_issued_at`,
+  `client_secret_expires_at: 0`, the echoed metadata, plus the hub's `approval_state` and a
+  human-readable `approval_message`. No RFC 7592 management endpoint yet (recorded as a later row).
+
+  Policy: `OAuth::RegistrationPolicy` reads `OAUTH_REGISTRATION_POLICY` env (`approval` default |
+  `open` | `closed`). `approval`: client created `pending` (`registered_via: dynamic`); it can be
+  used at authorize/token only after an admin approves (TASK-016 `approve`). `open`: created
+  `approved` immediately but restricted to public/PKCE and the user-consentable scopes (implement
+  and spec it, but it stays off by default). `closed`: 404 on the endpoint and no
+  `registration_endpoint` in discovery. Discovery (TASK-021) advertises `registration_endpoint`
+  when policy ≠ closed.
+
+  Abuse controls (until rate limiting lands in T24): cap pending registrations per source IP per
+  hour via a simple DB count (configurable, default 20) → 429; body size limit; reject duplicate
+  (client_name + redirect_uris) within 24 h. Log each registration at info with client_id and IP.
+
+  Specs (spec/requests/oauth/register_spec.rb): public and confidential happy paths (exact
+  response shape, secret returned once, pending state), each validation error, admin scopes
+  refused, policy=open → approved + restrictions, policy=closed → 404 and discovery without the
+  endpoint, IP cap → 429, duplicate → 409/400 (pick, document); pending client cannot authorize
+  (unauthorized_client, from TASK-017) and can after `OAuth::Clients.approve`.
+acceptance_criteria:
+- >-
+  POST /oauth/register implements RFC 7591 request/response fields listed in the context with the
+  RFC error codes; confidential registrations receive a one-time secret
+- >-
+  OAUTH_REGISTRATION_POLICY approval|open|closed is implemented and spec'd; default approval
+  creates pending clients that cannot obtain tokens until an admin approves; discovery advertises
+  registration_endpoint only when the policy is not closed
+- >-
+  Registration never grants admin:* or machine scopes; per-IP cap and duplicate protection are
+  spec'd; README documents the env var and the approval flow
+- >-
+  Doorkeeper isolation spec passes; rspec/rubocop/brakeman pass
+plan:
+- OAuth::RegistrationPolicy + env var + README.
+- Controller + request validation on top of OAuth::Clients.create; response shape.
+- Abuse controls; discovery integration.
+- Request specs for every case; suite; closing note.
+notes: []

@@ -1,0 +1,70 @@
+id: TASK-015
+title: Signing keys with kid and rotation, JWKS endpoint, dev key tooling
+type: feat
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-014]
+context: |
+  TODO T11 (audit §5.1, §5.2, §6.3). Access tokens (doorkeeper-jwt) and id_tokens
+  (doorkeeper-openid_connect) must be signed with the hub's private key; every client and resource
+  server verifies with the published JWKS via rack-jwt-verifier. The private key never leaves the
+  hub (ARCHITECTURE §3).
+
+  Design
+  - `SigningKey` (app/services/oauth/signing_key.rb or app/lib): loads keys from the environment:
+    `OIDC_SIGNING_KEY` (PEM, RSA 2048+; base64-wrapped PEM accepted because .env files dislike
+    newlines) is the current key; `OIDC_SIGNING_KEY_PREVIOUS` (optional, same format) stays
+    published in the JWKS so tokens signed before a rotation still verify until they expire.
+    `kid` = RFC 7638 JWK thumbprint (SHA-256, base64url) computed from the public key — stable,
+    no extra env var. Algorithm RS256 (ES256 optional later; keep the class algorithm-agnostic via
+    OpenSSL::PKey).
+  - Boot behaviour: production/staging raise a clear error if `OIDC_SIGNING_KEY` is missing or
+    weaker than 2048 bits; development/test generate an ephemeral key in memory (replaces the
+    guard from TASK-014). `SECRET_KEY_BASE_DUMMY` precompile path must not need the key.
+  - Wire doorkeeper-jwt (`secret_key` = private key, `signing_method :rs256`, `token_headers`
+    adds `kid`) and doorkeeper-openid_connect (`signing_key`, `signing_algorithm :RS256`) to
+    SigningKey — one source of truth, loaded once per process (memoised), not per request.
+  - JWKS: doorkeeper-openid_connect serves `/oauth/discovery/keys`; add a route alias
+    `GET /.well-known/jwks.json` to the same controller/action (or a tiny controller rendering
+    `SigningKey.jwks`), containing current + previous keys with `kid`, `use: "sig"`, `alg`. Both
+    respond with `Cache-Control: public, max-age=300` and an ETag (`fresh_when`), JSON content type.
+  - Tooling: `bin/rails hub:keys:generate` rake task prints a fresh RSA-2048 PEM in the base64
+    form expected by the env var and the resulting kid, with instructions (never writes files);
+    `bin/rails hub:keys:show` prints the kids currently loaded. README "Configuration" gains
+    OIDC_SIGNING_KEY / OIDC_SIGNING_KEY_PREVIOUS and a rotation runbook (generate → set as
+    PREVIOUS=current, current=new → deploy → after max token lifetime drop PREVIOUS).
+  - Specs: SigningKey unit specs (PEM and base64 PEM parsing, kid thumbprint matches an
+    independently computed value, previous key optional, weak key rejected, production guard);
+    request specs for both JWKS paths (fields, cache headers, ETag 304 on If-None-Match, previous
+    key present when configured); a token issued by Doorkeeper::JWT verifies with the JWKS
+    (ruby-jwt `JWT.decode(token, nil, true, algorithms: ["RS256"], jwks: jwks_hash)`) and carries the
+    kid header.
+acceptance_criteria:
+- >-
+  SigningKey loads current (+ optional previous) RSA keys from OIDC_SIGNING_KEY /
+  OIDC_SIGNING_KEY_PREVIOUS (PEM or base64 PEM), exposes kid (RFC 7638 thumbprint), private/public
+  keys and `jwks`; keys are loaded once per process
+- >-
+  Production boot fails with a clear message when the key is absent or < 2048 bits; development
+  and test use an in-memory ephemeral key; asset precompile with SECRET_KEY_BASE_DUMMY still works
+- >-
+  doorkeeper-jwt and doorkeeper-openid_connect both sign with SigningKey (RS256) and tokens carry
+  the kid header; spec decodes an issued access token with the JWKS document
+- >-
+  GET /.well-known/jwks.json and GET /oauth/discovery/keys return the same key set (current +
+  previous) with kid/use/alg, Cache-Control public max-age=300 and a working ETag (304)
+- >-
+  rake tasks hub:keys:generate and hub:keys:show exist and are covered by a spec that captures
+  their output; README documents the env vars and the rotation runbook
+- >-
+  `bundle exec rspec`, rubocop and brakeman pass
+plan:
+- Implement SigningKey with specs (parsing, kid, guard, jwks).
+- Wire Doorkeeper::JWT and openid_connect config to it; remove the TASK-014 ephemeral guard.
+- JWKS alias route + cache headers + specs (including previous key and 304).
+- Rake tasks + README runbook.
+- Full suite; closing note.
+notes: []

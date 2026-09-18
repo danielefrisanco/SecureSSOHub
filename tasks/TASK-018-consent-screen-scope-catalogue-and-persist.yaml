@@ -1,0 +1,70 @@
+id: TASK-018
+title: Consent screen, scope catalogue and persisted consents
+type: feat
+status: todo
+priority: high
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-017]
+context: |
+  TODO T15 (audit §5.3, §6.3). When a user is sent to /oauth/authorize by a client they have not
+  consented to (for these scopes), the hub shows a consent page; on approval the consent is
+  persisted so the next authorization for the same client and a subset of scopes skips the page.
+
+  Scope catalogue (single source: `OAuth::Scopes`, used by the Doorkeeper initializer's
+  default/optional scopes, the consent page, the userinfo endpoint and later MCP):
+  | scope | shown to users as | grants |
+  | openid | Sign you in | id_token, sub |
+  | profile | See your name | name claim / userinfo name |
+  | email | See your email address | email + email_verified |
+  | offline_access | Stay signed in (refresh token) | refresh token issuance |
+  | admin:clients | Manage OAuth clients on your behalf | admin service calls (Phase 4 MCP) |
+  | admin:users | Manage users on your behalf | idem |
+  | admin:tokens | Revoke tokens on your behalf | idem |
+  | admin:audit | Read the audit log on your behalf | idem |
+  | introspect | Verify tokens | introspection endpoint access for resource servers |
+  Only admins can grant `admin:*` scopes (consent refuses with invalid_scope for non-admins).
+  Machine (client-credentials) clients are restricted to `introspect` and a per-client allow-list.
+
+  Consent persistence: `oauth_consents` table (user_id, oauth_application_id, scopes string,
+  granted_at, revoked_at, unique on user+application where revoked_at is null). `OAuth::Consents`
+  service: `covers?(user:, client:, scopes:)`, `grant(user:, client:, scopes:)` (merges scopes),
+  `revoke(user:, client:)` (also revokes that client's tokens for the user via OAuth::Tokens —
+  TASK-022 provides it; until then call a stub that TASK-022 fills). Doorkeeper
+  `skip_authorization { |user, client| OAuth::Consents.covers?(...) }` (verify the block's
+  arguments for the installed version; Doorkeeper passes resource owner and application).
+
+  Consent page: generate Doorkeeper's authorizations/new view into app/views/doorkeeper/ and
+  restyle it inside the application layout (TASK-009 stylesheet): client name (+ logo_uri if set),
+  "wants to:" list from the catalogue descriptions, the user's email with a "Not you? Sign out"
+  link, Allow / Deny buttons (POST/DELETE with CSRF), and a note "You can revoke this later in your
+  account" (page comes in Phase 3). Deny → `access_denied` redirect to the client (Doorkeeper
+  handles). The page must render under the CSP (no inline scripts/styles).
+
+  Specs: consent shown first time (200 with client name and scope descriptions), Allow persists a
+  consent row and redirects with code, Deny redirects with access_denied and persists nothing,
+  repeat visit with same/subset scopes skips consent, superset scopes shows consent again with only
+  the new scopes highlighted, revoked consent re-asks, non-admin requesting admin:* → invalid_scope,
+  catalogue/description completeness spec (every optional scope has a description).
+acceptance_criteria:
+- >-
+  OAuth::Scopes is the single catalogue (id, user-facing description, admin-only flag) and feeds the
+  Doorkeeper initializer scopes; a spec fails if a configured scope lacks a description
+- >-
+  oauth_consents table + OAuth::Consents (covers?/grant/revoke) with specs; Doorkeeper
+  skip_authorization consults it so repeat authorizations for covered scopes skip the page
+- >-
+  Consent page renders inside the application layout under the CSP, lists the client and scope
+  descriptions, offers Allow/Deny; Allow → consent persisted + code issued; Deny → access_denied
+- >-
+  Scope escalation re-asks showing the new scopes; revoked consent re-asks; non-admins cannot
+  consent to admin:* scopes (invalid_scope)
+- >-
+  rspec/rubocop/brakeman pass and the Doorkeeper isolation spec still passes
+plan:
+- OAuth::Scopes catalogue + completeness spec; wire initializer.
+- Migration + OAuth::Consents + specs.
+- skip_authorization wiring; generate and restyle the consent view; request specs for every flow.
+- Suite; closing note.
+notes: []

@@ -1,0 +1,49 @@
+id: TASK-026
+title: Phase 1 gate — verify outcomes, re-plan Phase 2 and create its tasks
+type: docs
+status: todo
+priority: high
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: [TASK-013, TASK-014, TASK-015, TASK-016, TASK-017, TASK-018, TASK-019, TASK-020, TASK-021, TASK-022, TASK-023, TASK-024, TASK-025]
+context: |
+  Phase gate (see TODO.md "Phase gates"; the Phase 0 gate was TASK-012 and docs/PHASES.md records
+  its verification). Phase 1 (TASK-013..025) is complete when this task starts.
+
+  1. Verify the Phase 1 end state against docs/AUDIT.md §5.4/§6 and record it in docs/PHASES.md:
+     Ruby 3.4 / Rails 8 with blocking scanners; a public-client PKCE login completes end to end
+     through omniauth-ssoprovider (TASK-023); tokens are RS256 JWTs verifiable with the JWKS by
+     rack-jwt-verifier; discovery documents complete; revocation/introspection work; dynamic
+     registration approval-gated; consent persisted; the Doorkeeper isolation spec passes; CI green
+     on GitHub (ask the user for the run link if it has not been pushed).
+  2. Re-read TODO.md Phase 2 (T23–T29 minus T30, already done) against the code: Redis (decided)
+     for Rails.cache + rack-jwt-verifier replay cache + authorization-code single-use (T23),
+     rate limiting (T24 — replaces TASK-025's DB cap), audit log (T25 — hook points exist in
+     OAuth::Clients/Tokens), Devise hardening + mailer (T26), 2FA (T27), rack-cors full policy
+     (T28 — discovery paths done in TASK-021), production compose + readiness + JSON logs (T29).
+     Adjust rows; ask the user any blocking question with a recommendation (email delivery
+     provider for T26; TLS-terminating proxy choice for T29).
+  3. Create one harness task per adjusted Phase 2 row (task.py new or direct YAML in tasks/),
+     each with context lifted from the audit and the Phase 1 code, 3–6 verifiable acceptance
+     criteria and correct depends_on; annotate TODO.md rows with the new ids.
+  4. Create the Phase 2 gate task with this same structure.
+  5. Update docs/ARCHITECTURE.md decisions log; mark any audit finding that proved wrong.
+acceptance_criteria:
+- >-
+  docs/PHASES.md has a Phase 1 section listing each verification check with pass/fail and evidence
+- >-
+  TODO.md Phase 2 rows are revised against the actual code and each carries its new TASK id
+- >-
+  One harness task exists per Phase 2 row with context, 3–6 acceptance criteria and depends_on
+  matching the TODO after-column; a Phase 2 gate task depends on all of them
+- >-
+  Blocking Phase 2 questions were asked and the answers recorded in docs/ARCHITECTURE.md
+- >-
+  No application code is changed by this task
+plan:
+- Run the verification list; write docs/PHASES.md Phase 1 section.
+- Re-plan Phase 2 rows; ask the blocking questions.
+- Write the task files and the gate; annotate TODO.md; update ARCHITECTURE.md.
+- Review and complete.
+notes: []

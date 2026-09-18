@@ -1,0 +1,78 @@
+id: TASK-013
+title: Upgrade Ruby to 3.4 and Rails to 8.x; make security scanners blocking
+type: chore
+status: todo
+priority: critical
+created: '2026-09-18'
+updated: '2026-09-18'
+branch: null
+depends_on: []
+context: |
+  TODO T30, pulled into Phase 1 as its first task by the Phase 0 gate (TASK-012): brakeman flags
+  Ruby 3.1.4 and Rails 7.1.5.2 as end-of-life and bundler-audit lists ~75 advisories, most inside
+  Rails 7.1.5.2 itself. Doing the upgrade before Doorkeeper lands means fewer moving parts.
+  Decision (2026-09-18, user): target Rails 8.x — the newest stable 8.x at execution time (8.1 if
+  released stable, otherwise 8.0) — and Ruby 3.4.x (newest patch). Postgres image → 17-alpine.
+
+  Current state: `.ruby-version` 3.1.4, `Gemfile` `ruby "3.1.4"`, `rails ~> 7.1`, Dockerfile
+  `ARG RUBY_VERSION=3.1.4`, compose `postgres:14-alpine`, CI uses `ruby/setup-ruby` reading
+  .ruby-version and a `postgres:14-alpine` service. `config.load_defaults 7.1`. Asset pipeline is
+  sprockets (`sassc-rails` is declared but there is no .scss — plain application.css) with importmap.
+
+  What must change
+  - Ruby: `.ruby-version`, Gemfile `ruby`, Dockerfile ARG. Check every gem's `required_ruby_version`
+    (`bundle outdated`, `bundle update --conservative` first, then `bundle update rails`).
+  - Rails 8: `bundle update rails` with `~> 8.0`; run `bin/rails app:update` and review each
+    generated diff (keep our initializers: jwt_auth_client, header_guard, content_security_policy,
+    devise); `config.load_defaults 8.0`; `new_framework_defaults_8_0.rb` reviewed and folded in.
+    Drop `sassc-rails` (unmaintained, libsass; no .scss in the app). Keep sprockets-rails +
+    importmap (Propshaft migration is a separate decision — do NOT switch in this task).
+    Devise 4.9.4 supports Rails 8 (verify the installed version; bump if needed).
+  - Rails 8 ships Solid Cache/Queue/Cable only for new apps — do not add them here (cache backend
+    decision is Redis, TASK for it lives in Phase 2/T23).
+  - Postgres: compose image and CI service → `postgres:17-alpine`; `pg` gem ≥ 1.5 fine.
+  - Scanners: remove `--except EOLRuby,EOLRails` from .github/workflows/ci.yml; set bundler-audit
+    `continue-on-error: false` (delete the key). If advisories remain that are not fixable by
+    updating (e.g. a transitive gem with no release), add them to `.bundler-audit.yml` `ignore:`
+    with a dated comment each — never a blanket ignore.
+  - Rubocop: `TargetRubyVersion: 3.4`; fix new offenses (do not weaken cops to pass).
+  - Deprecations: run the suite with `RAILS_ENABLE_DEPRECATIONS` visible; fix ours (not gems').
+
+  Non-goals: no Propshaft, no Solid* adoption, no feature work, no Doorkeeper yet.
+acceptance_criteria:
+- >-
+  .ruby-version, Gemfile and Dockerfile agree on a Ruby 3.4.x version; Gemfile.lock resolves rails 8.x
+  (newest stable at execution time) and no gem is pinned to a Rails 7 constraint
+- >-
+  `bin/rails app:update` has been run and every resulting change is either applied or consciously
+  rejected with a line in the task note; config.load_defaults is 8.0 (or 8.1) with no leftover
+  new_framework_defaults file
+- >-
+  sassc-rails is removed; importmap + sprockets still serve /assets/application-*.css and the
+  importmap scripts (security_headers and devise_views specs still pass unchanged)
+- >-
+  `bundle exec rspec` passes (all existing examples), `bundle exec rubocop` passes with
+  TargetRubyVersion 3.4, `bundle exec brakeman -q --no-pager` (no --except) reports no warnings
+- >-
+  `bundle exec bundler-audit check --update` exits 0, with any remaining ignores listed in
+  .bundler-audit.yml each carrying a dated justification; ci.yml no longer has continue-on-error on
+  that step and no longer excludes the EOL checks
+- >-
+  docker-compose.yml and ci.yml use postgres:17-alpine; `docker compose build` succeeds locally
+  (record the command output tail in the note)
+- >-
+  The app boots and signs in (spec/requests/sessions_spec.rb) under the new versions; README's
+  building-blocks table states the new Ruby/Rails/Postgres versions
+plan:
+- >-
+  Baseline: run rspec/rubocop/brakeman/bundler-audit on develop and paste the summary into the note.
+- >-
+  Ruby first: bump .ruby-version/Gemfile/Dockerfile, `rbenv install` if needed, `bundle install`, run the suite.
+- >-
+  Rails: `bundle update rails` to 8.x, `bin/rails app:update`, review diffs, load_defaults, drop sassc-rails, run suite; fix deprecations.
+- Postgres 17 in compose + CI; recreate the local test DB (`docker compose up -d db` with the new image is a new volume — note it).
+- >-
+  Scanners: make brakeman and bundler-audit fully blocking; document any ignore.
+- Rubocop target 3.4; fix offenses.
+- README versions; closing note with the before/after scanner summaries.
+notes: []
