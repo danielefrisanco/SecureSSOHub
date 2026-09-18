@@ -1,0 +1,1 @@
+- [Doorkeeper extension points](project_doorkeeper_extension_points.md) — how to hook hub rules into Doorkeeper, env/DB quirks for rspec and rails
