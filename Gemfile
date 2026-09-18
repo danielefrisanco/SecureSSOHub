@@ -19,11 +19,11 @@ gem "turbo-rails"
 # --- Authentication & Security Gems ---
 # User management framework
 gem "devise", "~> 5.0", ">= 5.0.4"
-# Own gems (published on rubygems.org). The hub is the OAuth *provider*: it issues
-# tokens (jwt_auth_client), verifies bearer tokens on its own API (rack-jwt-verifier)
-# and hardens responses (header_guard). Client-side gems live in the test group below.
+# Own gems (published on rubygems.org). The hub is the OAuth *provider*: it
+# verifies bearer tokens on its own API (rack-jwt-verifier) and hardens
+# responses (header_guard); access tokens are minted by doorkeeper-jwt below.
+# Client-side gems live in the test group below.
 gem "header_guard", "~> 0.3"
-gem "jwt_auth_client", "~> 0.2"
 gem "rack-jwt-verifier", "~> 0.3"
 # OAuth 2.1 / OpenID Connect authorization server core (ARCHITECTURE §4): kept behind
 # app/services/oauth so it can be swapped for an own gem later.

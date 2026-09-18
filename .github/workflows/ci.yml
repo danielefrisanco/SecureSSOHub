@@ -9,9 +9,6 @@ env:
   RAILS_ENV: test
   POSTGRES_HOST: localhost
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/secure_sso_hub_test
-  # Test-only signing key; the suite generates a random one when unset, but
-  # bin/rails commands (db:prepare) boot the app and need it present.
-  JWT_SERVICE_SECRET: ci-only-signing-key-not-a-secret-0123456789abcdef
   HUB_ISSUER: https://hub.test
 
 jobs:

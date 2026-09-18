@@ -4,31 +4,12 @@ class User < ApplicationRecord
   devise :database_authenticatable, :recoverable, :rememberable, :validatable,
          :trackable, :lockable, :timeoutable
 
-  # === JWT INTEGRATION ===
-
-  # Include the Issuable module from the 'jwt_auth_client' gem.
-  # This mixin provides the `to_jwt` method, which is implicitly called by the
-  # SSO Hub controller to generate the token for the client app.
-  include JwtAuthClient::Issuable
-
   # Validation to ensure the sso_id is present and unique.
   validates :sso_id, presence: true, uniqueness: true
 
   # Callback to ensure a stable, globally unique ID (sso_id) is set
   # before the user record is saved.
   before_validation :set_sso_id, on: :create
-
-  # Custom claims embedded by JwtAuthClient::Issuable#to_jwt. The registered
-  # claims (iss, sub, iat, nbf, exp, jti) are set by the gem from its
-  # configuration; `sub` is taken from `user_id`, i.e. the stable sso_id.
-  def jwt_claims
-    {
-      user_id: sso_id,
-      email: email,
-      name: name,
-      admin: is_admin
-    }
-  end
 
   private
 

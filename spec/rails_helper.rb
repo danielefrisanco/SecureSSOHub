@@ -1,10 +1,6 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
-# The JwtAuthClient initializer refuses to boot without a signing key; the suite
-# uses a random one per run so no key is ever committed.
-require 'securerandom'
-ENV['JWT_SERVICE_SECRET'] ||= SecureRandom.hex(32)
 # Canonical issuer URL used in tokens and discovery documents (see doorkeeper_openid_connect.rb).
 ENV['HUB_ISSUER'] ||= 'https://hub.test'
 require_relative '../config/environment'

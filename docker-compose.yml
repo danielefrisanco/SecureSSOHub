@@ -20,8 +20,7 @@ services:
       RAILS_ENV: development
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: development_password
-      # We will set the JWT secrets in .env later
-      # JWT_SERVICE_SECRET: ...
+      # HUB_ISSUER and the OIDC signing keys come from .env (see README).
 
   # 2. PostgreSQL Database Service
   db:
