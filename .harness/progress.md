@@ -57,3 +57,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 ## 2026-09-18 — TASK-015 done: Signing keys with kid and rotation, JWKS endpoint, dev key tooling
 - OAuth::SigningKey (env PEM/base64, RFC 7638 kid, previous key for rotation, realm-ready accessor); ruby-jwt kid generator = Thumbprint; doorkeeper-jwt + openid_connect sign via it; JWKS at /.well-known/jwks.json and /oauth/discovery/keys with cache headers; hub:keys rake tasks; README runbook. 51 specs. Merged into develop.
 - STOPPED HERE at the user's request (handoff + compact). Next: /harness:start-task TASK-016 (client registry). Reminder: develop → main merge/push is the user's step; local test runs need DATABASE_URL pointing at the compose Postgres 17 on localhost.
+
+## 2026-09-18 — TASK-015 handoff (end of session)
+- DONE: TASK-013/014/015 reviewed PASS and merged into develop (0c52ebb); Ruby 3.4.10, Rails 8.1.3.1, Postgres 17, Doorkeeper/OIDC/JWT core behind app/services/oauth, SigningKey + JWKS + rotation; 51 specs, rubocop/brakeman/bundler-audit clean.
+- NEXT: /harness:start-task TASK-016 (client registry), then 017 → 018/019 → 020/021/022 → 023/024/025 → 026 gate. Env for local runs: compose Postgres 17 via DATABASE_URL, JWT_SERVICE_SECRET exported for bin/rails (until TASK-019), HUB_ISSUER defaults in specs.
+- BLOCKERS/QUESTIONS: none. User merges develop → main and pushes; first CI run pending.
