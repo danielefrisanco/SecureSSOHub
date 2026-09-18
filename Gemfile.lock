@@ -129,8 +129,8 @@ GEM
       activesupport (>= 6.1)
     hashdiff (1.2.1)
     hashie (5.0.0)
-    header_guard (0.1.1)
-      rack (~> 3.0)
+    header_guard (0.3.1)
+      rack (>= 2.0, < 4)
     i18n (1.14.7)
       concurrent-ruby (~> 1.0)
     importmap-rails (2.2.2)
@@ -148,8 +148,7 @@ GEM
     json (2.15.2)
     jwt (2.10.2)
       base64
-    jwt_auth_client (0.1.0)
-      activesupport (>= 6.0)
+    jwt_auth_client (0.2.0)
       faraday (~> 2.9)
       jwt (~> 2.8)
     logger (1.7.0)
@@ -206,9 +205,6 @@ GEM
     omniauth-ssoprovider (0.1.2)
       omniauth (~> 2.1)
       omniauth-oauth2 (~> 1.8)
-    omniauth_syncer (0.1.0)
-      activesupport (>= 6.0)
-      omniauth (~> 2.0)
     orm_adapter (0.5.0)
     pg (1.6.2-x86_64-linux)
     pp (0.6.3)
@@ -230,9 +226,10 @@ GEM
     rack-cors (3.0.0)
       logger
       rack (>= 3.0.14)
-    rack-jwt-verifier (0.1.0)
-      jwt (~> 2.8)
-      rack (>= 2.0)
+    rack-jwt-verifier (0.3.0)
+      jwt (>= 2.8, < 4)
+      logger (>= 1.4)
+      rack (>= 2.2, < 4)
     rack-protection (4.2.1)
       base64 (>= 0.1.0)
       logger (>= 1.6.0)
@@ -357,21 +354,20 @@ DEPENDENCIES
   dotenv-rails
   factory_bot_rails
   faker
-  header_guard
+  header_guard (~> 0.3)
   importmap-rails
   jbuilder
   jwt (~> 2.8)
-  jwt_auth_client
+  jwt_auth_client (~> 0.2)
   omniauth (~> 2.1)
   omniauth-oauth2
   omniauth-rails_csrf_protection
   omniauth-ssoprovider (~> 0.1.2)
-  omniauth_syncer
   pg (~> 1.1)
   pry-rails
   puma (~> 6.0)
   rack-cors
-  rack-jwt-verifier
+  rack-jwt-verifier (~> 0.3)
   rails (~> 7.1, >= 7.1.3)
   rspec-rails (~> 6.0)
   sassc-rails
