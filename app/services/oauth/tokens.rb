@@ -1,6 +1,7 @@
 module OAuth
-  # Issued access/refresh tokens as the application sees them. Revocation and
-  # "sign out everywhere" arrive with TASK-022; the token payload with TASK-019.
+  # Issued access/refresh tokens as the application sees them. Per-token
+  # revocation and "sign out everywhere" arrive with TASK-022; the token
+  # payload with TASK-019.
   module Tokens
     Token = Struct.new(:jti, :client_uid, :subject_id, :scopes, :resource, :created_at, :expires_at, :revoked_at,
                        keyword_init: true)
@@ -21,8 +22,7 @@ module OAuth
     end
 
     # Revokes every live access token, refresh token and authorization code of
-    # a client (client revocation, TASK-016). Per-user and per-token revocation
-    # come with TASK-022.
+    # a client (client revocation, TASK-016).
     #
     # @param client_uid [String]
     # @return [Integer] number of access tokens revoked
@@ -30,14 +30,33 @@ module OAuth
       app = Doorkeeper::Application.find_by(uid: client_uid)
       return 0 unless app
 
-      app.access_grants.where(revoked_at: nil).find_each(&:revoke)
+      revoke_live(app.access_grants, app.access_tokens)
+    end
+
+    # Revokes the live tokens and codes one client holds for one user (consent
+    # revocation, TASK-018; the account page reuses it in TASK-022).
+    #
+    # @param user [User]
+    # @param client_uid [String]
+    # @return [Integer] number of access tokens revoked
+    def revoke_for(user:, client_uid:)
+      app = Doorkeeper::Application.find_by(uid: client_uid)
+      return 0 unless app
+
+      revoke_live(app.access_grants.where(resource_owner_id: user.id),
+                  app.access_tokens.where(resource_owner_id: user.id))
+    end
+
+    def revoke_live(grants, tokens)
+      grants.where(revoked_at: nil).find_each(&:revoke)
       revoked = 0
-      app.access_tokens.where(revoked_at: nil).find_each do |token|
+      tokens.where(revoked_at: nil).find_each do |token|
         token.revoke
         revoked += 1
       end
       revoked
     end
+    private_class_method :revoke_live
 
     def wrap(token)
       Token.new(
