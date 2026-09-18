@@ -1,11 +1,11 @@
 id: TASK-012
 title: Phase 0 gate — verify outcomes, re-plan Phase 1 and create its tasks
 type: docs
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/012-phase-0-gate-verify-outcomes-re-plan-pha
 depends_on:
 - TASK-002
 - TASK-003
@@ -45,4 +45,6 @@ acceptance_criteria:
 - Blocking open questions for Phase 1 were asked and their answers recorded in docs/ARCHITECTURE.md
 - No application code is changed by this task
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 16:10
+  text: started on task/012-phase-0-gate-verify-outcomes-re-plan-pha
