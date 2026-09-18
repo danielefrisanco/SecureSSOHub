@@ -99,3 +99,12 @@ notes:
     that an id_token would pass rack-jwt-verifier at a downstream service using aud = client_id (gem needs
     a typ at+jwt check). Gem prompts inputs: TODO.md T48/T52, spec/requests/api/rack_jwt_verifier_interop_spec.rb,
     docs/ARCHITECTURE.md section 3.'
+- at: 2026-09-18 20:10
+  text: 'handoff: DONE: TASK-018, TASK-019, TASK-020 reviewed PASS and merged into develop (7ad348d),
+    plus fix(docker) 57a0d4d for the image build (HUB_ISSUER placeholder at precompile). rspec 243/0,
+    rubocop, brakeman clean. | NEXT: user pauses to prepare gem prompts with the Fable model: inputs are
+    TODO.md T48 (rack-jwt-verifier in-process key set) and T52 (typ at+jwt check), spec/requests/api/rack_jwt_verifier_interop_spec.rb,
+    docs/ARCHITECTURE.md section 3 (token payload) and section 4. Then resume Phase 1 with /harness:run-task
+    TASK-021 (start-task steps first), then 022 -> 023/024/025; stop before the TASK-026 gate. Local env:
+    POSTGRES_HOST=localhost for rspec; bin/rails no longer needs JWT_SERVICE_SECRET. | BLOCKERS/QUESTIONS:
+    none. User merges develop -> main and pushes; CI has still never run on GitHub.'

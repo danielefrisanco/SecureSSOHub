@@ -96,3 +96,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - Interop spec: gem as shipped in JWKS mode (WebMock to_rack to the real stack, `rack.session` stripped — WebMock/rack-session 2 quirk) and public_key mode accepts a hub token. Gem finding recorded as T52: an id_token passes a downstream verifier whose aud is its client_id; a `typ: at+jwt` check is needed in the gem.
 - Commits 4ad8fb7, 46b47a2, 2b6e270, 7fc521a. rspec 240/0, rubocop, brakeman clean.
 - Review: FAIL on a //api guard bypass, fixed in 82e388a (path normalised like the router, guard moved before Warden::Manager, fail-closed controller); re-review PASS. Merged into develop.
+
+## 2026-09-18 — TASK-020 handoff (session checkpoint)
+- DONE: TASK-018/019/020 merged into develop (7ad348d) + fix(docker) 57a0d4d; rspec 243/0, rubocop, brakeman clean.
+- NEXT: user prepares gem prompts (TODO.md T48/T52, interop spec, ARCHITECTURE section 3); then /harness:run-task TASK-021 (start-task steps first), 022 -> 023/024/025; stop before TASK-026.
+- BLOCKERS/QUESTIONS: none. User merges develop -> main and pushes.
