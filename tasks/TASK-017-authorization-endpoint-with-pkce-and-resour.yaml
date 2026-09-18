@@ -54,3 +54,26 @@ plan:
 notes:
 - at: 2026-09-18 17:48
   text: started on task/017-authorization-endpoint-with-pkce-redirec
+- at: 2026-09-18 17:59
+  text: 'closing: Authorization endpoint hardened on top of Doorkeeper 5.9.7 (force_pkce kept; rules prepended
+    from the initializer so Doorkeeper:: stays in app/services/oauth). New: OAuth::AuthorizationRules
+    (prepended to PreAuthorization: S256 PKCE mandatory for public clients, optional for confidential,
+    plain/malformed -> invalid_request with reason; exact redirect_uri string match on top of Doorkeeper''s
+    matcher because Doorkeeper tolerated extra query params, loopback port exception per RFC 8252; validate
+    :resource -> invalid_target), OAuth::Resources (known = HUB_ISSUER/api and HUB_ISSUER/mcp; known(client_uid:)
+    reserved, no per-client resources exist yet), OAuth::AuthorizationGuard (prepended to AuthorizationsController:
+    disabled user -> sign_out + access_denied, redirected only when the request validated, rendered otherwise).
+    Config: allow_grant_flow_for_client { client.usable? } (pending/revoked -> unauthorized_client, also
+    closes the token endpoint to them), pkce_code_challenge_methods [S256], custom_access_token_attributes
+    [:resource], handle_auth_errors :redirect; HUB_ISSUER moved to config.x.oauth.issuer (OIDC initializer
+    reads it). Migration adds code_challenge/code_challenge_method/resource to oauth_access_grants and
+    resource to oauth_access_tokens (grants had no PKCE columns before, so Doorkeeper was not storing
+    challenges). OAuth::Grants::Grant gained resource/code_challenge_method, OAuth::Tokens::Token gained
+    resource. Verified: spec/requests/oauth/authorize_spec.rb (31 examples: sign-in return path, consent
+    GET + approval POST happy path with state round-trip, PKCE negatives, 6 redirect_uri mismatches +
+    loopback port, unknown/missing client_id, pending/revoked, disabled user both branches, response_type=token,
+    out-of-client and out-of-catalogue scopes, resource accepted on grant and carried to the token via
+    POST /oauth/token, 4 invalid_target cases); spec/services/oauth/resources_spec.rb; isolation spec
+    passes; rspec 142/0, rubocop clean, brakeman 0 warnings. Decisions: a resource sent more than once
+    (array) is dropped by Doorkeeper''s scalar param permit and treated as absent; aud default to client_id
+    is left to TASK-019 as the task states. Nothing for the user to do; branch ready for review.'
