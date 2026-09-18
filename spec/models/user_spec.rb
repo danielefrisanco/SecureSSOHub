@@ -58,3 +58,9 @@ RSpec.describe User, "#to_jwt", type: :model do
       .to raise_error(JWT::VerificationError)
   end
 end
+
+RSpec.describe User, "factory", type: :model do
+  it "builds an admin with the :admin trait" do
+    expect(build(:user, :admin)).to be_valid.and have_attributes(is_admin: true)
+  end
+end
