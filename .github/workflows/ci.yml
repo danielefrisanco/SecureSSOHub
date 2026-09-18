@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:14-alpine
+        image: postgres:17-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -55,14 +55,9 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-      # EOLRuby/EOLRails are skipped until the Ruby/Rails upgrade (TODO T30);
-      # every other check is blocking.
-      - run: bundle exec brakeman -q --no-pager --except EOLRuby,EOLRails
-      # Most open advisories are in Rails 7.1 itself and close with T30. Until
-      # then this step reports but does not block; flip continue-on-error off
-      # once the upgrade lands.
-      - run: bundle exec bundler-audit check --update
-        continue-on-error: true
+      - run: bundle exec brakeman -q --no-pager
+      # Ignores, if ever needed, go in config/bundler-audit.yml with a dated reason.
+      - run: bin/bundler-audit check --update
 
   docker:
     name: Docker build

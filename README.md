@@ -10,7 +10,7 @@ current-state audit is in [`docs/AUDIT.md`](docs/AUDIT.md) and the backlog in [`
 
 | Concern | Implementation |
 |---|---|
-| Framework | Rails 7.1, Ruby 3.1.4, PostgreSQL |
+| Framework | Rails 8.1, Ruby 3.4.10, PostgreSQL 17 |
 | User accounts | [Devise](https://github.com/heartcombo/devise) |
 | Identity | each user has a stable `sso_id` (UUID) used as the token subject, decoupled from the email |
 | Token issuing | [`jwt_auth_client`](https://rubygems.org/gems/jwt_auth_client) (`Issuable` mixin on `User`) |
@@ -30,7 +30,7 @@ The endpoints are being built phase by phase; see `TODO.md` for what exists toda
 ## Development
 
 ```bash
-docker compose up -d db                      # PostgreSQL 14 on localhost:5432
+docker compose up -d db                      # PostgreSQL 17 on localhost:5432
 bundle install
 DATABASE_URL=postgres://postgres:<password>@localhost:5432/secure_sso_hub_test \
   bin/rails db:prepare                       # <password> = POSTGRES_PASSWORD from docker-compose.yml
