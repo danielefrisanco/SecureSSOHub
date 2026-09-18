@@ -53,6 +53,16 @@ moves pending → approved, pending → revoked, approved → revoked (final). `
 only API (admin-only mutation with one-time secrets; `register_dynamic` is the single no-actor path,
 for RFC 7591, and never grants `admin`/`machine` scopes). Rotating a secret leaves issued tokens valid.
 
+**Authorization endpoint (TASK-017):** `GET/POST /oauth/authorize` is Doorkeeper's controller with the
+hub's rules prepended from the initializer: `OAuth::AuthorizationRules` (into the pre-authorization
+check) requires S256 PKCE from public clients, allows it for confidential ones and never accepts
+`plain`; matches `redirect_uri` exactly (only a loopback port may differ, RFC 8252); validates the
+optional RFC 8707 `resource` against `OAuth::Resources.known` (`#{HUB_ISSUER}/api`, `#{HUB_ISSUER}/mcp`)
+with `invalid_target` and stores it on the grant and token (`aud` in TASK-019; absent → the client's own
+client_id). `OAuth::AuthorizationGuard` (into the controller) signs out a disabled user and answers
+`access_denied`. Only approved clients pass (`unauthorized_client`). Errors are redirected to the client
+once client and `redirect_uri` are verified, rendered before that — never a redirect to an unverified URI.
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |
