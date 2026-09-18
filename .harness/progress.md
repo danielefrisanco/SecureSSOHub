@@ -17,3 +17,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - Deleted the ssoprovider initializer, OmniauthCallbacksController, /auth/* routes and the Minitest asserting the strategy; dropped omniauth + omniauth-rails_csrf_protection from the default group. The app boots for the first time; rspec green (1 pending).
 - Commits: 7302741 (refactor), task-file commits. Test DB: docker compose `db` + DATABASE_URL (database.yml host made env-configurable in TASK-006).
 - Merged into develop. main is merged/pushed by the user.
+
+## 2026-09-18 — TASK-002 done: Remove stray file, README transcript and TODO stub; add ARCHITECTURE.md
+- `a` deleted; README rewritten; docs/ARCHITECTURE.md (purpose, roles, trust boundaries, decisions log). Commits 5063777 + fix. Merged into develop.
