@@ -75,7 +75,9 @@ Doorkeeper.configure do
   grant_flows %w[authorization_code client_credentials]
 
   # Only approved clients (OAuth::ClientRules approval workflow) get a code or
-  # a token; pending and revoked ones are refused as unauthorized_client.
+  # a client_credentials token; pending and revoked ones are refused as
+  # unauthorized_client. Codes and refresh tokens issued earlier are closed
+  # by OAuth::TokenRules.
   allow_grant_flow_for_client { |_grant_flow, client| client.usable? }
 
   # PKCE: S256 is mandatory for public clients and honoured for confidential
@@ -117,6 +119,8 @@ Rails.application.config.after_initialize do
   Doorkeeper::Application.include(OAuth::ClientRules)
   Doorkeeper::OAuth::PreAuthorization.prepend(OAuth::AuthorizationRules)
   Doorkeeper::AuthorizationsController.prepend(OAuth::AuthorizationGuard)
+  Doorkeeper::OAuth::AuthorizationCodeRequest.prepend(OAuth::TokenRules)
+  Doorkeeper::OAuth::RefreshTokenRequest.prepend(OAuth::TokenRules)
 end
 
 Doorkeeper::JWT.configure do
