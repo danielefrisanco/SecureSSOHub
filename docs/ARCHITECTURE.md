@@ -22,9 +22,26 @@ service in the ecosystem trusts. It does **not** own business authorization data
 
 - The hub's **private signing key** never leaves the hub; everyone else verifies with the published
   JWKS. Shared-secret (HMAC) signing is a stopgap only.
-- Tokens carry `iss`, `aud` (resource indicator), `sub` (`sso_id`), `scopes`, `azp` (acting client),
-  `exp`, `jti`. Resource servers must check `iss` and `aud` — `rack-jwt-verifier` refuses to boot
-  without them.
+- **Access tokens** are RS256 JWTs (RFC 9068: header `typ: at+jwt`, `kid` of the signing key) built by
+  `OAuth::TokenPayload`. Resource servers must check `iss` and `aud` — `rack-jwt-verifier` refuses to
+  boot without them.
+
+  | claim | value |
+  |---|---|
+  | `iss` | `HUB_ISSUER` |
+  | `sub` | the user's `sso_id`; the client's `client_id` for client-credentials tokens |
+  | `aud` | the RFC 8707 `resource` of the authorization request, else the client's `client_id` |
+  | `azp` | the client the token was issued to (audit, MCP) |
+  | `scope` / `scopes` | space-delimited string (OAuth) and array (what `rack-jwt-verifier` reads) |
+  | `jti` | unique per token (UUID) |
+  | `iat`, `nbf`, `exp` | issued-at, not-before (= `iat`), expiry = `iat` + 10 minutes |
+  | `name` | only with the `profile` scope |
+  | `email`, `email_verified` | only with the `email` scope |
+  | `admin` | boolean, `true` only for administrators |
+
+  Nothing else about the user is placed in an access token. The same scope gating applies to the
+  id_token (`openid` scope; `sub`, `iss`, `aud` = client_id, `nonce`, `auth_time`, `at_hash`) and to
+  userinfo. Refresh tokens are opaque, hashed at rest, issued only with `offline_access`.
 - **Licensing, multi-tenancy and complex authorization live in a separate, connected service** that
   trusts the hub's tokens; the hub only asserts *who* (and which client) — never entitlements.
   Roles/claims the hub does expose are minimal (`admin`) and are inputs to that service, not a
@@ -58,7 +75,7 @@ hub's rules prepended from the initializer: `OAuth::AuthorizationRules` (into th
 check) requires S256 PKCE from public clients, allows it for confidential ones and never accepts
 `plain`; matches `redirect_uri` exactly (only a loopback port may differ, RFC 8252); validates the
 optional RFC 8707 `resource` against `OAuth::Resources.known` (`#{HUB_ISSUER}/api`, `#{HUB_ISSUER}/mcp`)
-with `invalid_target` and stores it on the grant and token (`aud` in TASK-019; absent → the client's own
+with `invalid_target` and stores it on the grant and token (the token's `aud`; absent → the client's own
 client_id). `OAuth::AuthorizationGuard` (into the controller) signs out a disabled user and answers
 `access_denied`. Only approved clients pass (`unauthorized_client`). Errors are redirected to the client
 once client and `redirect_uri` are verified, rendered before that — never a redirect to an unverified URI.
@@ -77,11 +94,25 @@ against the redirect that follows Allow/Deny), scope descriptions with new scope
 Allow/Deny forms that carry `resource` and `nonce` as well as Doorkeeper's fields. Only administrators
 may consent to `admin:*` scopes (`invalid_scope` otherwise, in `OAuth::AuthorizationRules`).
 
+**Token endpoint (TASK-019):** `POST /oauth/token` is Doorkeeper's controller with `OAuth::TokenRules`
+prepended into the authorization-code and refresh-token requests. Client authentication is Doorkeeper's:
+confidential clients send their secret with `client_secret_basic` or `client_secret_post`, public clients
+send none (a public client presenting a secret, or a confidential one without, is `invalid_client`); the
+code must match the client, the `redirect_uri` and the S256 `code_verifier` (`invalid_grant`), and expires
+after one minute. Every token remembers the code it descends from (`oauth_access_tokens.access_grant_id`,
+kept across refresh rotations): a replayed code answers `invalid_grant` and revokes every token issued from
+it. Refresh tokens are issued only with `offline_access`, rotate on every use — Doorkeeper revokes the used
+one immediately under a row lock because the schema deliberately has no `previous_refresh_token` column —
+and presenting an already-rotated token (`OAuth::Tokens.detect_reuse!`) revokes every live token and code
+the client holds for that user. Their lifetime is absolute (`OAUTH_REFRESH_TOKEN_TTL`, 30 days from the
+code). The id_token gets the hub's `at_hash` over the JWT the client received (`OAuth::IdToken`), and
+`oauth_applications.last_used_at` is touched on every successful response.
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |
 |---|---|---|
-| `jwt_auth_client` | hub (and services calling each other) | signs tokens the hub issues (`Issuable` on `User`, `TokenIssuer` for the token endpoint claims until Doorkeeper's JWT layer takes over); hub → service calls with `HttpClient`. Needs asymmetric signing (0.3.0) to serve the JWKS. |
+| `jwt_auth_client` | services calling each other (not the hub today) | service → service calls with `HttpClient`. Removed from the hub in TASK-019: access tokens are minted by doorkeeper-jwt + `OAuth::TokenPayload`; it returns only if the hub itself calls services with signed requests (then with asymmetric signing, 0.3.0). |
 | `rack-jwt-verifier` | hub's own API and MCP endpoint; every downstream service | verifies bearer tokens against the hub's JWKS with mandatory `iss`/`aud`, scopes and replay guard. |
 | `header_guard` | hub | HSTS, CSP (nonce-aware), frame/referrer/COOP/CORP/permissions headers. |
 | `omniauth-ssoprovider` | client applications; hub test suite and developer page | the reference login client — defines the contract the hub must honour (`/oauth/authorize`, `/oauth/token`, `/api/v1/userinfo`). |
@@ -96,10 +127,11 @@ may consent to `admin:*` scopes (`invalid_scope` otherwise, in `OAuth::Authoriza
 | 2026-09-18 | Deployment target: Docker on a single host. | Only Dockerfile/compose exist; keeps infra advice concrete. | Scaling beyond one host. |
 | 2026-09-18 | Licensing / tenancy / fine-grained authorization are a separate service. | Keeps the hub small and auditable (see §3). | — |
 | 2026-09-18 | **Authorization-server core: Doorkeeper + doorkeeper-openid_connect**, behind the app's service layer; own gem left open (TASK-003). | Audit §5.4: an AS is the wrong thing to hand-roll first; Doorkeeper is mature and audited. | When the service layer is stable and an own gem would add real value (e.g. MCP-native features). |
-| 2026-09-18 | **Access tokens are RS256 JWTs** issued through doorkeeper-jwt (claims documented in §3 once TASK-019 lands); id_tokens via doorkeeper-openid_connect; both signed by the hub's `SigningKey` (TASK-015). jwt_auth_client's HMAC/Issuable path leaves the OAuth flow (kept for hub→service calls); rack-jwt-verifier is the verifier everywhere. (TASK-012) | Offline verification with a public key is the secure, future-proof default; opaque tokens would force every service to call introspection. | If a resource server needs instant revocation, it introspects (TASK-022). |
+| 2026-09-18 | **Access tokens are RS256 JWTs** issued through doorkeeper-jwt (claims in §3); id_tokens via doorkeeper-openid_connect; both signed by the hub's `SigningKey` (TASK-015). jwt_auth_client's HMAC/Issuable path left the hub entirely in TASK-019 (gem dropped from the Gemfile; nothing called it); rack-jwt-verifier is the verifier everywhere. (TASK-012) | Offline verification with a public key is the secure, future-proof default; opaque tokens would force every service to call introspection. | If a resource server needs instant revocation, it introspects (TASK-022). |
 | 2026-09-18 | **Shared cache backend: Redis** (rate limiting, replay guard, later jobs). (TASK-012) | Proven atomic counters/TTLs; one extra compose service. | If operating Redis proves a burden, Solid Cache is the fallback. |
 | 2026-09-18 | **Dynamic client registration is approval-gated** by default, behind a policy switch (`OAUTH_REGISTRATION_POLICY` approval/open/closed) so open mode can be enabled later. (TASK-012, TASK-025) | Safe default for a security product; MCP clients can still self-onboard pending approval. | When agent onboarding friction matters more than manual review. |
 | 2026-09-18 | **Ruby/Rails upgrade (Ruby 3.4, Rails 8.x) is the first Phase 1 task** (TASK-013). | EOL runtime + ~75 advisories; fewer moving parts before Doorkeeper. | — |
+| 2026-09-18 | **Refresh tokens rotate immediately** (no `previous_refresh_token` column) and have an **absolute lifetime** from the authorization code; **reuse revokes the (user, client) family**, a **replayed code revokes its descendants** (TASK-019). | Doorkeeper's deferred revocation only fires through its own bearer lookup, which the hub never uses; OAuth 2.1 §4.3.1 / RFC 6749 §4.1.2. | If a client cannot cope with strict rotation (concurrent refreshes), a short grace window would need the column back plus an explicit revocation hook. |
 
 ## 6. Future directions (not scheduled)
 
