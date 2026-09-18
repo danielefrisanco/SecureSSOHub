@@ -72,3 +72,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - OAuth::AuthorizationRules (prepended into PreAuthorization: S256 PKCE mandatory for public clients, plain never, exact redirect_uri match with loopback port exception, RFC 8707 resource → invalid_target), OAuth::Resources (hub API + MCP), OAuth::AuthorizationGuard (disabled user → sign out + access_denied), OAuth::TokenRules (codes/refresh tokens of revoked clients or disabled users refused at POST /oauth/token). Migration adds code_challenge(_method) and resource to grants, resource to tokens. HUB_ISSUER now in config.x.oauth.issuer.
 - Commits db81f34, ac04e1f, a2db205, 0c435a5, 6a61c78 (review fix) + executor memory notes. rspec 147/0, rubocop, brakeman clean. Reviewer PASS on second round. Merged into develop.
 - Follow-up noted on TASK-022: disabling a user should revoke their tokens/grants at the source.
+
+## 2026-09-18 — TASK-017 handoff (session checkpoint before compaction)
+- DONE: TASK-016 and TASK-017 merged into develop (db02f51); alignment notes on TASK-018..025 and two criteria reworded; rspec 147/0, rubocop, brakeman clean.
+- NEXT: /harness:run-task TASK-018 (start-task steps first), then 019 -> 020/021/022 -> 023/024/025; stop before TASK-026. Local env: POSTGRES_HOST=localhost for rspec; JWT_SERVICE_SECRET exported for bin/rails until TASK-019.
+- BLOCKERS/QUESTIONS: none. User merges develop -> main and pushes.

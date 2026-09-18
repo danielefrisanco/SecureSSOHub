@@ -90,3 +90,14 @@ notes:
   text: done — criteria verified by spec/requests/oauth/authorize_spec.rb (31), spec/requests/oauth/token_spec.rb
     (5), spec/services/oauth/resources_spec.rb; suite 147/0, rubocop, brakeman clean, isolation spec green.
     Reviewer FAIL (token endpoint gap) then PASS after 6a61c78.
+- at: 2026-09-18 18:12
+  text: 'handoff: DONE: TASK-016 (client registry: OAuth::Clients/ClientRules/Scopes, migration, factory)
+    and TASK-017 (OAuth::AuthorizationRules/Guard/Resources/TokenRules, PKCE+resource columns, config.x.oauth.issuer)
+    reviewed PASS and merged into develop (db02f51). Alignment notes added to TASK-018..025 and two criteria
+    reworded (018 catalogue = config/oauth_scopes.yml + OAuth::Scopes; 022 uses existing revoke_all(client_uid:)
+    + revoke_for(user:, client_uid:) from 018). rspec 147/0, rubocop, brakeman clean. | NEXT: /harness:run-task
+    TASK-018 (do the start-task steps first: branch from develop, set in_progress), then 019 -> 020/021/022
+    -> 023/024/025; stop before the TASK-026 gate. Local runs: POSTGRES_HOST=localhost bundle exec rspec;
+    bin/rails needs JWT_SERVICE_SECRET exported until TASK-019 removes the legacy initializer. Executor
+    conventions in .claude/agent-memory/harness-executor/. | BLOCKERS/QUESTIONS: none. develop -> main
+    merge/push is the user''s step (develop ahead of origin by 35).'
