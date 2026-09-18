@@ -108,6 +108,23 @@ the client holds for that user. Their lifetime is absolute (`OAUTH_REFRESH_TOKEN
 code). The id_token gets the hub's `at_hash` over the JWT the client received (`OAuth::IdToken`), and
 `oauth_applications.last_used_at` is touched on every successful response.
 
+**Userinfo and the API guard (TASK-020):** two userinfo endpoints serve the same token. `GET /oauth/userinfo`
+is doorkeeper-openid_connect's (OIDC claims, `sub` + the scope-gated `name`/`email`/`email_verified`;
+Doorkeeper finds the token by the hash of the presented JWT). `GET /api/v1/userinfo` is the document
+`omniauth-ssoprovider` hard-codes — `{id, sub, name, email, email_verified, roles}`, `id`/`sub` = `sso_id`,
+`roles` = `["admin"]` or `[]`, `name`/`email` gated by `profile`/`email` — and the first endpoint of the hub's
+bearer-token API. `/api/**` sits behind `rack-jwt-verifier` (`config/initializers/rack_jwt_verifier.rb`):
+RS256 only, `iss` = `HUB_ISSUER`, `aud` = `OAuth::Resources.hub_api` (a token minted for the client itself or
+for the MCP endpoint is `invalid_token`), 30 s leeway, token required, JSON errors with the RFC 6750
+challenge, everything outside `/api` skipped. Key material never leaves the process: the hub's JWKS (active
+and previous key) is handed to ruby-jwt as the `jwks` decode option, resolved per request from
+`OAuth::SigningKey` (gem follow-up T48). What a self-contained JWT cannot say is checked per request in
+`Api::BaseController`: the token's `jti` — chosen on the record before the JWT is generated
+(`OAuth::TokenRecord`, indexed `oauth_access_tokens.jti`) — must still be live (`OAuth::Tokens.active?`),
+and the user must not be disabled; both answer 401 `invalid_token`. `replay_cache` waits for Redis (T23).
+The interop spec (`spec/requests/api/rack_jwt_verifier_interop_spec.rb`) runs the gem as shipped, in
+JWKS mode against the hub's own document, as the proof downstream services need nothing hub-specific.
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |
