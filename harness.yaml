@@ -1,0 +1,85 @@
+# Harness configuration. Copy to the root of your project as `harness.yaml`.
+# Every value here is a default; delete what you don't want to override.
+
+tasks:
+  dir: tasks                    # where TASK-*.yaml files live (tracked in git)
+  id_prefix: TASK
+  id_width: 3                   # TASK-001
+  single_active: true           # only one task may be in_progress at a time
+  commit_task_files: true       # commit task file changes automatically (create/start/complete)
+  require_acceptance_criteria: true   # /create-task asks for criteria if missing
+
+git:
+  base_branch: main             # branch tasks start from
+  protected_branches: [main, master]
+  branch_pattern: "task/{num}-{slug}"        # placeholders: {id} TASK-001, {id_lower}, {num} 001, {slug}, {type}
+  allow_commit_on_protected: false
+  allow_push: false             # agent never pushes unless true (you can still push yourself)
+  commit:
+    format: conventional        # conventional | free
+    types: [feat, fix, chore, docs, refactor, test, perf, ci, build, style, revert]
+    require_task_ref: true      # message must mention the task id (e.g. trailer "Task: TASK-001")
+    trailer: "Task: {id}"
+    max_subject_length: 72
+  blocked_commands:             # regexes matched against any Bash command; always blocked
+    - "git\\s+push\\s+.*(--force|-f)\\b"
+    - "git\\s+commit\\s+.*--no-verify"
+    - "git\\s+reset\\s+--hard"
+    - "git\\s+clean\\s+-[a-zA-Z]*f"
+    - "git\\s+branch\\s+-D"
+    - "git\\s+checkout\\s+--\\s+\\."
+    - "git\\s+restore\\s+\\."
+    - "rm\\s+-rf\\s+(/|~|\\$HOME)\\s*$"
+
+secrets:
+  deny_globs:                   # never read, grep, cat, edit or glob these
+    - ".env"
+    - ".env.*"
+    - "*.env"
+    - "**/secrets/**"
+    - "**/*secret*"
+    - "**/*credential*"
+    - "*.pem"
+    - "*.key"
+    - "*.p12"
+    - "*.pfx"
+    - "id_rsa*"
+    - "id_ed25519*"
+    - "**/.aws/**"
+    - "**/.ssh/**"
+    - "**/.netrc"
+    - "**/.npmrc"
+    - "**/.pypirc"
+  allow_globs:                  # exceptions to deny_globs (e.g. templates)
+    - ".env.example"
+    - ".env.sample"
+    - ".env.template"
+  respect_gitignore: true       # also block files ignored by git ...
+  gitignore_exceptions:         # ... except these (build output, deps)
+    - "node_modules/**"
+    - "dist/**"
+    - "build/**"
+    - ".venv/**"
+    - "venv/**"
+    - "__pycache__/**"
+    - "*.log"
+  block_env_dump: true          # block `env`, `printenv`, `set` with no args, `echo $SECRET`-style
+
+checks:
+  test_command: "bundle exec rspec"   # run before completing a task
+  lint_command: ""              # e.g. "ruff check ."
+  format_on_edit: ""            # e.g. "ruff format {file}" — run after every Edit/Write ({file} = path)
+  format_extensions: []         # e.g. [".py"] — only run format_on_edit for these
+
+behavior:
+  ask_when_unclear: true        # agents must ask (AskUserQuestion) instead of guessing
+  execution_mode: main          # main | subagent — where /start-task runs the implementation
+  review_required: true         # /complete-task runs the reviewer agent before marking done
+  progress_file: .harness/progress.md
+  rules_dir: .harness/rules
+
+models:
+  explorer: haiku
+  task_writer: sonnet
+  reviewer: sonnet
+  executor: inherit
