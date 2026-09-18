@@ -73,3 +73,6 @@ RSpec/MultipleDescribes:
   Enabled: false
 RSpec/DescribeMethod:
   Enabled: false
+RSpec/SpecFilePathFormat:
+  CustomTransform:
+    OAuth: oauth   # app/services/oauth ↔ spec/services/oauth (acronym inflection)

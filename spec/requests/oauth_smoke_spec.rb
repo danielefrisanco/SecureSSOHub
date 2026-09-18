@@ -59,11 +59,13 @@ RSpec.describe "OAuth core installation", type: :request do
       expect(config.optional_scopes.to_a).to match_array(catalogue.keys.map(&:to_s) - ["openid"])
     end
 
-    it "signs with an RSA key shared by doorkeeper-jwt and openid_connect" do
-      pem = Rails.application.config.x.oauth.signing_key_pem
-      expect(OpenSSL::PKey::RSA.new(pem).n.num_bits).to be >= 2048
-      expect(Doorkeeper::JWT.configuration.secret_key).to eq(pem)
-      expect(Doorkeeper::OpenidConnect.configuration.signing_key).to eq(pem)
+    it "signs with the same RSA key (and kid) in doorkeeper-jwt and openid_connect" do
+      keys = OAuth::SigningKey.for(realm: :default)
+      expect(keys.private_key.n.num_bits).to be >= 2048
+      expect(Doorkeeper::JWT.configuration.secret_key.call({})).to eq(keys.private_key.to_pem)
+      expect(Doorkeeper::JWT.configuration.token_headers.call({})).to eq(kid: keys.kid)
+      expect(Doorkeeper::OpenidConnect.signing_key.kid).to eq(keys.kid)
+      expect(Doorkeeper::OpenidConnect.signing_keys.map(&:kid)).to eq(keys.kids)
     end
   end
 end

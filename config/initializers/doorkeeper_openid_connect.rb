@@ -8,7 +8,10 @@ Doorkeeper::OpenidConnect.configure do
     ENV.fetch("HUB_ISSUER") { Rails.env.local? ? "http://localhost:3000" : raise("HUB_ISSUER is not set") }
   end
 
-  signing_key Rails.application.config.x.oauth.signing_key_pem
+  # Active key first, previous key (rotation window) second; the gem publishes
+  # all of them at /oauth/discovery/keys. Resolved lazily so the app-level
+  # OAuth::SigningKey owns the material.
+  signing_key { OAuth::SigningKey.for(realm: :default).pems }
   signing_algorithm :rs256
 
   subject_types_supported [:public]

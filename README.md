@@ -49,7 +49,25 @@ All configuration comes from environment variables; there are no fallback values
 | `JWT_SERVICE_SECRET` | token signing key, at least 32 bytes — `openssl rand -hex 32` (HMAC until asymmetric keys land); required to boot |
 | `JWT_ISSUER` | `iss` claim of tokens minted by jwt_auth_client (default `secure-sso-hub`; legacy, removed in TASK-019) |
 | `HUB_ISSUER` | canonical https URL of this hub, e.g. `https://sso.example.com` — the OAuth/OIDC `iss` and the base of every discovery URL; required outside development/test |
-| `OIDC_SIGNING_KEY` | RSA private key (PEM) that signs access and id tokens; required outside development/test (ephemeral key there) — rotation and `kid` arrive with TASK-015 |
+| `OIDC_SIGNING_KEY` | active RSA private key (≥ 2048 bits) that signs access and id tokens — PEM, or the PEM base64-encoded on one line; required outside development/test (an ephemeral key is generated there) |
+| `OIDC_SIGNING_KEY_PREVIOUS` | the previous signing key during a rotation (same format); stays published in the JWKS so tokens it signed still verify |
+
+### Key rotation
+
+Every token carries the `kid` (RFC 7638 thumbprint) of the key that signed it; clients and resource
+servers verify against `https://<hub>/.well-known/jwks.json`, which lists the active key and, during a
+rotation, the previous one.
+
+```bash
+bin/rails hub:keys:generate     # prints a new key as OIDC_SIGNING_KEY=<base64 PEM> plus its kid
+bin/rails hub:keys:show         # kids of the keys the running app has loaded
+```
+
+1. Generate a new key. Set `OIDC_SIGNING_KEY_PREVIOUS` to the *current* value and `OIDC_SIGNING_KEY`
+   to the new one; deploy. New tokens are signed with the new key; the JWKS lists both.
+2. Wait at least the longest token lifetime (refresh tokens included) plus the clients' JWKS cache
+   TTL (5 minutes by default).
+3. Remove `OIDC_SIGNING_KEY_PREVIOUS`; deploy. The old key disappears from the JWKS.
 | `RAILS_MASTER_KEY` | Rails credentials |
 
 ## Task workflow

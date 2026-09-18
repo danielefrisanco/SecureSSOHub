@@ -1,27 +1,45 @@
+require "base64"
+require "jwt"
 require "openssl"
 
 # OAuth 2.1 / OIDC core. Doorkeeper stays behind app/services/oauth (see
 # docs/ARCHITECTURE.md §4 and spec/architecture/doorkeeper_isolation_spec.rb);
 # this file and doorkeeper_openid_connect.rb are the only configuration points.
 #
-# Signing key for access tokens (doorkeeper-jwt) and id_tokens (openid_connect).
-# Placeholder until TASK-015 introduces SigningKey (kid, rotation, JWKS):
-#   - OIDC_SIGNING_KEY (PEM) when present;
-#   - an ephemeral in-memory key in development/test;
-#   - a boot failure anywhere else — the hub never signs with a key it did not
-#     get from its operator. The asset-precompile step of the Docker build boots
-#     with SECRET_KEY_BASE_DUMMY and no configuration, so it gets no key at all.
-signing_key_pem =
+# --- Signing keys -----------------------------------------------------------
+# OIDC_SIGNING_KEY is the active RSA private key (PEM, or base64 of the PEM
+# because .env files dislike newlines); OIDC_SIGNING_KEY_PREVIOUS, set during a
+# rotation, stays published in the JWKS so older tokens still verify (runbook
+# in README). Both are parsed and validated at boot here — initializers cannot
+# use autoloaded code — and handed to OAuth::SigningKey through config.x.
+#   - development/test without a configured key: an ephemeral in-memory key;
+#   - any other environment without a key: boot failure — the hub never signs
+#     with a key its operator did not provide;
+#   - SECRET_KEY_BASE_DUMMY (asset precompile in the Docker build): no key at all.
+oauth_key_material = lambda do |value|
+  text = value.to_s.strip
+  text = Base64.strict_decode64(text) unless text.start_with?("-----BEGIN")
+  key = OpenSSL::PKey::RSA.new(text)
+  raise "OIDC signing key must be an RSA private key of at least 2048 bits" if !key.private? || key.n.num_bits < 2048
+
+  key.to_pem
+end
+
+signing_key_pems =
   if ENV["SECRET_KEY_BASE_DUMMY"]
-    nil
+    []
   elsif ENV["OIDC_SIGNING_KEY"].present?
-    OpenSSL::PKey::RSA.new(ENV.fetch("OIDC_SIGNING_KEY")).to_pem
+    [oauth_key_material.call(ENV.fetch("OIDC_SIGNING_KEY")),
+     ENV.fetch("OIDC_SIGNING_KEY_PREVIOUS", nil).presence&.then { |pem| oauth_key_material.call(pem) }]
   elsif Rails.env.local?
-    OpenSSL::PKey::RSA.new(2048).to_pem
+    [OpenSSL::PKey::RSA.new(2048).to_pem, nil]
   else
     raise "OIDC_SIGNING_KEY is not set: the hub refuses to boot without a token signing key"
   end
-Rails.application.config.x.oauth.signing_key_pem = signing_key_pem
+Rails.application.config.x.oauth.signing_key_pems = signing_key_pems
+
+# One `kid` convention everywhere (id_tokens, access tokens, JWKS): RFC 7638.
+JWT.configuration.jwk.kid_generator = JWT::JWK::Thumbprint
 
 # Scope catalogue (config/oauth_scopes.yml); OAuth::Scopes wraps it for the app.
 scope_catalogue = Rails.application.config_for(:oauth_scopes).fetch(:scopes)
@@ -75,6 +93,8 @@ Doorkeeper::JWT.configure do
     }
   end
 
-  secret_key Rails.application.config.x.oauth.signing_key_pem
+  # Resolved per token, so the app-level SigningKey (autoloaded) owns the material.
+  token_headers { |_opts| { kid: OAuth::SigningKey.for(realm: :default).kid } }
+  secret_key { |_opts| OAuth::SigningKey.for(realm: :default).private_key.to_pem }
   signing_method :rs256
 end
