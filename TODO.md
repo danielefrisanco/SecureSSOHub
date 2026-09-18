@@ -7,6 +7,12 @@ Derived from [`docs/AUDIT.md`](docs/AUDIT.md) (TASK-001, 2026-09-18). Ordered: w
 Columns: **id · title · type · priority · placement · depends on · audit ref**.
 Placement: `[app]` this repo · `[gem: x]` change in that gem · `[new gem]` extract a new gem.
 
+**Phase gates.** Every phase ends with a gate task (type `docs`) that depends on all tasks of the
+phase: it verifies the phase's end state against the audit, re-plans the *next* phase's rows against
+the code as it actually is (split/merge/reorder/drop/add, ask blocking questions), creates one harness
+task per row, annotates the rows with their task ids, and creates the next gate. Phase 0 gate: TASK-012.
+Only the current phase and its gate are ever instantiated as harness tasks; later phases stay as rows.
+
 ## Phase 0 — foundations (make the app boot, decide the core)
 
 | id | title | type | prio | placement | after | ref |
