@@ -2,7 +2,7 @@ source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 # Specify the required Ruby version to match your local setup
-ruby "3.1.4"
+ruby "3.4.10"
 
 # --- Core Rails Dependencies ---
 gem "bootsnap", require: false
