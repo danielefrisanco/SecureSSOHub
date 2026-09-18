@@ -8,6 +8,13 @@ Rails.application.routes.draw do
   use_doorkeeper_openid_connect
   use_doorkeeper
   devise_for :users
+
+  # Bearer-token API, guarded by rack-jwt-verifier (config/initializers/rack_jwt_verifier.rb).
+  namespace :api do
+    namespace :v1 do
+      get "userinfo", to: "userinfo#show"
+    end
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
