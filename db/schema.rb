@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_18_160002) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_18_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -45,14 +45,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_18_160002) do
   end
 
   create_table "oauth_applications", force: :cascade do |t|
+    t.string "approval_state", default: "approved", null: false
+    t.string "client_type", default: "confidential", null: false
+    t.string "client_uri"
     t.boolean "confidential", default: true, null: false
+    t.jsonb "contacts"
     t.datetime "created_at", null: false
+    t.datetime "last_used_at"
+    t.string "logo_uri"
     t.string "name", null: false
+    t.bigint "owner_id"
     t.text "redirect_uri", null: false
+    t.string "registered_via", default: "admin", null: false
     t.string "scopes", default: "", null: false
-    t.string "secret", null: false
+    t.string "secret"
+    t.string "software_id"
+    t.string "software_version"
     t.string "uid", null: false
     t.datetime "updated_at", null: false
+    t.index ["approval_state"], name: "index_oauth_applications_on_approval_state"
+    t.index ["owner_id"], name: "index_oauth_applications_on_owner_id"
     t.index ["uid"], name: "index_oauth_applications_on_uid", unique: true
   end
 
@@ -95,5 +107,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_18_160002) do
 
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
+  add_foreign_key "oauth_applications", "users", column: "owner_id"
   add_foreign_key "oauth_openid_requests", "oauth_access_grants", column: "access_grant_id", on_delete: :cascade
 end

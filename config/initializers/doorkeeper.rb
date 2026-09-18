@@ -77,10 +77,21 @@ Doorkeeper.configure do
   default_scopes(*scope_catalogue.select { |_, v| v[:default] }.keys)
   optional_scopes(*scope_catalogue.reject { |_, v| v[:default] }.keys)
 
-  force_ssl_in_redirect_uri !Rails.env.local?
+  # The redirect-URI policy (https, http only on loopback, private-use schemes
+  # for public clients) lives in OAuth::ClientRules and applies in every
+  # environment; Doorkeeper's blanket https rule would refuse loopback http.
+  force_ssl_in_redirect_uri false
 
   # Access tokens are RS256 JWTs (payload defined below; claims completed in TASK-019).
   access_token_generator "::Doorkeeper::JWT"
+end
+
+# The hub's client-registry rules (client type, approval workflow, redirect
+# allow-list) — kept out of app/models so nothing there names Doorkeeper.
+# Included once, after boot (a to_prepare hook would re-register the
+# validations on every code reload in development).
+Rails.application.config.after_initialize do
+  Doorkeeper::Application.include(OAuth::ClientRules)
 end
 
 Doorkeeper::JWT.configure do

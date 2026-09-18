@@ -5,6 +5,7 @@
 #
 #   description: what the consent page shows the user
 #   admin:       only administrators may grant it
+#   machine:     for resource servers; never granted to a dynamically registered client
 #   default:     granted implicitly when a client asks for no scope
 #
 # `shared:` because Rails.application.config_for expects per-environment
@@ -22,6 +23,7 @@ shared:
       description: Stay signed in (refresh token)
     introspect:
       description: Verify tokens issued by this hub
+      machine: true
     "admin:clients":
       description: Manage OAuth clients on your behalf
       admin: true

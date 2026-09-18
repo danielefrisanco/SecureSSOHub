@@ -20,6 +20,25 @@ module OAuth
         .reject { |token| token.expires_at && token.expires_at <= Time.current }
     end
 
+    # Revokes every live access token, refresh token and authorization code of
+    # a client (client revocation, TASK-016). Per-user and per-token revocation
+    # come with TASK-022.
+    #
+    # @param client_uid [String]
+    # @return [Integer] number of access tokens revoked
+    def revoke_all(client_uid:)
+      app = Doorkeeper::Application.find_by(uid: client_uid)
+      return 0 unless app
+
+      app.access_grants.where(revoked_at: nil).find_each(&:revoke)
+      revoked = 0
+      app.access_tokens.where(revoked_at: nil).find_each do |token|
+        token.revoke
+        revoked += 1
+      end
+      revoked
+    end
+
     def wrap(token)
       Token.new(
         jti: token.token,
