@@ -1,11 +1,11 @@
 id: TASK-021
 title: Discovery documents — openid-configuration and oauth-authorization-server
 type: feat
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/021-discovery-documents-openid-configuration
 depends_on:
 - TASK-019
 context: "TODO T18 (audit §5.4). Clients (omniauth-ssoprovider is configured by hand, but generic OIDC\n\
@@ -49,3 +49,5 @@ notes:
     code_challenge_methods_supported should already be [S256] via pkce_code_challenge_methods; grant_types
     are authorization_code, refresh_token, client_credentials. Omit registration_endpoint — TASK-025 adds
     it through OAuth::Metadata.'
+- at: 2026-09-18 20:35
+  text: started on task/021-discovery-documents-openid-configuration
