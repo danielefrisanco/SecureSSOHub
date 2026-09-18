@@ -65,8 +65,10 @@ acceptance_criteria:
   hints (e.g. "after T03") where applicable.'
 - Every TODO.md item traces back to a finding in docs/AUDIT.md (no undocumented requirements introduced
   in TODO.md).
-- No files under app/, config/, db/, lib/, spec/, test/, or Gemfile* are modified by this task; the stray
-  `a` file is left in place and only referenced as a TODO.md item.
+- 'No files under app/, config/, db/, lib/, spec/, test/, or Gemfile are modified by this task; the stray
+  `a` file is left in place and only referenced as a TODO.md item. Exception agreed with the user on 2026-09-18:
+  the single Gemfile.lock DEPENDENCIES line (omniauth-oauth2) that Bundler re-applies on every `bundle
+  exec` is committed separately (1d510a3) so the tree can stay clean while running the test command.'
 plan:
 - 'Inventory the 5 self-developed gems: versions from Gemfile/Gemfile.lock, `bundle show <gem>` for install
   paths, read each gem''s lib/ source, cross-reference with usage in app/controllers/omniauth_callbacks_controller.rb,
@@ -99,3 +101,11 @@ notes:
     investigation and was restored via git checkout. Test command bundle exec rspec CANNOT run here: bundle
     not installed (Bundler::GemNotFound puma-6.6.1 etc.) - pre-existing, documented in audit s2/s5.5,
     fix is T03. User must: decide AS core (T02), run bundle install after T03.'
+- at: 2026-09-18 15:09
+  text: 'UPDATE: user decided T02 = Doorkeeper now, own gem left open (recorded in AUDIT s10 + TODO T02).
+    Running rspec after bundle install revealed a boot bug in omniauth-ssoprovider (no add_camelization
+    for :ssoprovider -> LoadError) - added to AUDIT s3.3/s9 and TODO T44. Gemfile.lock 1-line sync committed
+    as 1d510a3 with user approval; criterion 7 amended accordingly. Test command result: bundle exec rspec
+    boots but fails with the documented LoadError from config/initializers/omniauth_ssoprovider.rb:9 (0
+    examples run) - pre-existing app bug, out of scope for a docs task, fixed by T04. Tree clean after
+    each rspec run.'
