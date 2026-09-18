@@ -29,3 +29,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-007 done: Align User with jwt_auth_client 0.2.0 and add its initializer
 - User#jwt_claims; initializer reads JWT_SERVICE_SECRET (no fallback, boot fails without it; skipped only under SECRET_KEY_BASE_DUMMY) and JWT_ISSUER; to_jwt specs (10 green). Commit 8ffa274. Merged into develop.
+
+## 2026-09-18 — TASK-008 done: Delete Minitest suite, port cases to RSpec, complete test setup
+- test/ removed; rails_helper (WebMock, Timecop safe mode, Devise helpers), spec_helper random order, :admin factory trait. Commit bbad4cd. Merged into develop.

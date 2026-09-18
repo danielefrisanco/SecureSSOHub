@@ -1,7 +1,7 @@
 id: TASK-008
 title: Delete Minitest suite, port cases to RSpec, complete test setup
 type: test
-status: review
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -42,3 +42,5 @@ notes:
     :admin trait + spec. Verified: bundle exec rspec -> 11 examples, 0 failures, randomized. Env note:
     the compose db container was destroyed/recreated by something outside this session twice during the
     task (docker events); restarted with docker compose up -d db, named volume kept data.'
+- at: 2026-09-18 15:55
+  text: done — reviewer PASS; rspec 11/0 randomized.
