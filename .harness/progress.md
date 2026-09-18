@@ -35,3 +35,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-009 done: Add landing page and styled Devise views
 - HomeController, layout with header/flash, generated + styled Devise views, single stylesheet, hello_controller removed; 20 specs. Commit bb3311b. Merged into develop.
+
+## 2026-09-18 — TASK-010 done: Mount header_guard with a nonce-aware CSP and security headers
+- header_guard for HSTS/frame/nosniff/referrer/COOP/CORP/permissions; Rails CSP enforced with per-request nonce (header_guard 0.3.1 has no nonce support → T46). Specs verify nonce on every inline script. Commit b870b84. Merged into develop.

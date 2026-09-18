@@ -1,7 +1,7 @@
 id: TASK-010
 title: Mount header_guard with a nonce-aware CSP and security headers
 type: feat
-status: review
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -53,3 +53,5 @@ notes:
     has no per-request nonce support (gem follow-up T46, documented in both files). spec/requests/security_headers_spec.rb:
     header set on /, CSP nonce present and equal on every inline <script> and the csp-nonce meta tag,
     same headers on Devise pages. Verified: rspec 23 examples 0 failures; headers printed via rails runner.'
+- at: 2026-09-18 16:02
+  text: done — reviewer PASS; rspec 23/0.
