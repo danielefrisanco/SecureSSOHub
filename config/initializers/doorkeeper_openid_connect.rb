@@ -2,10 +2,11 @@
 # The signing key is shared with doorkeeper-jwt through config.x.oauth
 # (set in doorkeeper.rb, replaced by SigningKey in TASK-015).
 Doorkeeper::OpenidConnect.configure do
-  # Canonical https URL of this hub; every issued token carries it as `iss`
-  # and discovery documents are built from it — never from the request Host.
+  # Canonical https URL of this hub (HUB_ISSUER, loaded in doorkeeper.rb);
+  # every issued token carries it as `iss` and discovery documents are built
+  # from it — never from the request Host.
   issuer do |_resource_owner, _application, _request|
-    ENV.fetch("HUB_ISSUER") { Rails.env.local? ? "http://localhost:3000" : raise("HUB_ISSUER is not set") }
+    Rails.configuration.x.oauth.issuer
   end
 
   # Active key first, previous key (rotation window) second; the gem publishes

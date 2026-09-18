@@ -2,7 +2,7 @@ module OAuth
   # Issued access/refresh tokens as the application sees them. Revocation and
   # "sign out everywhere" arrive with TASK-022; the token payload with TASK-019.
   module Tokens
-    Token = Struct.new(:jti, :client_uid, :subject_id, :scopes, :created_at, :expires_at, :revoked_at,
+    Token = Struct.new(:jti, :client_uid, :subject_id, :scopes, :resource, :created_at, :expires_at, :revoked_at,
                        keyword_init: true)
 
     module_function
@@ -45,6 +45,7 @@ module OAuth
         client_uid: token.application&.uid,
         subject_id: token.resource_owner_id,
         scopes: token.scopes.to_a,
+        resource: token.resource,
         created_at: token.created_at,
         expires_at: token.expires_in && (token.created_at + token.expires_in.seconds),
         revoked_at: token.revoked_at

@@ -41,6 +41,11 @@ Rails.application.config.x.oauth.signing_key_pems = signing_key_pems
 # One `kid` convention everywhere (id_tokens, access tokens, JWKS): RFC 7638.
 JWT.configuration.jwk.kid_generator = JWT::JWK::Thumbprint
 
+# Canonical https URL of the hub: `iss` of every token, base of the discovery
+# document and of the hub's own resource identifiers (OAuth::Resources).
+Rails.application.config.x.oauth.issuer =
+  ENV.fetch("HUB_ISSUER") { Rails.env.local? ? "http://localhost:3000" : raise("HUB_ISSUER is not set") }
+
 # Scope catalogue (config/oauth_scopes.yml); OAuth::Scopes wraps it for the app.
 scope_catalogue = Rails.application.config_for(:oauth_scopes).fetch(:scopes)
 Rails.application.config.x.oauth.scopes = scope_catalogue
@@ -69,8 +74,25 @@ Doorkeeper.configure do
 
   grant_flows %w[authorization_code client_credentials]
 
-  # PKCE (S256) is mandatory for every authorization-code request.
+  # Only approved clients (OAuth::ClientRules approval workflow) get a code or
+  # a token; pending and revoked ones are refused as unauthorized_client.
+  allow_grant_flow_for_client { |_grant_flow, client| client.usable? }
+
+  # PKCE: S256 is mandatory for public clients and honoured for confidential
+  # ones; `plain` is never accepted. The public/confidential distinction and
+  # the invalid_request wording live in OAuth::AuthorizationRules; these two
+  # settings keep Doorkeeper's own checks and the discovery document in line.
   force_pkce
+  pkce_code_challenge_methods %w[S256]
+
+  # Resource indicator (RFC 8707): validated by OAuth::AuthorizationRules,
+  # stored on the grant and copied to the token (TASK-019 makes it `aud`).
+  custom_access_token_attributes [:resource]
+
+  # RFC 6749 §4.1.2.1: once the client and redirect_uri are verified, errors
+  # go back to the client; before that (bad client_id, bad redirect_uri) the
+  # error page is rendered — never a redirect to an unverified URI.
+  handle_auth_errors :redirect
 
   # Clients may only request scopes from the catalogue they were registered with.
   enforce_configured_scopes
@@ -87,11 +109,14 @@ Doorkeeper.configure do
 end
 
 # The hub's client-registry rules (client type, approval workflow, redirect
-# allow-list) — kept out of app/models so nothing there names Doorkeeper.
-# Included once, after boot (a to_prepare hook would re-register the
-# validations on every code reload in development).
+# allow-list), authorization-request rules (PKCE, resource indicator) and
+# the disabled-account guard — kept out of app/models and app/controllers so
+# nothing there names Doorkeeper. Wired once, after boot (a to_prepare hook
+# would re-register the validations on every code reload in development).
 Rails.application.config.after_initialize do
   Doorkeeper::Application.include(OAuth::ClientRules)
+  Doorkeeper::OAuth::PreAuthorization.prepend(OAuth::AuthorizationRules)
+  Doorkeeper::AuthorizationsController.prepend(OAuth::AuthorizationGuard)
 end
 
 Doorkeeper::JWT.configure do

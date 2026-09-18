@@ -97,11 +97,16 @@ en:
           missing_param: 'Missing required parameter: %{value}.'
           request_not_authorized: 'Request needs to be authorized. Required parameter for authorizing the request is missing or invalid.'
           invalid_code_challenge: 'Code challenge is required.'
+          # OAuth::AuthorizationRules (PKCE, RFC 7636)
+          malformed_code_challenge: 'The code_challenge must be 43 to 128 unreserved characters.'
+          invalid_code_challenge_method: 'The code_challenge_method must be S256.'
           multiple_client_auth_methods: 'The request utilizes more than one mechanism for authenticating the client.'
         invalid_redirect_uri: "The requested redirect URI is malformed or doesn't match the client redirect URI."
         unauthorized_client: 'The client is not authorized to perform this request using this method.'
         access_denied: 'The resource owner or authorization server denied the request.'
         invalid_scope: 'The requested scope is invalid, unknown, or malformed.'
+        # RFC 8707 §2 (resource indicator)
+        invalid_target: 'The requested resource is invalid, missing, unknown, or malformed.'
         invalid_code_challenge_method:
           zero: 'The authorization server does not support PKCE as there are no accepted code_challenge_method values.'
           one: 'The code_challenge_method must be %{challenge_methods}.'
