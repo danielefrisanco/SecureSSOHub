@@ -1,7 +1,7 @@
 id: TASK-016
 title: OAuth client registry on top of Doorkeeper applications
 type: feat
-status: in_progress
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -80,3 +80,8 @@ notes:
     Factory :oauth_client with :public/:pending/:revoked. Known: until TASK-019 adds jti, two tokens with
     identical claims in the same second collide (spec uses different users). rspec 108/0, rubocop, brakeman
     clean.'
+- at: 2026-09-18 17:22
+  text: 'done — criteria verified by specs (client_rules_spec: every rule''s failing case; clients_spec:
+    every operation incl. Forbidden/NotFound/Invalid/InvalidTransition, one-time secret, register_dynamic
+    policies) and by the suite: rspec 108/0, rubocop clean, brakeman 0, isolation spec green. Reviewer
+    PASS.'

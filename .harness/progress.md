@@ -62,3 +62,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - DONE: TASK-013/014/015 reviewed PASS and merged into develop (0c52ebb); Ruby 3.4.10, Rails 8.1.3.1, Postgres 17, Doorkeeper/OIDC/JWT core behind app/services/oauth, SigningKey + JWKS + rotation; 51 specs, rubocop/brakeman/bundler-audit clean.
 - NEXT: /harness:start-task TASK-016 (client registry), then 017 → 018/019 → 020/021/022 → 023/024/025 → 026 gate. Env for local runs: compose Postgres 17 via DATABASE_URL, JWT_SERVICE_SECRET exported for bin/rails (until TASK-019), HUB_ISSUER defaults in specs.
 - BLOCKERS/QUESTIONS: none. User merges develop → main and pushes; first CI run pending.
+
+## 2026-09-18 — TASK-016 done: OAuth client registry on top of Doorkeeper applications
+- Migration 20260918170000 (client_type, approval_state+index, registered_via, owner_id FK, RFC 7591 metadata, last_used_at; secret nullable for public clients). OAuth::ClientRules included from the Doorkeeper initializer (redirect-URI allow-list: https anywhere, http loopback only, private-use schemes only for public clients, no fragment/userinfo/OOB; approval pending→approved/revoked, approved→revoked). OAuth::Scopes over the catalogue (introspect flagged machine). OAuth::Clients list/find/usable?/create/update/rotate_secret/approve/revoke (admin-only, one-time secrets) + no-actor register_dynamic (policy approval|open, no admin/machine scopes); revoke cascades via OAuth::Tokens.revoke_all. Factory :oauth_client (:public/:pending/:revoked).
+- Commits 5c14cda (feat), afd37c9 (docs). rspec 108/0, rubocop, brakeman clean. Reviewer PASS. Merged into develop.
+- Known: until TASK-019 adds jti, two JWT access tokens with identical claims in the same second collide on the unique token column.
