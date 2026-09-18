@@ -30,7 +30,7 @@ RSpec.describe "JWKS and token signatures", type: :request do
 
   it "is the jwks_uri the discovery document advertises" do
     get "/.well-known/openid-configuration"
-    expect(response.parsed_body["jwks_uri"]).to end_with("/oauth/discovery/keys")
+    expect(response.parsed_body["jwks_uri"]).to eq("#{ENV.fetch('HUB_ISSUER')}/.well-known/jwks.json")
   end
 
   it "publishes the previous key during a rotation" do

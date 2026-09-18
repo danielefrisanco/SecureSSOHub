@@ -23,8 +23,8 @@ RSpec.describe "OAuth core installation", type: :request do
       get "/.well-known/openid-configuration"
       expect(response).to have_http_status(:ok)
       expect(response.media_type).to eq("application/json")
-      # Endpoint URLs still derive from the request host; TASK-021 rebuilds the
-      # document from HUB_ISSUER.
+      # The full document (every field, URLs from HUB_ISSUER, caching, CORS)
+      # is covered by spec/requests/discovery_spec.rb.
       expect(response.parsed_body).to include("issuer" => ENV.fetch("HUB_ISSUER"))
       expect(response.parsed_body["token_endpoint"]).to end_with("/oauth/token")
     end
