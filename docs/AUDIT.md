@@ -117,6 +117,12 @@ All five are published on rubygems.org at the same version as the local repos; o
   gem as a dev/test dependency for an end-to-end "example client" spec. `[gem: omniauth-ssoprovider]`
   later: PKCE (`omniauth-oauth2 ≥ 1.8` supports `pkce: true`), `id_token` support, a documented
   `return_to`/`state` story, and a spec suite (there is none today).
+  - **Boot bug (verified by running `bundle exec rspec`)**: `provider :ssoprovider` makes
+    `OmniAuth::Builder` look up `OmniAuth::Strategies::Ssoprovider`, but the class is `SSOProvider`
+    and the gem never calls `OmniAuth.config.add_camelization 'ssoprovider', 'SSOProvider'` →
+    `LoadError: Could not find matching strategy for :ssoprovider` from
+    `config/initializers/omniauth_ssoprovider.rb:9`. The README's own example is therefore broken.
+    `[gem: omniauth-ssoprovider]` add the camelization in `lib/omniauth/ssoprovider.rb`.
 
 ### 3.4 `omniauth_syncer` (0.1.0)
 
@@ -436,13 +442,15 @@ good candidate for a `[new gem]` (e.g. `rack-mcp-auth`) or a feature of `[gem: r
 |---|---|---|
 | `jwt_auth_client` | 0.3.0: RS256/ES256 signing with `kid`; optional JWKS publisher helper | high (hub needs asymmetric keys) |
 | `rack-jwt-verifier` | optional RFC 9728 `resource_metadata` in the `WWW-Authenticate` challenge (MCP); controller helper for `current_token` | medium |
-| `omniauth-ssoprovider` | `pkce: true` default; `id_token` handling; spec suite; document `state`/return-to; expose `roles` in `info` | medium |
+| `omniauth-ssoprovider` | **fix strategy name lookup (`add_camelization`)**; `pkce: true` default; `id_token` handling; spec suite; document `state`/return-to; expose `roles` in `info` | high (README example does not boot) |
 | `omniauth_syncer` | require `engine` properly or drop it; spec suite | low |
 | `header_guard` | Rails CSP nonce integration helper | low |
 
 ## 10. Open questions (do not block TODO.md)
 
-1. Authorization-server core: Doorkeeper (recommended) or own gem? (§5.4)
+1. ~~Authorization-server core: Doorkeeper (recommended) or own gem?~~ **Decided 2026-09-18: Doorkeeper
+   (+ doorkeeper-openid_connect) now; an own gem stays an open option for later, so the app must keep
+   the AS behind its own service layer (T37) rather than calling Doorkeeper models from views/tools.** (§5.4)
 2. Shared cache backend: Redis or Solid Cache (Postgres)?
 3. Email delivery provider for confirmation/reset (needed before `:confirmable`).
 4. Should `/oauth/register` be open (with rate limits) or approval-gated for agents?

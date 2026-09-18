@@ -12,7 +12,7 @@ Placement: `[app]` this repo · `[gem: x]` change in that gem · `[new gem]` ext
 | id | title | type | prio | placement | after | ref |
 |---|---|---|---|---|---|---|
 | T01 | Remove stray file `a`, README transcript and the TODO stub; add docs/ARCHITECTURE.md skeleton with the "licensing/tenancy is a separate service" note | chore | high | [app] | — | §4, §7 E4 |
-| T02 | Decide authorization-server core (Doorkeeper + doorkeeper-openid_connect vs. own gem) and record the decision in docs/ARCHITECTURE.md | docs | critical | [app] | — | §5.4, §10 Q1 |
+| T02 | Record the AS-core decision in docs/ARCHITECTURE.md: **Doorkeeper + doorkeeper-openid_connect now, own gem left open** — keep Doorkeeper behind the app's service layer so it can be swapped | docs | critical | [app] | — | §5.4, §10 Q1 |
 | T03 | Update Gemfile.lock to jwt_auth_client 0.2.0, rack-jwt-verifier 0.3.0, header_guard 0.3.1; drop omniauth_syncer; move omniauth-ssoprovider to the development/test group; make `bundle install` succeed | chore | critical | [app] | — | §3, §5.5 |
 | T04 | Remove the OmniAuth *client* wiring: omniauth_ssoprovider initializer, `/auth/*` routes, OmniauthCallbacksController, test/initializers spec; keep omniauth-rails_csrf_protection only if still needed | refactor | critical | [app] | T03 | §7 E5, §8 |
 | T05 | Fix Devise schema: migration adding `encrypted_password`, `reset_password_token`/`sent_at`, `confirmation_*`, `failed_attempts`/`unlock_token`/`locked_at`, `disabled_at`; enable `:trackable :lockable :timeoutable`; disable `:registerable` | fix | critical | [app] | T03 | §1 (3), §5.1 |
@@ -79,6 +79,6 @@ Placement: `[app]` this repo · `[gem: x]` change in that gem · `[new gem]` ext
 
 | id | title | type | prio | placement | after | ref |
 |---|---|---|---|---|---|---|
-| T44 | omniauth-ssoprovider: `pkce: true` default, `id_token` handling, `state`/return-to docs, expose `roles`, add a spec suite; release and bump | feat | medium | [gem: omniauth-ssoprovider] | T20 | §3.3, §9 |
+| T44 | omniauth-ssoprovider: fix `:ssoprovider` name lookup (`OmniAuth.config.add_camelization`), `pkce: true` default, `id_token` handling, `state`/return-to docs, expose `roles`, add a spec suite; release and bump | fix | high | [gem: omniauth-ssoprovider] | — | §3.3, §9 |
 | T45 | omniauth_syncer: require the engine properly or drop it; add a spec suite | fix | low | [gem: omniauth_syncer] | — | §3.4, §9 |
 | T46 | header_guard: Rails CSP nonce integration helper | feat | low | [gem: header_guard] | T09 | §3.5, §9 |
