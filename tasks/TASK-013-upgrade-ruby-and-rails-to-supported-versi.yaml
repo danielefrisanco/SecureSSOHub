@@ -1,7 +1,7 @@
 id: TASK-013
 title: Upgrade Ruby to 3.4 and Rails to 8.x; make security scanners blocking
 type: chore
-status: review
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -90,3 +90,6 @@ notes:
     . -> exit 0, image sha256:550e508f...; only 2 FromAsCasing warnings (Dockerfile ''as'' vs ''FROM''
     casing, cosmetic, left as is). README building-blocks row updated. Not verified: a GitHub Actions
     run (nothing pushed).'
+- at: 2026-09-18 16:51
+  text: done — reviewer PASS; findings fixed (solid_queue puma hook removed, orphaned test.rb comment
+    removed); worker-count clustering note deferred to T29.

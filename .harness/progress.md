@@ -47,3 +47,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - docs/PHASES.md: Phase 0 6/6 verified (CI only local — nothing pushed). Decisions: RS256 JWT access tokens via doorkeeper-jwt, Redis, approval-gated registration with policy switch, Ruby 3.4/Rails 8 upgrade first.
 - Phase 1 = TASK-013..025 (detailed specs) + gate TASK-026; TODO.md and ARCHITECTURE.md updated. Merged into develop.
 - Next: `/harness:start-task TASK-013` (upgrade). User must merge develop → main and push.
+
+## 2026-09-18 — TASK-013 done: Upgrade Ruby to 3.4 and Rails to 8.x; make security scanners blocking
+- Ruby 3.4.10, Rails 8.1.3.1 (load_defaults 8.1), Postgres 17 (new compose volume), Devise 5.0.4, Puma 7.2.1, json pinned 2.x (rack-session 2.1.2 vs json 3); unused Active Storage/Mailbox/Text engines removed; sassc-rails out, sprockets-rails explicit. brakeman 0 (no exclusions), bundler-audit clean, rubocop clean, rspec 23/0, docker build ok. Merged into develop.
