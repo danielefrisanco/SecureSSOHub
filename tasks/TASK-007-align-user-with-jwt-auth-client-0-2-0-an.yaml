@@ -1,11 +1,11 @@
 id: TASK-007
 title: Align User with jwt_auth_client 0.2.0 and add its initializer
 type: fix
-status: todo
+status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/007-align-user-with-jwt-auth-client-0-2-0-an
 depends_on:
 - TASK-004
 context: 'TODO T06 (docs/AUDIT.md §3.1). app/models/user.rb includes JwtAuthClient::Issuable but defines
@@ -37,4 +37,6 @@ acceptance_criteria:
 - README documents JWT_SERVICE_SECRET and JWT_ISSUER as required env vars (names only)
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:45
+  text: started on task/007-align-user-with-jwt-auth-client-0-2-0-an
