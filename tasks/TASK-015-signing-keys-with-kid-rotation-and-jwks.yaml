@@ -1,7 +1,7 @@
 id: TASK-015
 title: Signing keys with kid and rotation, JWKS endpoint, dev key tooling
 type: feat
-status: in_progress
+status: review
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -62,3 +62,20 @@ notes:
     realm for now.'
 - at: 2026-09-18 17:02
   text: started on task/015-signing-keys-with-kid-and-rotation-jwks-e
+- at: 2026-09-18 17:08
+  text: 'DONE (commit 6d8c29f). OAuth::SigningKey (app/services/oauth/signing_key.rb): parse (PEM or base64
+    PEM, RSA private, >= 2048 bits), current + optional previous, kid = RFC 7638 thumbprint (spec computes
+    it independently), jwks/kids/pems, realm-ready accessor SigningKey.for(realm: :default) memoised per
+    realm (guidance note honoured). Boot: config/initializers/doorkeeper.rb parses/validates OIDC_SIGNING_KEY
+    and OIDC_SIGNING_KEY_PREVIOUS into config.x.oauth.signing_key_pems (initializers cannot autoload),
+    ephemeral key in local envs, raise elsewhere (verified: missing key -> ''OIDC_SIGNING_KEY is not set'';
+    1024-bit key -> ''at least 2048 bits''; SECRET_KEY_BASE_DUMMY production eager boot -> ok; production
+    with current+previous -> hub:keys:show lists both kids). kid consistency: JWT.configuration.jwk.kid_generator
+    = Thumbprint globally; doorkeeper-jwt secret_key/token_headers are lambdas resolving SigningKey per
+    token (kid header); openid_connect signing_key lambda returns [active, previous] pems - the gem (1.10.5)
+    supports multi-key and lists all in its JWKS. JWKS: WellKnownController#jwks at /.well-known/jwks.json
+    and /oauth/discovery/keys (route defined before the engine, so the discovery document''s jwks_uri
+    lands on it), Cache-Control public max-age=300, ETag/304. Rake: hub:keys:generate (prints base64 PEM
+    + kid, never writes files), hub:keys:show. README env rows + rotation runbook. Specs: 20 new (signing_key_spec
+    10, jwks_spec 8, hub_keys_spec 2) incl. issued access token decoded via JWT::JWK::Set from the served
+    JWKS with the active kid. Verified: rspec 51/0, rubocop clean, brakeman 0.'
