@@ -4,9 +4,9 @@ require "digest"
 
 # GET/POST /oauth/authorize — the HTTP contract of the authorization endpoint
 # (TASK-017): PKCE, redirect allow-list, resource indicator (RFC 8707), client
-# state, disabled accounts and the RFC 6749 §4.1.2.1 error codes. Consent
-# rendering itself is TASK-018; here the GET shows Doorkeeper's consent form and
-# the POST is the user's approval.
+# state, disabled accounts and the RFC 6749 §4.1.2.1 error codes. The consent
+# page and persisted consents are spec/requests/oauth/consent_spec.rb; here the
+# GET shows the consent page and the POST is the user's approval.
 RSpec.describe "OAuth authorization endpoint", type: :request do
   let(:user) { create(:user) }
   let(:redirect_uri) { "https://client.test/callback" }

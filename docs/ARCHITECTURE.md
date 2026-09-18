@@ -63,6 +63,20 @@ client_id). `OAuth::AuthorizationGuard` (into the controller) signs out a disabl
 `access_denied`. Only approved clients pass (`unauthorized_client`). Errors are redirected to the client
 once client and `redirect_uri` are verified, rendered before that — never a redirect to an unverified URI.
 
+**Consent (TASK-018):** `config/oauth_scopes.yml`, wrapped by `OAuth::Scopes`, is the single scope
+catalogue (description, `default`/`admin`/`machine` flags); a spec fails if a scope lacks a description.
+A user's standing consent per client is an `oauth_consents` row (one live row per user and client,
+scopes merged on every grant, `revoked_at` closes it and `OAuth::Tokens.revoke_for` drops that client's
+tokens for the user) behind `OAuth::Consents` (`covers?`/`granted_scopes`/`grant`/`revoke`/`for`).
+Doorkeeper's `skip_authorization` asks `covers?`, so a repeat request for a subset of the consented
+scopes gets its code without a page; a superset or a revoked consent asks again. The page itself is
+`app/views/doorkeeper/authorizations/new.html.erb` driven by `OAuth::ConsentScreen` (prepended into the
+authorizations controller): application layout under the CSP (this controller alone widens `img-src`
+to https for the client logo and `form-action` to the validated redirect target, which browsers check
+against the redirect that follows Allow/Deny), scope descriptions with new scopes highlighted, and
+Allow/Deny forms that carry `resource` and `nonce` as well as Doorkeeper's fields. Only administrators
+may consent to `admin:*` scopes (`invalid_scope` otherwise, in `OAuth::AuthorizationRules`).
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |
