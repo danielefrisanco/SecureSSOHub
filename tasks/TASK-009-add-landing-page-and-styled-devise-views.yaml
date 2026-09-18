@@ -1,11 +1,11 @@
 id: TASK-009
 title: Add landing page and styled Devise views
 type: feat
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/009-add-landing-page-and-styled-devise-views
 depends_on:
 - TASK-006
 context: 'TODO T08 (docs/AUDIT.md §7 E1, §5.3). config/routes.rb has `root "home#index"` but no
@@ -31,4 +31,6 @@ acceptance_criteria:
 - hello_controller.js is removed
 - '`bundle exec rspec` passes'
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:55
+  text: started on task/009-add-landing-page-and-styled-devise-views
