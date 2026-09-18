@@ -1,11 +1,11 @@
 id: TASK-002
 title: Remove stray file, README transcript and TODO stub; add ARCHITECTURE.md
 type: chore
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/002-remove-stray-file-readme-transcript-and
 depends_on: []
 context: 'TODO T01 (docs/AUDIT.md §4, §7 E4). Repo hygiene from the audit: the root file `a` is 2.2 KB
   of
@@ -27,4 +27,6 @@ acceptance_criteria:
   the 'licensing/tenancy is a separate service trusting hub tokens' note
 - No files under app/, config/, db/, lib/, spec/ are changed
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:38
+  text: started on task/002-remove-stray-file-readme-transcript-and
