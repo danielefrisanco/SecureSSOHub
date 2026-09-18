@@ -51,3 +51,12 @@ notes:
     it through OAuth::Metadata.'
 - at: 2026-09-18 20:35
   text: started on task/021-discovery-documents-openid-configuration
+- at: 2026-09-18 20:40
+  text: 'DONE: OAuth::Metadata.document(oidc:) builds both /.well-known/openid-configuration and /.well-known/oauth-authorization-server
+    from HUB_ISSUER + route paths (WellKnownController#render_cached: public max-age=300, ETag/304); routes
+    shadow the engine''s provider action like jwks. jwks_uri now /.well-known/jwks.json (jwks_spec updated).
+    config/initializers/cors.rb: rack-cors (already in Gemfile) GET/OPTIONS from any origin on /.well-known/*
+    and /oauth/discovery/keys only. registration_endpoint omitted until TASK-025. Verified: spec/requests/discovery_spec.rb
+    (every field literal, Host+X-Forwarded-Host spoof, 304, CORS on discovery/jwks, none on /oauth/token,
+    scopes follow OAuth::Scopes); rspec 257/0, rubocop, brakeman clean, isolation spec passes. Commits
+    99a9593, 59ef3b6, e5fdf17. Full rack-cors policy stays T28. Run with POSTGRES_HOST=localhost.'
