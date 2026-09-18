@@ -33,3 +33,13 @@ plan: []
 notes:
 - at: 2026-09-18 15:19
   text: started on task/004-update-gem-lock-drop-unused-gems-make-bu
+- at: 2026-09-18 15:21
+  text: 'DONE: Gemfile/Gemfile.lock updated. Verified: lock resolves jwt_auth_client 0.2.0, rack-jwt-verifier
+    0.3.0, header_guard 0.3.1; omniauth_syncer absent from both files; omniauth-oauth2 + omniauth-ssoprovider
+    in group :development, :test; bundle install OK; BUNDLE_DEPLOYMENT=1 bundle install (into a scratch
+    BUNDLE_PATH) exit 0. Boot: the app does NOT boot yet - RAILS_ENV=test rails runner and rspec both
+    stop at the pre-existing LoadError ''Could not find matching strategy for :ssoprovider'' from config/initializers/omniauth_ssoprovider.rb:9
+    (same as before this task); TASK-005 removes that initializer. With omniauth-ssoprovider now dev/test-only
+    that initializer would also NameError in production until TASK-005 lands - no regression, production
+    did not boot either. omniauth + omniauth-rails_csrf_protection kept (still loaded by the initializer
+    until TASK-005 decides). Test gate: rspec cannot run until TASK-005.'
