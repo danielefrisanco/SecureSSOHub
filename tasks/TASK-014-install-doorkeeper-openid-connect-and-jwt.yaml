@@ -1,7 +1,7 @@
 id: TASK-014
 title: Install Doorkeeper, doorkeeper-openid_connect and doorkeeper-jwt behind a service layer
 type: feat
-status: review
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -99,3 +99,8 @@ notes:
     ships RFC 7591 dynamic client registration (options dynamic_client_registration / authorize_dynamic_client_registration)
     - TASK-025 should build on it; discovery URLs are still request-host based (TASK-021). Verified: rspec
     31/0, rubocop clean, brakeman 0.'
+- at: 2026-09-18 17:01
+  text: 'done — reviewer PASS. Deviation for traceability: config/oauth_scopes.yml already carries the
+    full catalogue planned for TASK-018 (openid, profile, email, offline_access, introspect, admin:clients/users/tokens/audit)
+    rather than a placeholder :admin scope; TASK-018 adds descriptions/UI on top. Found: doorkeeper-openid_connect
+    1.10 provides RFC 7591 registration options (TASK-025).'

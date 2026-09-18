@@ -50,3 +50,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-013 done: Upgrade Ruby to 3.4 and Rails to 8.x; make security scanners blocking
 - Ruby 3.4.10, Rails 8.1.3.1 (load_defaults 8.1), Postgres 17 (new compose volume), Devise 5.0.4, Puma 7.2.1, json pinned 2.x (rack-session 2.1.2 vs json 3); unused Active Storage/Mailbox/Text engines removed; sassc-rails out, sprockets-rails explicit. brakeman 0 (no exclusions), bundler-audit clean, rubocop clean, rspec 23/0, docker build ok. Merged into develop.
+
+## 2026-09-18 — TASK-014 done: Install Doorkeeper, doorkeeper-openid_connect and doorkeeper-jwt behind a service layer
+- Gems + migrations; config verified against gem source (PKCE forced, hashed secrets, 10 min tokens, JWT generator); signing-key boot guard; OIDC issuer from HUB_ISSUER, subject = sso_id; app/services/oauth skeleton + isolation spec; 31 specs. Merged into develop.
