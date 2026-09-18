@@ -5,6 +5,8 @@ ENV['RAILS_ENV'] ||= 'test'
 # uses a random one per run so no key is ever committed.
 require 'securerandom'
 ENV['JWT_SERVICE_SECRET'] ||= SecureRandom.hex(32)
+# Canonical issuer URL used in tokens and discovery documents (see doorkeeper_openid_connect.rb).
+ENV['HUB_ISSUER'] ||= 'https://hub.test'
 require_relative '../config/environment'
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?

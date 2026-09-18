@@ -59,6 +59,14 @@ Rails/ThreeStateBooleanColumn:
   Exclude:
     - "db/migrate/20251025175249_devise_create_users.rb"  # legacy; fixed by a later migration
 
+# Generator-provided migrations (Doorkeeper, OpenID Connect) are kept verbatim.
+Rails/ReversibleMigration:
+  Exclude:
+    - "db/migrate/20260918160001_create_doorkeeper_tables.rb"
+Rails/CreateTableWithTimestamps:
+  Exclude:
+    - "db/migrate/20260918160002_create_doorkeeper_openid_connect_tables.rb"
+
 RSpec/IncludeExamples:
   Enabled: false
 RSpec/MultipleDescribes:

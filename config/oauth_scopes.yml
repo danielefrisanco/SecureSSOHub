@@ -1,0 +1,36 @@
+# The hub's OAuth scope catalogue — the single source read by the Doorkeeper
+# initializer (boot) and, from TASK-018 on, by OAuth::Scopes (consent page,
+# userinfo, MCP). Data lives in YAML rather than an app constant because
+# initializers cannot reference autoloaded code.
+#
+#   description: what the consent page shows the user
+#   admin:       only administrators may grant it
+#   default:     granted implicitly when a client asks for no scope
+#
+# `shared:` because Rails.application.config_for expects per-environment
+# sections; the catalogue is the same everywhere.
+shared:
+  scopes:
+    openid:
+      description: Sign you in
+      default: true
+    profile:
+      description: See your name
+    email:
+      description: See your email address
+    offline_access:
+      description: Stay signed in (refresh token)
+    introspect:
+      description: Verify tokens issued by this hub
+    "admin:clients":
+      description: Manage OAuth clients on your behalf
+      admin: true
+    "admin:users":
+      description: Manage users on your behalf
+      admin: true
+    "admin:tokens":
+      description: Revoke tokens on your behalf
+      admin: true
+    "admin:audit":
+      description: Read the audit log on your behalf
+      admin: true

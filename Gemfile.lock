@@ -108,6 +108,15 @@ GEM
       responders
       warden (~> 1.2.3)
     diff-lcs (1.6.2)
+    doorkeeper (5.9.7)
+      railties (>= 5)
+    doorkeeper-jwt (0.4.5)
+      doorkeeper (>= 5.4)
+      jwt (>= 2.1)
+    doorkeeper-openid_connect (1.10.5)
+      doorkeeper (>= 5.5, < 6.0)
+      jwt (>= 2.5)
+      ostruct (>= 0.5)
     dotenv (3.2.0)
     dotenv-rails (3.2.0)
       dotenv (= 3.2.0)
@@ -213,6 +222,7 @@ GEM
       omniauth (~> 2.1)
       omniauth-oauth2 (~> 1.8)
     orm_adapter (0.5.0)
+    ostruct (0.6.3)
     parallel (2.2.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
@@ -390,6 +400,9 @@ DEPENDENCIES
   brakeman
   bundler-audit
   devise (~> 5.0, >= 5.0.4)
+  doorkeeper (~> 5.9)
+  doorkeeper-jwt (~> 0.4)
+  doorkeeper-openid_connect (~> 1.10)
   dotenv-rails
   factory_bot_rails
   faker

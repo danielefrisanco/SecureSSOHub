@@ -14,3 +14,8 @@
 # ActiveSupport::Inflector.inflections(:en) do |inflect|
 #   inflect.acronym "RESTful"
 # end
+
+# app/services/oauth/ is the OAuth namespace (not Oauth) — see app/services/oauth/clients.rb.
+ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.acronym "OAuth"
+end

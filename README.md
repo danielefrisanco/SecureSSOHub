@@ -47,7 +47,9 @@ All configuration comes from environment variables; there are no fallback values
 |---|---|
 | `DATABASE_URL` / `SECURE_SSO_HUB_DATABASE_PASSWORD` | database connection |
 | `JWT_SERVICE_SECRET` | token signing key, at least 32 bytes — `openssl rand -hex 32` (HMAC until asymmetric keys land); required to boot |
-| `JWT_ISSUER` | `iss` claim of issued tokens (default `secure-sso-hub`) |
+| `JWT_ISSUER` | `iss` claim of tokens minted by jwt_auth_client (default `secure-sso-hub`; legacy, removed in TASK-019) |
+| `HUB_ISSUER` | canonical https URL of this hub, e.g. `https://sso.example.com` — the OAuth/OIDC `iss` and the base of every discovery URL; required outside development/test |
+| `OIDC_SIGNING_KEY` | RSA private key (PEM) that signs access and id tokens; required outside development/test (ephemeral key there) — rotation and `kid` arrive with TASK-015 |
 | `RAILS_MASTER_KEY` | Rails credentials |
 
 ## Task workflow
