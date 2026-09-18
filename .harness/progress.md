@@ -89,3 +89,9 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - Commits 8f888f7, 2a938af, c4f0cf5, 09cca1c. rspec 214/0, rubocop, brakeman clean.
 - Decisions to confirm: strict rotation (no grace window), TTL in seconds from the code, email_verified from confirmed_at (false until confirmable), admin:false on client-only tokens.
 - Review: PASS, no findings. Merged into develop.
+
+## 2026-09-18 — TASK-020 done: Userinfo endpoints behind rack-jwt-verifier
+- `/api/**` guarded by rack-jwt-verifier (config/initializers/rack_jwt_verifier.rb): in-process keys (hub JWKS, active + previous, passed as the ruby-jwt `jwks` decode option next to a placeholder `public_key` — gem cannot take a key set, TODO T48), iss + hub-API aud, RS256, leeway 30, require_token, json_errors, skip everything outside /api; replay_cache off until Redis (T23). Api::BaseController (ActionController::API) adds revoked-token and disabled-user checks (401 invalid_token + RFC 6750 challenge); Api::V1::UserinfoController serves `{id, sub, name, email, email_verified, roles}` with profile/email gating. `/oauth/userinfo` (OIDC) works with the same JWT unchanged (Doorkeeper finds it by hash).
+- jti now chosen on the token row before generation (OAuth::TokenRecord, migration 20260918210000 adds indexed `oauth_access_tokens.jti`); OAuth::Tokens.active?(jti:) is the one-query revocation check; Token#jti is the claim.
+- Interop spec: gem as shipped in JWKS mode (WebMock to_rack to the real stack, `rack.session` stripped — WebMock/rack-session 2 quirk) and public_key mode accepts a hub token. Gem finding recorded as T52: an id_token passes a downstream verifier whose aud is its client_id; a `typ: at+jwt` check is needed in the gem.
+- Commits 4ad8fb7, 46b47a2, 2b6e270, 7fc521a. rspec 240/0, rubocop, brakeman clean.

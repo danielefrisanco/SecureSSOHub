@@ -58,3 +58,28 @@ notes:
     API controller must go through OAuth::Tokens.'
 - at: 2026-09-18 19:44
   text: started on task/020-userinfo-endpoints-protected-by-rack-jwt
+- at: 2026-09-18 19:58
+  text: 'closing: DONE. Files: db/migrate/20260918210000_add_jti_to_oauth_access_tokens.rb (+schema),
+    app/services/oauth/token_record.rb (prepended into Doorkeeper::AccessToken: jti chosen on the row
+    before the JWT is generated, passed to the generator), token_payload.rb (jti from attributes), tokens.rb
+    (active?(jti:) one indexed query; Token#jti now the claim), config/initializers/rack_jwt_verifier.rb,
+    app/controllers/api/base_controller.rb (ActionController::API; revoked -> 401 invalid_token, disabled
+    -> 401 invalid_token, RFC 6750 challenge), app/controllers/api/v1/userinfo_controller.rb, routes,
+    spec/support/hub_access_token.rb, spec/requests/api/v1/userinfo_spec.rb (19), spec/requests/api/rack_jwt_verifier_interop_spec.rb
+    (4), TODO.md (T48 confirmed + new T52), docs/ARCHITECTURE.md par. Commits 4ad8fb7, 46b47a2, 2b6e270,
+    7fc521a. rspec 240/0, rubocop, brakeman clean. Verification: criterion 1 by userinfo_spec (exact JSON,
+    scope gating, roles) and the /oauth/userinfo examples (Doorkeeper finds the JWT by its hash, no change
+    needed); criterion 2 by the 401 examples (missing token -> bare Bearer, wrong aud incl. id_token,
+    wrong iss, expired, tampered, foreign key, revoked, unissued jti, disabled) plus guard-reach examples
+    and a previous-key rotation example; criterion 3 by the interop spec (gem as shipped, JWKS mode over
+    WebMock to_rack against the real stack, and public_key mode); criterion 4 by the suite. Decisions
+    to confirm: (a) gem limitation: public_key takes one key and jwks_url always fetches, so the initializer
+    passes a placeholder public_key plus the hub JWKS as the ruby-jwt jwks decode option (documented pass-through,
+    resolved per request; TODO T48); (b) under SECRET_KEY_BASE_DUMMY a throwaway key keeps the guard mounted;
+    (c) replay_cache off until Redis (T23); (d) OAuth::Tokens.active? checks existence + revoked_at only,
+    expiry is the JWT exp; tokens issued before the jti column are treated as revoked (10-minute lifetime);
+    (e) aud string is built in the initializer from config.x (Resources cannot be autoloaded there). Finding
+    for the gem: an id_token passes rack-jwt-verifier at a downstream service whose aud is its client_id
+    (same iss/key/aud) — only typ tells them apart; recorded as T52 [gem: rack-jwt-verifier]. WebMock
+    to_rack seeds rack.session with a Hash that rack-session 2 cannot commit; the interop spec strips
+    it in a one-line adapter.'
