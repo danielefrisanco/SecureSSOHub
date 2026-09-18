@@ -13,9 +13,10 @@ module Api
 
     private
 
-    # @return [Hash] the verified claims (string keys)
+    # @return [Hash] the verified claims (string keys); empty when the guard
+    #   did not run, which `require_live_token` then refuses
     def token_claims
-      request.env.fetch(RackJwtVerifier::Middleware::RACK_ENV_PAYLOAD_KEY)
+      request.env.fetch(RackJwtVerifier::Middleware::RACK_ENV_PAYLOAD_KEY, {})
     end
 
     # @return [Array<String>] the token's scopes
@@ -34,6 +35,7 @@ module Api
     end
 
     def require_live_token
+      return invalid_token("no verified token") if token_claims.empty?
       return invalid_token("the token has been revoked") unless OAuth::Tokens.active?(jti: token_claims["jti"])
 
       invalid_token("the account is disabled") if current_user&.disabled_at.present?

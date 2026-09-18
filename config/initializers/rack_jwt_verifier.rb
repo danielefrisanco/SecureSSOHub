@@ -33,9 +33,21 @@ active_pem = Rails.application.config.x.oauth.signing_key_pems.first
 active_public_key = OpenSSL::PKey::RSA.new(active_pem || 2048).public_key
 issuer = Rails.application.config.x.oauth.issuer
 
-outside_api = ->(env) { !"#{env['SCRIPT_NAME']}#{env['PATH_INFO']}".match?(%r{\A/api(/|\z)}) }
+# The predicate sees the path exactly as the router will: Journey squeezes
+# repeated slashes and drops a trailing one before matching routes, so
+# "//api/v1/userinfo" is served by the API and must be guarded too.
+outside_api = lambda do |env|
+  path = ActionDispatch::Journey::Router::Utils.normalize_path("#{env['SCRIPT_NAME']}#{env['PATH_INFO']}")
+  !path.match?(%r{\A/api(/|\z)})
+end
 
-Rails.application.config.middleware.use(
+# Mounted outside Warden: the API is bearer-only and its 401s must never be
+# rewritten as a sign-in redirect. Devise only switches Warden's 401
+# interception off when the routes are finalised, which happens lazily in
+# development and test — a first request refused here before the router
+# ever ran would otherwise crash inside Warden ("No Failure App provided").
+Rails.application.config.middleware.insert_before(
+  Warden::Manager,
   RackJwtVerifier::Middleware,
   skip: [outside_api],
   public_key: active_public_key,

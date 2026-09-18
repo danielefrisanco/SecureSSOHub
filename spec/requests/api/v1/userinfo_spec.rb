@@ -169,6 +169,27 @@ RSpec.describe "GET /api/v1/userinfo", type: :request do
       expect(response).to have_http_status(:unauthorized)
       expect(response.headers["www-authenticate"]).to eq("Bearer")
     end
+
+    it "covers the path variants the router normalises to /api" do
+      %w[//api/v1/userinfo ///api/v1/userinfo /api/v1/userinfo/].each do |path|
+        get path
+        expect(response).to have_http_status(:unauthorized), path
+        expect(response.headers["www-authenticate"]).to eq("Bearer"), path
+      end
+    end
+
+    # Devise configures Warden (failure app, intercept_401 off) only once the
+    # routes are finalised, which is lazy in test/development: a 401 from the
+    # guard on the first request of a process must not pass through Warden.
+    it "sits outside Warden so an API 401 never becomes a sign-in flow" do
+      stack = Rails.application.middleware.map(&:klass)
+      expect(stack.index(RackJwtVerifier::Middleware)).to be < stack.index(Warden::Manager)
+    end
+
+    it "still serves a normalised path with a valid token" do
+      get "//api/v1/userinfo", headers: { "Authorization" => "Bearer #{token_for}" }
+      expect(response).to have_http_status(:ok)
+    end
   end
 
   describe "GET /oauth/userinfo (OIDC) with the same token" do
