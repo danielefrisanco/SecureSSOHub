@@ -1,11 +1,11 @@
 id: TASK-004
 title: Update gem lock, drop unused gems, make bundle install succeed
 type: chore
-status: todo
+status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/004-update-gem-lock-drop-unused-gems-make-bu
 depends_on: []
 context: 'TODO T03 (docs/AUDIT.md §3, §5.5). Gemfile.lock pins jwt_auth_client 0.1.0, rack-jwt-verifier
 
@@ -30,4 +30,6 @@ acceptance_criteria:
   Gemfile)'
 - A task note states whether the app boots after this change and which follow-up task fixes it if not
 plan: []
-notes: []
+notes:
+- at: 2026-09-18 15:19
+  text: started on task/004-update-gem-lock-drop-unused-gems-make-bu
