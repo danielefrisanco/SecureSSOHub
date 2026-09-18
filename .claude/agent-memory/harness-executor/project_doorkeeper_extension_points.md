@@ -31,11 +31,18 @@ with the modules living in `app/services/oauth/` (the only app dir allowed to na
   `data: { turbo: false }`.
 - Doorkeeper's URIChecker tolerates extra query params on redirect_uri — the hub adds exact matching.
 - Doorkeeper only stores PKCE challenges when `oauth_access_grants` has `code_challenge` columns (added in TASK-017).
-- Access-token JWTs have no jti until TASK-019: identical claims in the same second collide on the unique
-  `token` column, so use distinct users/clients per token in specs, or `Timecop.travel(1.second.from_now)`.
-- Running: `POSTGRES_HOST=localhost bundle exec rspec` (rails_helper sets HUB_ISSUER=https://hub.test and the
-  JWT env var itself); `bin/rails` needs `JWT_SERVICE_SECRET` and `POSTGRES_HOST` exported. Migrate both
-  dev and `RAILS_ENV=test` before running specs. A migration on an `oauth_*` table must be named `...OAuth...`
+- Token endpoint (TASK-019): `OAuth::TokenRules` is prepended into `AuthorizationCodeRequest` and
+  `RefreshTokenRequest`; override `validate_*` (names fixed by Doorkeeper), `custom_token_attributes_with_data`
+  (extra columns on the created token) and `after_successful_response` (`@response.id_token` is the OIDC
+  accessor). Doorkeeper 5.9 reads the refresh policy from the schema: no `previous_refresh_token` column =
+  immediate revocation under lock (the hub's choice). `access_grant_id` on tokens = token family.
+  Claim blocks in `Doorkeeper::OpenidConnect.configure { claims { claim ... } }` get 3 args
+  (owner, scopes, token) — `&:name` breaks. `at_hash` must hash `plaintext_token`, not the stored hash.
+  doorkeeper-jwt's payload block receives resource_owner_id/application/scopes/expires_in/created_at + the
+  custom attributes; `OAuth::TokenPayload` builds the claims (jti = uuid).
+- Running: `POSTGRES_HOST=localhost bundle exec rspec` (rails_helper sets HUB_ISSUER=https://hub.test);
+  `bin/rails` only needs `POSTGRES_HOST` exported (the legacy JWT env var is gone). Migrate both dev and
+  `RAILS_ENV=test` before running specs. A migration on an `oauth_*` table must be named `...OAuth...`
   (Zeitwerk acronym); model for `oauth_consents` is `OAuthConsent` in `app/models/oauth_consent.rb`.
 - The harness Bash guard blocks command text containing "secret"/"credential" (even inside heredoc text
   or commit bodies) and any path under `tmp/` (gitignored); a chained command with `&&` around
