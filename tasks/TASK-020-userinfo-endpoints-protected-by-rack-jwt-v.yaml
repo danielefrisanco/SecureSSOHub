@@ -1,7 +1,7 @@
 id: TASK-020
 title: Userinfo endpoints protected by rack-jwt-verifier
 type: feat
-status: in_progress
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -83,3 +83,19 @@ notes:
     (same iss/key/aud) — only typ tells them apart; recorded as T52 [gem: rack-jwt-verifier]. WebMock
     to_rack seeds rack.session with a Hash that rack-session 2 cannot commit; the interop spec strips
     it in a one-line adapter.'
+- at: 2026-09-18 20:07
+  text: 'review fix (82e388a): reviewer FAIL on a guard bypass — GET //api/v1/userinfo skipped the middleware
+    because the skip lambda matched raw PATH_INFO while Journey squeezes repeated slashes. Fixed by normalising
+    with ActionDispatch::Journey::Router::Utils.normalize_path, Api::BaseController now answers 401 when
+    no verified payload is present, regression specs for //api, ///api and trailing slash. While reproducing,
+    found an order-dependent failure: Devise configures Warden (failure app, intercept_401=false) only
+    when routes are finalised, lazily in test/dev, so a first-request 401 from the guard crashed in Warden
+    (''No Failure App provided''). The guard now sits before Warden::Manager (insert_before) and a spec
+    pins the order. Production unaffected (eager_load finalises routes at boot). rspec 243/0.'
+- at: 2026-09-18 20:10
+  text: 'review: FAIL (//api bypass) then PASS after 82e388a. rspec 243/0, rubocop, brakeman clean. Decisions
+    for the user: jwks passed as a ruby-jwt decode option next to a placeholder public_key (TODO T48);
+    replay_cache off until Redis (T23); tokens issued before the jti column count as revoked; T52 records
+    that an id_token would pass rack-jwt-verifier at a downstream service using aud = client_id (gem needs
+    a typ at+jwt check). Gem prompts inputs: TODO.md T48/T52, spec/requests/api/rack_jwt_verifier_interop_spec.rb,
+    docs/ARCHITECTURE.md section 3.'

@@ -95,3 +95,4 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - jti now chosen on the token row before generation (OAuth::TokenRecord, migration 20260918210000 adds indexed `oauth_access_tokens.jti`); OAuth::Tokens.active?(jti:) is the one-query revocation check; Token#jti is the claim.
 - Interop spec: gem as shipped in JWKS mode (WebMock to_rack to the real stack, `rack.session` stripped — WebMock/rack-session 2 quirk) and public_key mode accepts a hub token. Gem finding recorded as T52: an id_token passes a downstream verifier whose aud is its client_id; a `typ: at+jwt` check is needed in the gem.
 - Commits 4ad8fb7, 46b47a2, 2b6e270, 7fc521a. rspec 240/0, rubocop, brakeman clean.
+- Review: FAIL on a //api guard bypass, fixed in 82e388a (path normalised like the router, guard moved before Warden::Manager, fail-closed controller); re-review PASS. Merged into develop.
