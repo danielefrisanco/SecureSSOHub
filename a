@@ -1,0 +1,44 @@
+That is an excellent and very practical question. It touches on the core architectural design of a microservices environment.
+The answer is: Licenses, Multi-Tenancy, and complex authorization should be handled by a separate, connected service, not primarily by the SSO application.
+
+
+Why Separate the Concerns?
+
+
+SystemPrimary ResponsibilitySecondary Responsibilities (Avoid)SSO Application (e.g., AuthHub)Authentication (Who are you?)Authorization, Billing, Product FeaturesLicense/Tenancy Service (e.g., Licensing API)Authorization (What can you access?)User registration, Password management
+Here is the breakdown of why separation is better:
+SSO (Authentication): Its sole purpose is to securely verify a user's identity and issue a verifiable token (your JWT). It needs to be fast, reliable, and have minimal, non-critical database dependencies.
+
+
+
+Licensing/Tenancy (Authorization): This service holds complex business logic:
+Which "tenant" (company/organization) does the user belong to?
+Which license tier are they on (Basic, Pro, Enterprise)?
+What permissions do they have (Admin, Editor, Viewer)?
+
+
+
+
+How the Systems Connect (The Flow)
+
+
+If you keep the concerns separate, your flow becomes much cleaner and more scalable:
+User Logs In: User logs into the SSO app (AuthHub).
+Token Issued: AuthHub issues a JWT with only the User ID (sub).
+
+
+Authorization Check (The Key): The internal API:
+Verifies the JWT signature using your rack_jwt_verifier.
+Takes the verified User ID from the token.
+Makes a simple, secure API call to your Licensing Service: "Hey Licensing API, what permissions does User 123 have for Tenant ABC?"
+The Licensing Service returns role: 'Admin', license: 'Pro'.
+The internal API then grants or denies access based on that real-time license data.
+
+
+
+
+Conclusion for our Build
+
+
+We should limit our SSO application to purely Authentication and User Synchronization. We will design the JWT to be flexible enough to carry basic claims, but we will leave the heavy lift of Multi-Tenancy and License checks to another hypothetical API.
+Since you are focusing on the latest standards, let's go with a name that reflects this centralized identity role. How about NexusID? It sounds modern and central.

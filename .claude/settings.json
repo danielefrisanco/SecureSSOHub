@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "harness": {
+      "source": {
+        "source": "directory",
+        "path": "/home/daniele/applications/harness"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "harness@harness": true
+  }
+}
