@@ -5,7 +5,7 @@ status: in_progress
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: task/015-signing-keys-with-kid-and-rotation-jwks-e
+branch: task/015-signing-keys-with-kid-and-rotation-jwks
 depends_on:
 - TASK-014
 context: "TODO T11 (audit §5.1, §5.2, §6.3). Access tokens (doorkeeper-jwt) and id_tokens\n(doorkeeper-openid_connect)\
