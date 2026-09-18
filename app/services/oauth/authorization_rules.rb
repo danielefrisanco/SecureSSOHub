@@ -17,6 +17,8 @@ module OAuth
   #     OAuth::Resources.known, otherwise `invalid_target`. It is persisted on
   #     the grant (Doorkeeper custom_access_token_attributes) and copied to
   #     the token, where TASK-019 turns it into `aud`.
+  #   - Admin scopes (`admin` flag in the catalogue): only an administrator
+  #     may consent to them; anyone else gets `invalid_scope`.
   module AuthorizationRules
     # RFC 7636 §4.2: 43 to 128 unreserved characters.
     CODE_CHALLENGE_FORMAT = /\A[A-Za-z0-9\-._~]{43,128}\z/
@@ -80,6 +82,18 @@ module OAuth
 
     def validate_resource # rubocop:disable Naming/PredicateMethod
       resource.nil? || OAuth::Resources.known?(resource, client_uid: client.uid)
+    end
+
+    def validate_scopes
+      super && admin_scopes_permitted?
+    end
+
+    # A request without a signed-in owner (the disabled-account guard) is
+    # treated as a non-admin: the safe default.
+    def admin_scopes_permitted?
+      return true if resource_owner&.is_admin
+
+      scopes.none? { |scope| OAuth::Scopes.admin?(scope) }
     end
   end
 end
