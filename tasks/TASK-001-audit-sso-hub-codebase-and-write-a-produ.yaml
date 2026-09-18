@@ -1,7 +1,7 @@
 id: TASK-001
 title: Audit SSO hub codebase and write a production-readiness TODO plan
 type: docs
-status: review
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -117,3 +117,7 @@ notes:
   text: 'review FAIL (round 1): gem inventory lacked bundle show install paths and s2 claimed bundle show
     fails (stale after user''s bundle install). Fixed: s3 install-path table added, s2/s1/s5.5 wording
     corrected.'
+- at: 2026-09-18 15:15
+  text: done — reviewer PASS (round 2, after adding bundle show paths). Criteria verified by reading docs/AUDIT.md
+    s3/s6/s7 and TODO.md structure, git diff main...HEAD --stat (docs + approved lock line only); test
+    gate waived (pre-existing boot LoadError, fixed by TASK-005).
