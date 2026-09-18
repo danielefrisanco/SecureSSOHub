@@ -1,0 +1,49 @@
+<%# The consent page (TASK-018). `consent` comes from OAuth::ConsentScreen; %>
+<%# no inline script or style — the page renders under the app's CSP. %>
+<h2><%= t(".title") %></h2>
+
+<section class="consent" id="oauth-consent">
+  <div class="consent-client">
+    <% if consent.logo_uri %>
+      <%= image_tag consent.logo_uri, alt: "", class: "consent-logo", size: "48x48" %>
+    <% end %>
+    <p class="consent-prompt">
+      <%= t(".prompt_html", client_name: tag.strong(consent.client.name)) %>
+    </p>
+  </div>
+
+  <p class="consent-account">
+    <%= t(".signed_in_as_html", email: tag.strong(current_user.email)) %>
+    <%= button_to t(".not_you"), destroy_user_session_path, method: :delete, class: "link-button" %>
+  </p>
+
+  <% if consent.escalation? %>
+    <p><%= t(".escalation") %></p>
+  <% else %>
+    <p><%= t(".able_to") %></p>
+  <% end %>
+  <ul class="consent-permissions" id="oauth-permissions">
+    <% consent.permissions.each do |permission| %>
+      <% highlighted = consent.escalation? && permission.new? %>
+      <li class="<%= 'consent-new' if highlighted %>" data-scope="<%= permission.scope %>">
+        <%= permission.description %>
+        <% if highlighted %>
+          <span class="badge"><%= t(".new") %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+
+  <div class="consent-actions">
+    <%= form_with url: oauth_authorization_path, method: :post, data: { turbo: false } do %>
+      <%= render "doorkeeper/authorizations/authorization_params" %>
+      <%= submit_tag t("doorkeeper.authorizations.buttons.authorize"), class: "button", name: nil %>
+    <% end %>
+    <%= form_with url: oauth_authorization_path, method: :delete, data: { turbo: false } do %>
+      <%= render "doorkeeper/authorizations/authorization_params" %>
+      <%= submit_tag t("doorkeeper.authorizations.buttons.deny"), class: "button button-secondary", name: nil %>
+    <% end %>
+  </div>
+
+  <p class="muted"><%= t(".revoke_note") %></p>
+</section>

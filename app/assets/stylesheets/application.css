@@ -87,3 +87,25 @@ h1, h2 { line-height: 1.2; }
 .flash-notice { border-color: var(--success); color: var(--success); }
 
 #error_explanation { color: var(--danger); }
+
+/* OAuth consent page (app/views/doorkeeper/authorizations/new.html.erb) */
+.consent { padding: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+.consent-client { display: flex; align-items: center; gap: 0.75rem; }
+.consent-logo { width: 48px; height: 48px; border-radius: 6px; object-fit: contain; }
+.consent-prompt { font-size: 1.125rem; margin: 0; }
+.consent-account { color: var(--muted); }
+.consent-permissions { padding-left: 1.25rem; }
+.consent-permissions li { padding: 0.25rem 0; }
+.consent-permissions .consent-new { font-weight: 600; }
+.badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+}
+.consent-actions { display: flex; gap: 0.75rem; margin: 1.5rem 0 1rem; }
+.button-secondary { color: var(--text); background: var(--surface); border: 1px solid var(--border); }

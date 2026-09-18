@@ -101,6 +101,13 @@ Doorkeeper.configure do
   default_scopes(*scope_catalogue.select { |_, v| v[:default] }.keys)
   optional_scopes(*scope_catalogue.reject { |_, v| v[:default] }.keys)
 
+  # The consent page is skipped when the user's standing consent for the
+  # client (OAuth::Consents, TASK-018) already covers every requested scope.
+  # Runs in the controller, so `pre_auth` is at hand.
+  skip_authorization do |resource_owner, client|
+    OAuth::Consents.covers?(user: resource_owner, client_uid: client.uid, scopes: pre_auth.scopes.to_a)
+  end
+
   # The redirect-URI policy (https, http only on loopback, private-use schemes
   # for public clients) lives in OAuth::ClientRules and applies in every
   # environment; Doorkeeper's blanket https rule would refuse loopback http.
@@ -111,14 +118,16 @@ Doorkeeper.configure do
 end
 
 # The hub's client-registry rules (client type, approval workflow, redirect
-# allow-list), authorization-request rules (PKCE, resource indicator) and
-# the disabled-account guard — kept out of app/models and app/controllers so
-# nothing there names Doorkeeper. Wired once, after boot (a to_prepare hook
-# would re-register the validations on every code reload in development).
+# allow-list), authorization-request rules (PKCE, resource indicator, admin
+# scopes), the disabled-account guard and the consent page — kept out of
+# app/models and app/controllers so nothing there names Doorkeeper. Wired
+# once, after boot (a to_prepare hook would re-register the validations on
+# every code reload in development).
 Rails.application.config.after_initialize do
   Doorkeeper::Application.include(OAuth::ClientRules)
   Doorkeeper::OAuth::PreAuthorization.prepend(OAuth::AuthorizationRules)
   Doorkeeper::AuthorizationsController.prepend(OAuth::AuthorizationGuard)
+  Doorkeeper::AuthorizationsController.prepend(OAuth::ConsentScreen)
   Doorkeeper::OAuth::AuthorizationCodeRequest.prepend(OAuth::TokenRules)
   Doorkeeper::OAuth::RefreshTokenRequest.prepend(OAuth::TokenRules)
 end

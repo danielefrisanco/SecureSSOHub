@@ -1,0 +1,5 @@
+<%# The authorization request, carried from GET /oauth/authorize to the Allow/Deny POST %>
+<%# (OAuth::ConsentScreen#consent_request_params). %>
+<% consent.request_params.each do |name, value| %>
+  <%= hidden_field_tag name, value, id: nil %>
+<% end %>

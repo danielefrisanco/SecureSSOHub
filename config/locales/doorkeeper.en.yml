@@ -62,14 +62,20 @@ en:
 
     authorizations:
       buttons:
-        authorize: 'Authorize'
+        authorize: 'Allow'
         deny: 'Deny'
       error:
         title: 'An error has occurred'
+      # The hub's consent page (app/views/doorkeeper/authorizations/new.html.erb, TASK-018).
       new:
         title: 'Authorization required'
-        prompt: 'Authorize %{client_name} to use your account?'
-        able_to: 'This application will be able to:'
+        prompt_html: '%{client_name} wants to:'
+        able_to: 'If you allow it, this application will be able to:'
+        escalation: 'You already allowed this application some of this. The new permissions are marked.'
+        new: 'new'
+        signed_in_as_html: 'You are signed in as %{email}.'
+        not_you: 'Not you? Sign out'
+        revoke_note: 'You can revoke this later in your account.'
       show:
         title: 'Authorization code:'
       form_post:
