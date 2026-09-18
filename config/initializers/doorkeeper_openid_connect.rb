@@ -36,5 +36,18 @@ Doorkeeper::OpenidConnect.configure do
     resource_owner.sso_id
   end
 
-  # Scope-gated claims (name/email) are added in TASK-019.
+  # Scope-gated claims, in the id_token and at userinfo: `profile` → name,
+  # `email` → email and email_verified. Nothing else about the user. The gem
+  # calls each block with (resource_owner, scopes, access_token).
+  claims do
+    claim :name, scope: :profile, response: %i[id_token user_info] do |resource_owner, _scopes, _token|
+      resource_owner.name
+    end
+    claim :email, scope: :email, response: %i[id_token user_info] do |resource_owner, _scopes, _token|
+      resource_owner.email
+    end
+    claim :email_verified, scope: :email, response: %i[id_token user_info] do |resource_owner, _scopes, _token|
+      resource_owner.confirmed_at.present?
+    end
+  end
 end

@@ -205,9 +205,7 @@ RSpec.describe OAuth::Clients do
                                               expires_in: 600)
       grant = Doorkeeper::AccessGrant.create!(application: client, resource_owner_id: user.id, scopes: "openid",
                                               expires_in: 60, redirect_uri: "https://client.test/callback")
-      # Another user: until TASK-019 adds jti, two tokens with the same claims in
-      # the same second would be the same JWT.
-      other = Doorkeeper::AccessToken.create!(application: create(:oauth_client), resource_owner_id: create(:user).id,
+      other = Doorkeeper::AccessToken.create!(application: create(:oauth_client), resource_owner_id: user.id,
                                               scopes: "openid", expires_in: 600)
 
       expect(described_class.revoke(client.uid, by: admin).approval_state).to eq("revoked")

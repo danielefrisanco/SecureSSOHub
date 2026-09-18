@@ -18,8 +18,7 @@ RSpec.describe OAuth::Tokens do
       mine = token_for(user, client)
       my_grant = grant_for(user, client)
       other_user = token_for(create(:user), client)
-      # Same subject in the same second would collide on the JWT until TASK-019 adds a jti.
-      other_client = Timecop.travel(1.second.from_now) { token_for(user, create(:oauth_client)) }
+      other_client = token_for(user, create(:oauth_client))
 
       expect(described_class.revoke_for(user: user, client_uid: client.uid)).to eq(1)
 

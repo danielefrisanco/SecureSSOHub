@@ -1,7 +1,12 @@
 module OAuth
-  # Issued access/refresh tokens as the application sees them. Per-token
-  # revocation and "sign out everywhere" arrive with TASK-022; the token
-  # payload with TASK-019.
+  # Issued access/refresh tokens as the application sees them (the payload
+  # itself is OAuth::TokenPayload). Per-token revocation and "sign out
+  # everywhere" arrive with TASK-022.
+  #
+  # Token family: every access/refresh token remembers the authorization code
+  # it descends from (`access_grant_id`, copied across refresh rotations by
+  # OAuth::TokenRules). A replayed code revokes its descendants; a replayed
+  # refresh token revokes everything the client holds for that user.
   module Tokens
     Token = Struct.new(:jti, :client_uid, :subject_id, :scopes, :resource, :created_at, :expires_at, :revoked_at,
                        keyword_init: true)
@@ -45,6 +50,50 @@ module OAuth
 
       revoke_live(app.access_grants.where(resource_owner_id: user.id),
                   app.access_tokens.where(resource_owner_id: user.id))
+    end
+
+    # Absolute lifetime of a refresh token, counted from the authorization
+    # code it descends from (rotation does not extend it). OAUTH_REFRESH_TOKEN_TTL
+    # in seconds, 30 days by default (config/initializers/doorkeeper.rb).
+    #
+    # @return [ActiveSupport::Duration]
+    def refresh_token_ttl
+      Rails.configuration.x.oauth.refresh_token_ttl
+    end
+
+    # Whether a refresh token is still within its absolute lifetime.
+    #
+    # @param token [Doorkeeper::AccessToken] the token record carrying the refresh token
+    # @return [Boolean]
+    def refresh_token_alive?(token)
+      origin = token.access_grant_id && Doorkeeper::AccessGrant.where(id: token.access_grant_id).pick(:created_at)
+      (origin || token.created_at) + refresh_token_ttl > Time.current
+    end
+
+    # Refresh-token reuse (RFC 6819 §5.2.2.3, OAuth 2.1 §4.3.1): a refresh
+    # token that was already rotated is presented again, so a second party
+    # holds a copy. The whole family the client holds for that user — live
+    # tokens and pending codes — is revoked; the caller answers invalid_grant.
+    #
+    # @param token [Doorkeeper::AccessToken, nil] the record found for the presented refresh token
+    # @return [Boolean] true when reuse was detected (and the family revoked)
+    def detect_reuse!(token) # rubocop:disable Naming/PredicateMethod -- the bang marks the revocation side effect
+      return false unless token&.revoked?
+
+      app = token.application
+      revoke_live(app.access_grants.where(resource_owner_id: token.resource_owner_id),
+                  app.access_tokens.where(resource_owner_id: token.resource_owner_id))
+      true
+    end
+
+    # Authorization-code replay (RFC 6749 §4.1.2, OAuth 2.1 §4.1.3): the code
+    # was redeemed before, so every token issued from it (refresh rotations
+    # included) is revoked; the caller answers invalid_grant.
+    #
+    # @param grant [Doorkeeper::AccessGrant]
+    # @return [Integer] number of access tokens revoked
+    def revoke_issued_from!(grant)
+      revoke_live(Doorkeeper::AccessGrant.none, Doorkeeper::AccessToken.where(access_grant_id: grant.id))
     end
 
     def revoke_live(grants, tokens)

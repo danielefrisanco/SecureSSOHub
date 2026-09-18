@@ -50,6 +50,11 @@ Rails.application.config.x.oauth.issuer =
 scope_catalogue = Rails.application.config_for(:oauth_scopes).fetch(:scopes)
 Rails.application.config.x.oauth.scopes = scope_catalogue
 
+# Absolute lifetime of a refresh token in seconds (OAuth::Tokens), counted
+# from the authorization code it descends from — rotation does not extend it.
+Rails.application.config.x.oauth.refresh_token_ttl =
+  Integer(ENV.fetch("OAUTH_REFRESH_TOKEN_TTL", 30.days.to_i)).seconds
+
 Doorkeeper.configure do
   orm :active_record
 
@@ -70,7 +75,15 @@ Doorkeeper.configure do
 
   access_token_expires_in 10.minutes
   authorization_code_expires_in 1.minute
-  use_refresh_token
+
+  # A refresh token only comes with the `offline_access` scope (public clients
+  # included: the code exchange was PKCE-bound). Rotation is immediate — the
+  # used refresh token is revoked under a row lock — because the schema has
+  # no `previous_refresh_token` column (db/migrate/20260918200000); reuse of
+  # a rotated token and the absolute lifetime are OAuth::TokenRules.
+  use_refresh_token do |context|
+    Doorkeeper::OAuth::Scopes.from_string(context.scopes.to_s).exists?("offline_access")
+  end
 
   grant_flows %w[authorization_code client_credentials]
 
@@ -88,7 +101,8 @@ Doorkeeper.configure do
   pkce_code_challenge_methods %w[S256]
 
   # Resource indicator (RFC 8707): validated by OAuth::AuthorizationRules,
-  # stored on the grant and copied to the token (TASK-019 makes it `aud`).
+  # stored on the grant and copied to the token, where it becomes `aud`
+  # (OAuth::TokenPayload).
   custom_access_token_attributes [:resource]
 
   # RFC 6749 §4.1.2.1: once the client and redirect_uri are verified, errors
@@ -113,16 +127,17 @@ Doorkeeper.configure do
   # environment; Doorkeeper's blanket https rule would refuse loopback http.
   force_ssl_in_redirect_uri false
 
-  # Access tokens are RS256 JWTs (payload defined below; claims completed in TASK-019).
+  # Access tokens are RS256 JWTs (payload: OAuth::TokenPayload, wired below).
   access_token_generator "::Doorkeeper::JWT"
 end
 
 # The hub's client-registry rules (client type, approval workflow, redirect
 # allow-list), authorization-request rules (PKCE, resource indicator, admin
-# scopes), the disabled-account guard and the consent page — kept out of
-# app/models and app/controllers so nothing there names Doorkeeper. Wired
-# once, after boot (a to_prepare hook would re-register the validations on
-# every code reload in development).
+# scopes), the disabled-account guard, the consent page and the token-endpoint
+# rules (replay, refresh reuse and lifetime, id_token at_hash, last_used_at) —
+# kept out of app/models and app/controllers so nothing there names
+# Doorkeeper. Wired once, after boot (a to_prepare hook would re-register the
+# validations on every code reload in development).
 Rails.application.config.after_initialize do
   Doorkeeper::Application.include(OAuth::ClientRules)
   Doorkeeper::OAuth::PreAuthorization.prepend(OAuth::AuthorizationRules)
@@ -132,18 +147,11 @@ Rails.application.config.after_initialize do
   Doorkeeper::OAuth::RefreshTokenRequest.prepend(OAuth::TokenRules)
 end
 
+# Both blocks run per token, so the autoloaded OAuth::TokenPayload and
+# OAuth::SigningKey own the claims and the key material.
 Doorkeeper::JWT.configure do
-  token_payload do |opts|
-    issued_at = Time.now.utc.to_i
-    {
-      sub: User.where(id: opts[:resource_owner_id]).pick(:sso_id) || opts[:application]&.uid,
-      iat: issued_at,
-      exp: issued_at + opts[:expires_in].to_i
-    }
-  end
-
-  # Resolved per token, so the app-level SigningKey (autoloaded) owns the material.
-  token_headers { |_opts| { kid: OAuth::SigningKey.for(realm: :default).kid } }
+  token_payload { |opts| OAuth::TokenPayload.build(opts) }
+  token_headers { |_opts| OAuth::TokenPayload.headers }
   secret_key { |_opts| OAuth::SigningKey.for(realm: :default).private_key.to_pem }
   signing_method :rs256
 end

@@ -3,7 +3,7 @@ require "uri"
 module OAuth
   # Resource indicators (RFC 8707): the identifiers a client may name in the
   # `resource` parameter of an authorization or token request. A resource
-  # ends up as the `aud` of the access token (TASK-019); when a request names
+  # ends up as the `aud` of the access token (OAuth::TokenPayload); when a request names
   # none, `aud` defaults to the client's own client_id.
   #
   # The known resources are the hub's own: its API and the MCP endpoint, both

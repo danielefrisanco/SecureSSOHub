@@ -16,7 +16,7 @@ module OAuth
   #   - Resource indicator (RFC 8707): an optional `resource` must be one of
   #     OAuth::Resources.known, otherwise `invalid_target`. It is persisted on
   #     the grant (Doorkeeper custom_access_token_attributes) and copied to
-  #     the token, where TASK-019 turns it into `aud`.
+  #     the token, where OAuth::TokenPayload turns it into `aud`.
   #   - Admin scopes (`admin` flag in the catalogue): only an administrator
   #     may consent to them; anyone else gets `invalid_scope`.
   module AuthorizationRules

@@ -44,7 +44,10 @@ RSpec.describe "OAuth core installation", type: :request do
     it "matches the hub's policy" do
       expect(config.access_token_expires_in).to eq(10.minutes.to_i)
       expect(config.authorization_code_expires_in).to eq(1.minute.to_i)
-      expect(config.refresh_token_enabled?).to be(true)
+      expect(config.refresh_token_enabled?).to respond_to(:call)
+      refresh_for = ->(scopes) { config.refresh_token_enabled?.call(Doorkeeper::OAuth::Authorization::Context.new(scopes: scopes)) }
+      expect(refresh_for.call(Doorkeeper::OAuth::Scopes.from_string("openid offline_access"))).to be(true)
+      expect(refresh_for.call(Doorkeeper::OAuth::Scopes.from_string("openid profile"))).to be(false)
       expect(config.grant_flows).to contain_exactly("authorization_code", "client_credentials")
       expect(config.force_pkce?).to be(true)
       expect(config.enforce_configured_scopes?).to be(true)
@@ -63,7 +66,7 @@ RSpec.describe "OAuth core installation", type: :request do
       keys = OAuth::SigningKey.for(realm: :default)
       expect(keys.private_key.n.num_bits).to be >= 2048
       expect(Doorkeeper::JWT.configuration.secret_key.call({})).to eq(keys.private_key.to_pem)
-      expect(Doorkeeper::JWT.configuration.token_headers.call({})).to eq(kid: keys.kid)
+      expect(Doorkeeper::JWT.configuration.token_headers.call({})).to eq(kid: keys.kid, typ: "at+jwt")
       expect(Doorkeeper::OpenidConnect.signing_key.kid).to eq(keys.kid)
       expect(Doorkeeper::OpenidConnect.signing_keys.map(&:kid)).to eq(keys.kids)
     end

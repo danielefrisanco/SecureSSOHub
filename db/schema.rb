@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_18_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_18_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -32,16 +32,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_18_190000) do
   end
 
   create_table "oauth_access_tokens", force: :cascade do |t|
+    t.bigint "access_grant_id"
     t.bigint "application_id", null: false
     t.datetime "created_at", null: false
     t.integer "expires_in"
-    t.string "previous_refresh_token", default: "", null: false
     t.string "refresh_token"
     t.string "resource"
     t.bigint "resource_owner_id"
     t.datetime "revoked_at"
     t.string "scopes"
     t.string "token", null: false
+    t.index ["access_grant_id"], name: "index_oauth_access_tokens_on_access_grant_id"
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
     t.index ["resource_owner_id"], name: "index_oauth_access_tokens_on_resource_owner_id"
@@ -123,6 +124,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_18_190000) do
   end
 
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
+  add_foreign_key "oauth_access_tokens", "oauth_access_grants", column: "access_grant_id", on_delete: :nullify
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_applications", "users", column: "owner_id"
   add_foreign_key "oauth_consents", "oauth_applications"
