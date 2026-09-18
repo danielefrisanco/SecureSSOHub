@@ -1,7 +1,7 @@
 id: TASK-002
 title: Remove stray file, README transcript and TODO stub; add ARCHITECTURE.md
 type: chore
-status: in_progress
+status: review
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -30,3 +30,9 @@ plan: []
 notes:
 - at: 2026-09-18 15:38
   text: started on task/002-remove-stray-file-readme-transcript-and
+- at: 2026-09-18 15:39
+  text: 'DONE: ''a'' deleted; README rewritten (description, building blocks, flow, dev setup, env var
+    names, links to docs); docs/ARCHITECTURE.md created with purpose, roles, trust boundaries (incl. the
+    licensing/tenancy-is-a-separate-service note) and a decisions log seeded with decisions taken so far.
+    TODO.md stub was already replaced by TASK-001. Verified: grep ''Phase 1|Part 2'' README = 0 hits;
+    git diff --stat develop...HEAD shows only a, README.md, docs/ARCHITECTURE.md, task file.'
