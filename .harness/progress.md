@@ -12,3 +12,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - Gemfile/Gemfile.lock: jwt_auth_client 0.2.0, rack-jwt-verifier 0.3.0, header_guard 0.3.1; omniauth_syncer removed; omniauth-oauth2 + omniauth-ssoprovider moved to development/test.
 - Commits on task/004-update-gem-lock-drop-unused-gems-make-bu: 3238adc 5e5ddee f7c6878 (+ completion).
 - App still fails to boot on the pre-existing omniauth-ssoprovider LoadError (TASK-005 removes the initializer); test gate waived. User must merge/push.
+
+## 2026-09-18 — TASK-005 done: Remove OmniAuth client wiring from the hub
+- Deleted the ssoprovider initializer, OmniauthCallbacksController, /auth/* routes and the Minitest asserting the strategy; dropped omniauth + omniauth-rails_csrf_protection from the default group. The app boots for the first time; rspec green (1 pending).
+- Commits: 7302741 (refactor), task-file commits. Test DB: docker compose `db` + DATABASE_URL (database.yml host made env-configurable in TASK-006).
+- Merged into develop. main is merged/pushed by the user.

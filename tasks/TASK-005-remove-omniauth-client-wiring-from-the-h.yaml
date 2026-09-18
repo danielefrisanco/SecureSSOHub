@@ -1,7 +1,7 @@
 id: TASK-005
 title: Remove OmniAuth client wiring from the hub
 type: refactor
-status: review
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -41,3 +41,6 @@ notes:
     Test DB: docker compose db started; test run uses DATABASE_URL pointing at localhost because config/database.yml
     hardcodes host ''db'' - making that env-configurable is folded into TASK-006 (first task that changes
     db config). No provider endpoints added.'
+- at: 2026-09-18 15:38
+  text: done — reviewer PASS; verified by rails runner boot, rspec 1 example/0 failures/1 pending, routes
+    and grep for OmniAuth references.
