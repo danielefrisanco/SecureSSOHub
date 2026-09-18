@@ -23,3 +23,6 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 
 ## 2026-09-18 — TASK-003 done: Record authorization-server core decision (Doorkeeper) in ARCHITECTURE.md
 - docs/ARCHITECTURE.md §4: Doorkeeper + doorkeeper-openid_connect behind the service layer, own gem open; per-gem role table; decisions-log entry. Merged into develop.
+
+## 2026-09-18 — TASK-006 done: Fix Devise schema and modules
+- Migration adds encrypted_password, recoverable/confirmable/lockable columns, disabled_at; User modules trackable/lockable/timeoutable, registerable off; database.yml host via POSTGRES_HOST; factory + model + sign-in request specs (8 green). Commit a7116b2. Merged into develop.

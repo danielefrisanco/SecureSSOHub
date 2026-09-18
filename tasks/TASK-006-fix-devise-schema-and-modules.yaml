@@ -1,7 +1,7 @@
 id: TASK-006
 title: Fix Devise schema and modules
 type: fix
-status: review
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-18'
@@ -49,3 +49,5 @@ notes:
     user_session_path (sign_in_count 1) and rejects bad password (failed_attempts 1); rails_helper includes
     FactoryBot syntax + Devise integration helpers (TASK-008 completes the rest). Verified: bundle exec
     rspec -> 8 examples, 0 failures.'
+- at: 2026-09-18 15:45
+  text: done — reviewer PASS; verified by migration/schema inspection and rspec 8/0.
