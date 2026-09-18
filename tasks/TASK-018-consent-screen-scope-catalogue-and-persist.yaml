@@ -1,11 +1,11 @@
 id: TASK-018
 title: Consent screen, scope catalogue and persisted consents
 type: feat
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-09-18'
-branch: null
+branch: task/018-consent-screen-scope-catalogue-and-persi
 depends_on:
 - TASK-017
 context: 'TODO T15 (audit §5.3, §6.3). When a user is sent to /oauth/authorize by a client they have not
@@ -84,8 +84,9 @@ context: 'TODO T15 (audit §5.3, §6.3). When a user is sent to /oauth/authorize
 
   '
 acceptance_criteria:
-- config/oauth_scopes.yml (read at boot by the Doorkeeper initializer) wrapped by OAuth::Scopes is the single
-  catalogue (id, user-facing description, admin/machine/default flags); a spec fails if a scope lacks a description
+- config/oauth_scopes.yml (read at boot by the Doorkeeper initializer) wrapped by OAuth::Scopes is the
+  single catalogue (id, user-facing description, admin/machine/default flags); a spec fails if a scope
+  lacks a description
 - oauth_consents table + OAuth::Consents (covers?/grant/revoke) with specs; Doorkeeper skip_authorization
   consults it so repeat authorizations for covered scopes skip the page
 - Consent page renders inside the application layout under the CSP, lists the client and scope descriptions,
@@ -116,3 +117,5 @@ notes:
     assume no consent skip. (5) Locale file config/locales/doorkeeper.en.yml already exists (edit, do
     not regenerate). (6) Access-token JWTs have no jti until TASK-019: identical claims in the same second
     collide on the unique token column — use distinct users/clients or Timecop.travel in specs.'
+- at: 2026-09-18 18:14
+  text: started on task/018-consent-screen-scope-catalogue-and-persi
