@@ -33,8 +33,12 @@ COPY . .
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# Precompile assets without production configuration: SECRET_KEY_BASE_DUMMY
+# skips the signing-key requirement and HUB_ISSUER gets a reserved (.invalid)
+# placeholder. The runtime container still needs the real values to boot.
+RUN SECRET_KEY_BASE_DUMMY=1 \
+    HUB_ISSUER=https://asset-precompile.invalid \
+    ./bin/rails assets:precompile
 
 
 # Final stage for app image
