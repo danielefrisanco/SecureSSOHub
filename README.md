@@ -46,8 +46,8 @@ All configuration comes from environment variables; there are no fallback values
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` / `SECURE_SSO_HUB_DATABASE_PASSWORD` | database connection |
-| `JWT_SERVICE_SECRET` | token signing key (until asymmetric keys land) |
-| `JWT_ISSUER` | `iss` claim of issued tokens |
+| `JWT_SERVICE_SECRET` | token signing key, at least 32 bytes — `openssl rand -hex 32` (HMAC until asymmetric keys land); required to boot |
+| `JWT_ISSUER` | `iss` claim of issued tokens (default `secure-sso-hub`) |
 | `RAILS_MASTER_KEY` | Rails credentials |
 
 ## Task workflow

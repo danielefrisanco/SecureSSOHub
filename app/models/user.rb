@@ -18,6 +18,18 @@ class User < ApplicationRecord
   # before the user record is saved.
   before_validation :set_sso_id, on: :create
   
+  # Custom claims embedded by JwtAuthClient::Issuable#to_jwt. The registered
+  # claims (iss, sub, iat, nbf, exp, jti) are set by the gem from its
+  # configuration; `sub` is taken from `user_id`, i.e. the stable sso_id.
+  def jwt_claims
+    {
+      user_id: sso_id,
+      email: email,
+      name: name,
+      admin: is_admin
+    }
+  end
+
   private
   
   # Generates a unique UUID if sso_id is not already present.
@@ -26,21 +38,4 @@ class User < ApplicationRecord
     self.sso_id = SecureRandom.uuid unless self.sso_id.present?
   end
 
-  # REQUIRED BY JWT AUTH CLIENT: Defines the payload (claims) inside the JWT.
-  # The SSO Hub signs this payload.
-  def jwt_payload
-    {
-      'user_id' => self.sso_id,
-      'email' => self.email,
-      'iat' => Time.now.to_i,        # Issued At Time
-      'exp' => 1.hour.from_now.to_i, # Expiration Time (Tokens should be short-lived)
-      'iss' => 'SecuressoHub'        # Issuer ID (The Hub's ID)
-    }
-  end
-
-  # REQUIRED BY JWT AUTH CLIENT: Provides the secret key for signing the token.
-  def jwt_secret
-    # Fetches the secret from the encrypted credentials file.
-    Rails.application.credentials.sso_hub_client_secret
-  end
 end

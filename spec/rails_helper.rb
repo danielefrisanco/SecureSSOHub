@@ -1,6 +1,10 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
+# The JwtAuthClient initializer refuses to boot without a signing key; the suite
+# uses a random one per run so no key is ever committed.
+require 'securerandom'
+ENV['JWT_SERVICE_SECRET'] ||= SecureRandom.hex(32)
 require_relative '../config/environment'
 # Prevent database truncation if the environment is production
 abort("The Rails environment is running in production mode!") if Rails.env.production?
