@@ -83,3 +83,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - CSP decision to confirm: the authorizations controller alone widens img-src to https: (client logo) and form-action to the validated redirect target (browsers check form-action against the post-submit redirect). Not done (context only): machine-client scope allow-list for the machine grant flow.
 - Commits a7fe653, e5409bc, 99b08c4, c18e6ae, b44252a. rspec 182/0, rubocop, brakeman clean.
 - Review: PASS, no findings. Merged into develop.
+
+## 2026-09-18 — TASK-019 done: Token endpoint — JWT access tokens, refresh rotation, id_token, client auth
+- OAuth::TokenPayload builds the RS256 access token (iss, sub, aud = resource|client_id, azp, scope+scopes, jti, iat/nbf/exp, scope-gated name/email/email_verified, admin; header kid + typ at+jwt). OAuth::TokenRules: code replay → invalid_grant + revoke descendants (new oauth_access_tokens.access_grant_id = token family), refresh reuse → OAuth::Tokens.detect_reuse! revokes the (user, client) family, absolute refresh TTL (OAUTH_REFRESH_TOKEN_TTL, 30 days from the code), last_used_at touched. Refresh tokens only with offline_access; immediate rotation by dropping previous_refresh_token (Doorkeeper's deferred revocation never fires without its bearer lookup). OAuth::IdToken adds at_hash over the plaintext JWT; OIDC claims scope-gated. Legacy jwt_auth_client path removed (gem dropped; bin/rails no longer needs the JWT env var).
+- Commits 8f888f7, 2a938af, c4f0cf5, 09cca1c. rspec 214/0, rubocop, brakeman clean.
+- Decisions to confirm: strict rotation (no grace window), TTL in seconds from the code, email_verified from confirmed_at (false until confirmable), admin:false on client-only tokens.

@@ -138,3 +138,33 @@ notes:
     .claude/agent-memory/harness-executor notes that say bin/rails needs it.'
 - at: 2026-09-18 19:24
   text: started on task/019-token-endpoint-jwt-access-tokens-refresh
+- at: 2026-09-18 19:39
+  text: 'DONE. Commits 8f888f7 (refactor: legacy jwt_auth_client path removed — User mixin/jwt_claims,
+    initializer, to_jwt specs, JWT env var in rails_helper/ci.yml/compose, gem dropped from Gemfile since
+    nothing used it), 2a938af (feat: token endpoint), c4f0cf5 (docs), 09cca1c (agent memory). Files: app/services/oauth/token_payload.rb
+    (claims exactly per table; jti uuid; typ at+jwt + kid), app/services/oauth/id_token.rb (at_hash over
+    the plaintext JWT — the gem''s own variant hashes the stored SHA-256), app/services/oauth/token_rules.rb
+    (replay → invalid_grant + revoke descendants; refresh reuse → Tokens.detect_reuse! revokes the (user,
+    client) family; absolute refresh TTL; access_grant_id copied to every issued token; id_token swap
+    + last_used_at in after_successful_response), app/services/oauth/tokens.rb (refresh_token_ttl, refresh_token_alive?,
+    detect_reuse!, revoke_issued_from!), config/initializers/doorkeeper.rb (use_refresh_token block on
+    offline_access, OAUTH_REFRESH_TOKEN_TTL → config.x.oauth.refresh_token_ttl, doorkeeper-jwt wired to
+    TokenPayload), doorkeeper_openid_connect.rb (claims name/email/email_verified for id_token+userinfo,
+    scope-gated), migration 20260918200000 (oauth_access_tokens.access_grant_id FK nullify; previous_refresh_token
+    dropped). Doorkeeper 5.9.7 semantics verified in the gem source: use_refresh_token accepts a context
+    block (scopes); refresh_token_revoked_on_use? = column previous_refresh_token exists → deferred revocation
+    that only fires via Doorkeeper''s own bearer lookup (never used here: rack-jwt-verifier verifies),
+    so the column was dropped to get immediate rotation under lock; a replayed code fails validate_grant
+    (grant.accessible?) but Doorkeeper does NOT revoke tokens issued from it (no token↔grant link) — added
+    via access_grant_id; by_uid_and_secret already refuses public+secret and confidential-without-secret
+    (invalid_client); doorkeeper-jwt opts carry custom attributes (resource) via attributes_for_token_generator.
+    Decisions to confirm: (1) previous_refresh_token column dropped (strict rotation, no grace window
+    for concurrent refreshes); (2) OAUTH_REFRESH_TOKEN_TTL is seconds, counted from the code''s created_at
+    (absolute across rotations); (3) email_verified = users.confirmed_at.present? (always false until
+    confirmable is enabled); (4) admin claim present (false) on every token including client-only ones;
+    (5) id_token on refresh carries at_hash but no nonce. Specs: token_spec 35 examples (public+confidential
+    exchange, basic/post, exact claim set with/without scopes, admin, aud from resource, jti uniqueness
+    in the same second, refresh only with offline_access, rotation, reuse → family revoked, 30-day absolute
+    expiry, id_token nonce/auth_time/at_hash/JWKS, replay + revocation, wrong verifier/redirect_uri/client/secret,
+    public with secret, pending client, TASK-017 cases kept without the Timecop workaround); token_payload_spec
+    (client-only token). rspec 214/0, rubocop clean, brakeman clean, isolation spec green.'
