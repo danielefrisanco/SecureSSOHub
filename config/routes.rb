@@ -1,9 +1,12 @@
 Rails.application.routes.draw do
-  # JWKS is served by the hub (cache headers, rotation) at both the standard
-  # path and the one the OIDC engine advertises; defined first so it shadows
-  # the engine's own keys action.
+  # JWKS and the discovery documents are served by the hub (cache headers,
+  # rotation, URLs from HUB_ISSUER); defined first so they shadow the OIDC
+  # engine's own keys/provider actions at the same paths.
   get "/.well-known/jwks.json", to: "well_known#jwks", as: :jwks
   get "/oauth/discovery/keys", to: "well_known#jwks"
+  get "/.well-known/openid-configuration", to: "well_known#openid_configuration", as: :openid_configuration
+  get "/.well-known/oauth-authorization-server", to: "well_known#oauth_authorization_server",
+                                                 as: :oauth_authorization_server
 
   use_doorkeeper_openid_connect
   use_doorkeeper
