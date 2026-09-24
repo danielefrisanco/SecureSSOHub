@@ -60,3 +60,8 @@ notes:
     are implemented (spec/requests/oauth/authorize_spec.rb has reusable helpers); WebMock is configured
     with allow_localhost and to_rack works; HUB_ISSUER is https://hub.test in specs (rails_helper). Consent
     page comes from TASK-018, /api/v1/userinfo from TASK-020.'
+- at: 2026-09-24 12:00
+  text: 'omniauth_syncer 0.2.0 ships two hand-built fixtures (../omniauth_syncer/spec/fixtures/auth_hash_0_1_2.json
+    and auth_hash_0_2_0.json, the latter with extra.scope). This spec runs strategy 0.1.2, so compare the
+    auth hash it renders against auth_hash_0_1_2.json and record any difference as a T45 note; the 0.2.0
+    fixture is checked only after the hub bumps to omniauth-ssoprovider 0.2.0.'
