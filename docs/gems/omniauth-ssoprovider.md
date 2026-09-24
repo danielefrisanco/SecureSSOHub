@@ -161,7 +161,18 @@ A client may only request scopes it was registered with.
    info schema is not standard, so put it in `extra`), plus `nickname` left
    nil. `extra`: `raw_info`, `access_token`, `refresh_token`, `expires_at`
    (Integer epoch), `id_token` (claims), `roles` (Array, `[]` default),
-   `email_verified`.
+   `email_verified`, and `scope` (Array of the **granted** scopes, from the
+   token response's `scope` parameter, which the hub always sends). Consumers
+   such as `omniauth_syncer` need `scope` to tell "scope not granted" (so
+   `info.email` is nil) from "value cleared on the hub"; without it they must
+   fall back to key presence in `raw_info`.
+   **Roles gap (open, T44):** the hub sends `roles` only in
+   `/api/v1/userinfo`. The id_token and `/oauth/userinfo` carry no roles (the
+   access token has an `admin` boolean), so with `userinfo: false` or
+   `user_info_url: "/oauth/userinfo"` a hub admin would appear as `roles: []`.
+   Do not let `[]` stand for "unknown": either leave `extra.roles` nil when the
+   source had no roles and document it, or wait for the hub to add a roles
+   claim to the id_token / OIDC userinfo. Report the choice in the note back.
 7. `uid`: `raw_info['sub'] || raw_info['id']`, stringified.
 8. Failure handling: wrap `raw_info` so a non-2xx from userinfo calls
    `fail!(:invalid_credentials, error)`; map the authorize-callback `error`

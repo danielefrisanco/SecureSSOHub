@@ -35,7 +35,8 @@ After the changes requested in `omniauth-ssoprovider.md`, a hub login yields:
     "expires_at"     => 1758200000,
     "id_token"       => { "sub" => "…", "iss" => "…", "aud" => "…", "nonce" => "…", … },
     "roles"          => ["admin"],                # or []
-    "email_verified" => false
+    "email_verified" => false,
+    "scope"          => ["openid", "profile", "email"] # granted scopes (requested, T44)
   }
 }
 ```
@@ -44,6 +45,20 @@ After the changes requested in `omniauth-ssoprovider.md`, a hub login yields:
 carries `"admin"` only for hub administrators; it is the hub's *assertion*,
 not an entitlement system (licensing/authorization live in a separate service
 in this architecture).
+
+Caveats confirmed against the hub code (2026-09-24):
+
+- `extra.scope` is requested from omniauth-ssoprovider 0.2.0 and not yet
+  implemented. Until it exists, tell "scope not granted" from "value cleared"
+  by key presence in `raw_info`: `/api/v1/userinfo` omits `name` without
+  `profile` and `email`/`email_verified` without `email`; with the scope the
+  key is always present (`name` may be `null`, `email` is never blank).
+- `roles` comes only from `/api/v1/userinfo`; the id_token and
+  `/oauth/userinfo` carry none (open gap, T44). Opt-in role mappings must
+  document that they need `user_info_url: "/api/v1/userinfo"`.
+- `email_verified` is always `false` until the hub enables `:confirmable`
+  (hub TODO T26), so an email-based `:link` policy is inert against the hub
+  for now.
 
 ## Findings against 0.1.0
 
@@ -106,10 +121,15 @@ in this architecture).
 ## Verifying against the hub
 
 There is no hub-side spec for this gem, and there should not be one (it is
-client-side). Verify with a fixture auth hash copied from the hub's
-`spec/integration/omniauth_ssoprovider_flow_spec.rb` output once TASK-023
-lands (the JSON the client app renders in that spec is exactly the auth hash
-above). Optionally add an example client app under `examples/` in this repo
+client-side). Build the spec fixtures by hand: one from the auth hash above
+(the omniauth-ssoprovider 0.2.0 target shape) and one in the 0.1.2 shape
+(`extra` holds only `raw_info` and `access_token`; `uid` is `raw_info["id"]`).
+The default mappings (`uid`, `info.email`, `info.name`) must work with both.
+The hub's TASK-023 spec (`spec/integration/omniauth_ssoprovider_flow_spec.rb`)
+runs the installed strategy 0.1.2 mounted by class, so its output is the 0.1.2
+shape, **not** the hash above; it becomes the 0.2.0 shape only after the hub
+bumps to strategy 0.2.0, and that is when to compare the fixture against real
+output. Optionally add an example client app under `examples/` in this repo
 that mounts `omniauth-ssoprovider` + `omniauth_syncer` against a running hub
 (`SSO_HUB_URL`, client id/secret from the hub admin) as living documentation.
 
