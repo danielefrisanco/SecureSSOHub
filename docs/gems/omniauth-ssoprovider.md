@@ -170,9 +170,13 @@ A client may only request scopes it was registered with.
    `/api/v1/userinfo`. The id_token and `/oauth/userinfo` carry no roles (the
    access token has an `admin` boolean), so with `userinfo: false` or
    `user_info_url: "/oauth/userinfo"` a hub admin would appear as `roles: []`.
-   Do not let `[]` stand for "unknown": either leave `extra.roles` nil when the
-   source had no roles and document it, or wait for the hub to add a roles
-   claim to the id_token / OIDC userinfo. Report the choice in the note back.
+   `omniauth_syncer` 0.2.0's `Mappings::ADMIN` then revokes admin for real
+   admins. Do not let `[]` stand for "unknown". Options: leave the
+   `extra.roles` key out when the source sent no roles (`ADMIN` leaves the
+   attribute untouched when the key is absent — the syncer's preference), fall
+   back to the access token's `admin` claim, or wait for the hub to add a
+   roles claim to the id_token / OIDC userinfo. Report the choice in the note
+   back.
 7. `uid`: `raw_info['sub'] || raw_info['id']`, stringified.
 8. Failure handling: wrap `raw_info` so a non-2xx from userinfo calls
    `fail!(:invalid_credentials, error)`; map the authorize-callback `error`
