@@ -90,6 +90,7 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 | T41 | MCP user tools: `whoami`, `get_profile`, `update_profile`, `list_grants`, `revoke_grant`, `list_sessions`, `revoke_sessions`, `integration_snippet`; specs | feat | high | [app] | T39 | §6.1 |
 | T42 | MCP admin tools: clients CRUD + rotate + approve, users list/get/disable/set_admin, tokens list/revoke, `search_audit_log`, `introspect_token`; MCP resources for discovery/JWKS/clients; specs | feat | high | [app] | T41 | §6.1 |
 | T43 | Agent onboarding docs: how an MCP client registers, authorizes and calls the hub (in docs/ and the developer page) | docs | medium | [app] | T42 | §6 |
+| T54 | Production-readiness review before calling the roadmap done (run `/harness:audit`, one TODO row per gap). **Repo completeness**: LICENSE, SECURITY.md (disclosure), CONTRIBUTING, CHANGELOG + tagged releases, dependency update bot, operator runbook (deploy, key rotation, backup/restore). **Performance**: load test `/oauth/authorize`, `/oauth/token`, userinfo, JWKS/discovery with p95 targets; N+1 and missing-index check; Puma/DB pool sizing; cache hit rates. **Observability**: structured logs correlated by request id + `azp` + `sub`, no tokens/codes/passwords/PII in logs (`filter_parameters`), metrics + alerting (error rate, token failures, lockouts), tracing, audit-log coverage (T25). **Data protection**: PII inventory, encryption at rest (Active Record Encryption where useful, hashed secrets/tokens verified), TLS/HSTS, retention and purge of expired tokens/grants/codes/logs, user data export + deletion, encrypted backups, least-privilege DB role | docs | high | [app] | all of Phase 4 | §5 |
 
 ## Future (not scheduled — see docs/ARCHITECTURE.md §6)
 
@@ -98,6 +99,7 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 | T49 | Multiple realms (Keycloak-style): `realms` table, realm FK on users/clients/consents/keys, per-realm issuer `…/realms/<name>`, keys, branding, discovery; Phase 1 keeps one implicit default realm behind single accessors so this stays additive | feat | low | [app] | Phase 4 | ARCH §6 |
 | T50 | Kubernetes deployment (manifests/Helm, probes, HPA, secrets store, managed Postgres/Redis) derived from the Dockerfile/compose; prerequisites are T29's readiness endpoint, JSON logs and env-only config | chore | low | [app] | T29 | ARCH §6 |
 | T51 | Federation: the hub as OmniAuth client of upstream IdPs (where `omniauth_syncer` returns) | feat | low | [app] | T49 | ARCH §6 |
+| T53 | Tenants / organizations inside a realm: orgs, memberships + org roles, org-owned OAuth clients, an `org` claim in tokens/userinfo, org admin UI. Distant future; first revisit the 2026-09-18 decision that tenancy lives in a separate service (ARCHITECTURE decision log) and decide hub vs that service | feat | low | [app] | Phase 4 | ARCH §6 |
 
 ## Gem follow-ups (other repos, not blocking the hub)
 
