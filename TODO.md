@@ -62,6 +62,7 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 |---|---|---|---|---|---|---|
 | T23 | **Redis** (decided) as `Rails.cache` + compose service; enable rack-jwt-verifier `replay_cache` on `/api` and `/mcp`; authorization-code single-use via cache/DB | feat | high | [app] | T17 | §5.2, §10 Q2 |
 | T24 | Rate limiting (rack-attack or equivalent) on `/oauth/token`, sign-in, password reset, `/oauth/register` (replaces the DB cap from TASK-025); specs | feat | high | [app] | T23 | §5.1 |
+| T55 | Configurable account lockout: Devise `maximum_attempts`, `unlock_in` and `unlock_strategy` from env (e.g. `DEVISE_MAX_ATTEMPTS`, `DEVISE_UNLOCK_IN`), defaulting to today's hardcoded Devise defaults (20 attempts, 1 hour, email + time); a lock never revokes OAuth tokens (TASK-022 decision: failed attempts can be triggered by anyone); specs | feat | medium | [app] | T05 | §5.1 |
 | T25 | Audit log table + service (sign-in, grant, token issue/revoke, admin actions, MCP tool calls) with `azp`/client attribution; hook points already exist in `OAuth::Clients`/`OAuth::Tokens`; specs | feat | high | [app] | T16 | §5.1, §6.3 |
 | T26 | Devise hardening: password length ≥ 12 + pwned-password check, `:confirmable` with a real mailer config, `mailer_sender`; specs. Until this lands `email_verified` is always false, so omniauth_syncer's `on_conflict: :link` always raises against the hub | feat | medium | [app] | T05, T10 | §5.1, §10 Q3 |
 | T27 | TOTP 2FA for admins (enrolment UI + sign-in step); specs | feat | medium | [app] | T26 | §5.1 |
