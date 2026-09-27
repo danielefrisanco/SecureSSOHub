@@ -40,11 +40,15 @@ Endpoints, relative to the hub issuer (`client_options.site`, e.g. `https://hub.
   are rendered by the hub (never redirected). Error codes the strategy will
   see on its callback: `access_denied` (user denied consent, or account
   disabled), `invalid_scope` (scope outside the client's registration or the
-  catalogue, or a non-admin asking for `admin:*`), `unauthorized_client`
-  (client pending approval or revoked), `invalid_request` (PKCE problems),
-  `invalid_target`, `unsupported_response_type`.
+  catalogue, or a non-admin asking for `admin:*`), `invalid_request` (PKCE
+  problems), `invalid_target`, `unsupported_response_type`. A client pending
+  approval or revoked gets `unauthorized_client` **rendered on the hub's own
+  page, never redirected** (an unapproved client's redirect URI is not
+  trusted), so the strategy never sees it (verified by the hub's TASK-023).
 - `POST /oauth/token` — `grant_type=authorization_code`, `code`,
-  `redirect_uri`, `code_verifier`, client authentication: confidential clients
+  `redirect_uri` (**identical** to the one sent to `/oauth/authorize`: the bare
+  callback URL, no `?code=…&state=…`; the hub still tolerates an extra query
+  string here and will stop — hub TODO T56), `code_verifier`, client authentication: confidential clients
   via HTTP Basic (`client_secret_basic`, preferred) **or** body
   (`client_secret_post`); public clients send `client_id` only and **must not**
   send a secret (a public client presenting one is `invalid_client`). Response:
@@ -126,6 +130,14 @@ A client may only request scopes it was registered with.
     `gem "omniauth-ssoprovider"` without `require:` loads nothing.
     `required_ruby_version` spans `>= 2.7 < 4`; `omniauth-test ~> 0.0.11` is
     an odd dev dependency.
+11. **`redirect_uri` at the token endpoint carries the callback query**
+    (found by the hub's TASK-023). `omniauth-oauth2` 1.9 passes OmniAuth's
+    `callback_url` — `full_host + callback_path + query_string` — to the code
+    exchange, so the token request says
+    `redirect_uri=https://app/auth/ssoprovider/callback?code=…&state=…` while
+    the authorization request said the bare URL. The hub accepts it today
+    only because Doorkeeper drops the query when comparing; RFC 6749 §4.1.3
+    requires identical values and the hub will enforce it (T56).
 
 ## Requested changes
 
@@ -181,9 +193,9 @@ A client may only request scopes it was registered with.
 8. Failure handling: wrap `raw_info` so a non-2xx from userinfo calls
    `fail!(:invalid_credentials, error)`; map the authorize-callback `error`
    parameter through `omniauth-oauth2`'s existing `CallbackError` (it already
-   does `fail!(error, …)`; verify `access_denied`, `unauthorized_client`,
-   `invalid_scope` reach `omniauth.error.type`). Document what each hub error
-   means for the app.
+   does `fail!(error, …)`; verify `access_denied` and `invalid_scope` reach
+   `omniauth.error.type` — `unauthorized_client` never reaches the callback).
+   Document what each hub error means for the app.
 9. Token endpoint authentication: keep `oauth2`'s default `auth_scheme:
    :basic_auth` (the hub prefers `client_secret_basic`); for public clients
    document `client_secret: nil` and make sure no empty Basic header is sent
@@ -210,18 +222,27 @@ A client may only request scopes it was registered with.
     hash, how to use `extra['access_token']` against a service protected by
     `rack-jwt-verifier`, refresh tokens (the strategy does not refresh; show
     the `oauth2` snippet), and the error table.
+12. Exact `redirect_uri` in the code exchange (finding 11): override
+    `callback_url` to `full_host + callback_path` (no `query_string`), or
+    honour an explicit `redirect_uri` option first; a unit spec asserts the
+    token request's `redirect_uri` equals the authorization request's.
 
 ## Verifying against the hub
 
 The hub's TASK-023 spec (`spec/integration/omniauth_ssoprovider_flow_spec.rb`,
-to be written on the hub side) mounts the strategy in a minimal Rack client
-app, routes the strategy's HTTP calls to the in-process hub with WebMock
-`to_rack`, drives sign-in and consent with an integration session, and feeds
-the code+state redirect back to the client callback. It asserts `uid ==
+plumbing in `spec/support/omniauth_client_flow.rb`) mounts 0.1.2 in a minimal
+Rack client app, routes the strategy's HTTP calls to the in-process hub with
+WebMock `to_rack`, drives sign-in and consent with an integration session, and
+feeds the code+state redirect back to the client callback. It asserts `uid ==
 user.sso_id`, `info.name/email`, `extra.access_token` decodes with the hub
-JWKS, and the negative flows (tampered state, denied consent, pending client).
-Until this gem is released it mounts by class; after the release the hub bumps
-the gem and switches to `provider :ssoprovider`.
+JWKS, the 0.1.2 auth-hash shape (`provider`, `uid`, `info`, `credentials`,
+`extra.raw_info`/`access_token`), and the negative flows (tampered state →
+`csrf_detected`, denied consent → `access_denied`, pending client stopped at
+the hub). With 0.1.2 the host app has to supply what findings 1, 2, 4 and 5
+describe: mount by class, `pkce: true`, `scope: "openid profile email"`,
+`authorize_params: { resource: "https://hub.test/api" }`. After the release the
+hub bumps the gem, switches to `provider :ssoprovider` and drops those options
+where the new defaults cover them.
 
 To try the gem against the hub locally before releasing:
 
@@ -236,7 +257,7 @@ cd ../SecureSSOHub && bundle install && POSTGRES_HOST=localhost bundle exec rspe
 
 ## Definition of done
 
-- Findings 1–10 addressed, spec suite green, rubocop clean, README and
+- Findings 1–11 addressed, spec suite green, rubocop clean, README and
   CHANGELOG updated, 0.2.0 built.
 - A note back to the hub with: the final option names and defaults
   (`pkce`, `scope`, `resource`, `userinfo`, `issuer`), how a nil client secret
