@@ -1,11 +1,11 @@
 id: TASK-022
 title: Token revocation, introspection and sign-out-everywhere service
 type: feat
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
-updated: '2026-09-18'
-branch: null
+updated: '2026-09-27'
+branch: task/022-token-revocation-introspection-and-sign
 depends_on:
 - TASK-019
 context: 'TODO T19 (audit §5.4, §6.3). Doorkeeper provides `POST /oauth/revoke` (RFC 7009) and
@@ -77,8 +77,8 @@ acceptance_criteria:
 - POST /oauth/introspect follows RFC 7662, restricted to authorised confidential clients, returns the
   listed fields for active tokens and only active:false otherwise, with specs
 - OAuth::Tokens implements revoke / revoke_all_for(user:) / revoke_for(user:, client_uid:) / the existing
-  revoke_all(client_uid:) / active_for(user:) with service specs; password change and admin disable revoke all of
-  a user's tokens
+  revoke_all(client_uid:) / active_for(user:) with service specs; password change and admin disable revoke
+  all of a user's tokens
 - docs/ARCHITECTURE.md §3 documents the JWT revocation trade-off and the recommended resource-server behaviour;
   Doorkeeper isolation spec passes; rspec/rubocop/brakeman pass
 plan:
@@ -99,3 +99,5 @@ notes:
     change is this task. Introspection rule: a client holding the introspect scope (catalogue flag machine:
     true) — TASK-024 later formalises machine scopes on the same flag, so do not add a separate allow_introspection
     column.'
+- at: 2026-09-27 10:19
+  text: started on task/022-token-revocation-introspection-and-sign
