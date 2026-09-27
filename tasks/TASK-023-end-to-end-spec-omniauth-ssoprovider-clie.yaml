@@ -67,3 +67,25 @@ notes:
     0.2.0 fixture is checked only after the hub bumps to omniauth-ssoprovider 0.2.0.
 - at: 2026-09-27 12:00
   text: started on task/023-end-to-end-spec-omniauth-ssoprovider-cli
+- at: 2026-09-27 12:05
+  text: 'decision (user): omniauth-oauth2 1.9.0 sends redirect_uri=<callback>?code=..&state=.. to /oauth/token
+    (OmniAuth callback_url includes query_string; no override option in 0.1.2) and the hub accepts it
+    because Doorkeeper''s URIChecker drops the query at the token endpoint (exact match is enforced only
+    at /oauth/authorize by OAuth::AuthorizationRules). Record, tighten later: T44 gets the gem fix, a
+    new hub TODO row tightens /oauth/token to an identical redirect_uri after the hub bumps to the fixed
+    gem; gem doc corrected. Also found: unauthorized_client (pending/revoked client) is rendered by the
+    hub, never redirected, contrary to the gem doc.'
+- at: 2026-09-27 12:09
+  text: 'DONE: spec/integration/omniauth_ssoprovider_flow_spec.rb (6) — omniauth-ssoprovider 0.1.2 mounted
+    by class in a Rack client app (spec/support/omniauth_client_flow.rb: cookie session, OmniAuth 2 POST+CSRF
+    request phase, WebMock to_rack back channel, integration-session hub legs) completes authorize(PKCE
+    S256, state, resource)->sign-in->consent->token(client_secret_basic)->/api/v1/userinfo; auth hash
+    uid=sso_id, info name/email, raw_info, access token verified with the JWKS; 0.1.2 shape pinned; tampered
+    state -> csrf_detected (no token call), deny -> access_denied, pending client -> hub-rendered 401
+    unauthorized_client (never redirected). spec/integration/rack_jwt_verifier_flow_spec.rb (7): TASK-020
+    interop spec moved here (doc refs updated) + login token with require_scopes email, rotation (running
+    service refetches JWKS on new kid, old tokens still verify; retired key -> 401); wrong aud 401 / insufficient_scope
+    403 kept. Gem findings: docs/gems/omniauth-ssoprovider.md finding 11 + change 12 (redirect_uri query
+    at token exchange), unauthorized_client contract corrected; TODO T44/T45 notes, new hub row T56 (identical
+    redirect_uri at /oauth/token after the gem fix, user decision). No gem source modified (../omniauth-ssoprovider
+    clean). rspec 300/0 in 11.9 s, rubocop, brakeman clean. Commits 9098346, eab6136, d10e2f4.'
