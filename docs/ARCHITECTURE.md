@@ -42,6 +42,14 @@ service in the ecosystem trusts. It does **not** own business authorization data
   Nothing else about the user is placed in an access token. The same scope gating applies to the
   id_token (`openid` scope; `sub`, `iss`, `aud` = client_id, `nonce`, `auth_time`, `at_hash`) and to
   userinfo. Refresh tokens are opaque, hashed at rest, issued only with `offline_access`.
+- **Revocation vs self-contained tokens.** Revoking a token (RFC 7009 endpoint, sign out everywhere,
+  client or consent revocation) takes effect at once for the hub's own API and MCP endpoint (they check
+  the `jti` against the token record), for introspection callers and for the refresh flow. A resource
+  server that verifies the JWT offline cannot know: it keeps accepting a revoked access token until its
+  `exp` — at most **10 minutes**. Resource servers must accept that window, or call
+  `POST /oauth/introspect` (a confidential client registered with the `introspect` scope) before a
+  sensitive operation; a refresh token is never a credential for a resource server and introspects as
+  inactive.
 - **Licensing, multi-tenancy and complex authorization live in a separate, connected service** that
   trusts the hub's tokens; the hub only asserts *who* (and which client) — never entitlements.
   Roles/claims the hub does expose are minimal (`admin`) and are inputs to that service, not a
@@ -125,6 +133,23 @@ and the user must not be disabled; both answer 401 `invalid_token`. `replay_cach
 The interop spec (`spec/requests/api/rack_jwt_verifier_interop_spec.rb`) runs the gem as shipped, in
 JWKS mode against the hub's own document, as the proof downstream services need nothing hub-specific.
 
+**Revocation, introspection, sign out everywhere (TASK-022):** `POST /oauth/revoke` (RFC 7009) and
+`POST /oauth/introspect` (RFC 7662) are Doorkeeper's controller with `OAuth::RevocationRules` prepended.
+Revocation keeps Doorkeeper's client authentication (secret for confidential clients, `client_id` alone for
+public ones), 200 for an unknown token and 403 `unauthorized_client` for another client's token (RFC 7009
+§2.1: refused and informed; the token stays active); `token_type_hint` only orders the lookup, and a
+revoked token takes its family — every live token issued from the same code — with it
+(`OAuth::Tokens.revoke_family!`). Introspection needs client authentication (`OAuth::IntrospectionRules`:
+no bearer-token callers, 401 `invalid_client` otherwise); only a confidential, approved client registered with
+the machine scope `introspect` learns anything (`OAuth::Introspection.allowed?`), everyone else gets
+`{"active": false}`, as do revoked, expired, unknown and refresh tokens. An active access token is described
+by `active`, `scope`, `client_id`, `username` (`sso_id`, absent for `client_credentials`), `token_type`,
+`exp`, `iat` and the JWT's own `sub`, `aud`, `iss`, `jti`. `OAuth::Tokens` offers the same operations to the
+rest of the app: `revoke(token_or_jti, by:)` (owner or admin), `revoke_all_for(user:)`, `revoke_for(user:,
+client_uid:)`, `revoke_all(client_uid:)` and `active_for(user:)` (live sessions, refresh-backed ones
+included). A password change or reset and an administrator setting `disabled_at` revoke every token and
+pending code of the user (`User` callback); signing out of the hub and a failed-attempts lock do not.
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |
@@ -149,6 +174,7 @@ JWKS mode against the hub's own document, as the proof downstream services need 
 | 2026-09-18 | **Dynamic client registration is approval-gated** by default, behind a policy switch (`OAUTH_REGISTRATION_POLICY` approval/open/closed) so open mode can be enabled later. (TASK-012, TASK-025) | Safe default for a security product; MCP clients can still self-onboard pending approval. | When agent onboarding friction matters more than manual review. |
 | 2026-09-18 | **Ruby/Rails upgrade (Ruby 3.4, Rails 8.x) is the first Phase 1 task** (TASK-013). | EOL runtime + ~75 advisories; fewer moving parts before Doorkeeper. | — |
 | 2026-09-18 | **Refresh tokens rotate immediately** (no `previous_refresh_token` column) and have an **absolute lifetime** from the authorization code; **reuse revokes the (user, client) family**, a **replayed code revokes its descendants** (TASK-019). | Doorkeeper's deferred revocation only fires through its own bearer lookup, which the hub never uses; OAuth 2.1 §4.3.1 / RFC 6749 §4.1.2. | If a client cannot cope with strict rotation (concurrent refreshes), a short grace window would need the column back plus an explicit revocation hook. |
+| 2026-09-27 | **Revocation/introspection policy** (TASK-022): another client's token is refused with **403** (not a silent 200); **introspection is a scope** (`introspect`, machine), not a per-client flag, and needs client authentication; **password change/reset and admin disable sign the user out everywhere**, a **failed-attempts lock does not**. | RFC 7009 §2.1 says refuse and inform; one scope flag also serves TASK-024's machine clients; a lock can be triggered by anyone typing wrong passwords, so revoking on it would be a sign-out DoS. | If lockout becomes admin-driven or rate limiting (T24) makes brute-force locks rare, revisit revoking on lock; lockout thresholds become configurable in T55. |
 
 ## 6. Future directions (not scheduled)
 
