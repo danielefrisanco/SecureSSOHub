@@ -19,7 +19,7 @@ Sources of truth on the hub side (state of `develop` after TASK-020, 2026-09-18)
 - Token contract: `docs/ARCHITECTURE.md` §3 (access token claims, id_token, refresh).
 - Gem gap register: `TODO.md` rows tagged `[gem: …]` (T12, T40, T44, T45, T46, T48, T52).
 - Original per-gem audit: `docs/AUDIT.md` §3 and §9.
-- Live proof against real hub tokens: `spec/requests/api/rack_jwt_verifier_interop_spec.rb`,
+- Live proof against real hub tokens: `spec/integration/rack_jwt_verifier_flow_spec.rb`,
   `spec/requests/api/v1/userinfo_spec.rb`, `spec/requests/oauth/token_spec.rb`.
 
 Verifying a gem change against the hub before releasing it:

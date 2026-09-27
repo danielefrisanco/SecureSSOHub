@@ -87,7 +87,7 @@ issue tokens without a hub.
   real token endpoint via `to_rack` once TASK-024 has landed
   (`spec/requests/oauth/machine_grant_spec.rb` in the hub shows the exact
   request/response); for option 2, run the hub's
-  `spec/requests/api/rack_jwt_verifier_interop_spec.rb` pattern with a gem-minted
+  `spec/integration/rack_jwt_verifier_flow_spec.rb` pattern with a gem-minted
   token against a standalone `RackJwtVerifier::Middleware`.
 
 ## Definition of done

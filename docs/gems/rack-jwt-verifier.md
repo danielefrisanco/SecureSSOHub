@@ -278,10 +278,10 @@ Keep the existing `spec/rack_jwt_verifier/interop_spec.rb` green.
 # in ../SecureSSOHub, temporarily:
 #   Gemfile: gem "rack-jwt-verifier", path: "../rack_jwt_verifier"
 bundle install
-POSTGRES_HOST=localhost bundle exec rspec spec/requests/api
+POSTGRES_HOST=localhost bundle exec rspec spec/requests/api spec/integration
 ```
 
-`spec/requests/api/rack_jwt_verifier_interop_spec.rb` runs the gem as shipped
+`spec/integration/rack_jwt_verifier_flow_spec.rb` runs the gem as shipped
 in a standalone Rack app against real hub tokens (JWKS over WebMock `to_rack`,
 and `public_key` mode). `spec/requests/api/v1/userinfo_spec.rb` covers the
 hub's own mount, including the previous-key rotation case and the "id_token

@@ -130,7 +130,7 @@ and previous key) is handed to ruby-jwt as the `jwks` decode option, resolved pe
 `Api::BaseController`: the token's `jti` — chosen on the record before the JWT is generated
 (`OAuth::TokenRecord`, indexed `oauth_access_tokens.jti`) — must still be live (`OAuth::Tokens.active?`),
 and the user must not be disabled; both answer 401 `invalid_token`. `replay_cache` waits for Redis (T23).
-The interop spec (`spec/requests/api/rack_jwt_verifier_interop_spec.rb`) runs the gem as shipped, in
+The interop spec (`spec/integration/rack_jwt_verifier_flow_spec.rb`) runs the gem as shipped, in
 JWKS mode against the hub's own document, as the proof downstream services need nothing hub-specific.
 
 **Revocation, introspection, sign out everywhere (TASK-022):** `POST /oauth/revoke` (RFC 7009) and
