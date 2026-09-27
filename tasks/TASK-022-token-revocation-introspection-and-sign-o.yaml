@@ -101,3 +101,25 @@ notes:
     column.'
 - at: 2026-09-27 10:19
   text: started on task/022-token-revocation-introspection-and-sign
+- at: 2026-09-27 10:23
+  text: 'decision (user): cross-client revocation keeps Doorkeeper''s 403 unauthorized_client (RFC 7009
+    §2.1 ''refused and informed of the error''); 200 only for unknown tokens; spec asserts 403 and the
+    token stays active'
+- at: 2026-09-27 10:26
+  text: 'decision (user): a Devise lockable lock (failed attempts) does NOT revoke tokens — anyone can
+    trigger it, so it would be a sign-out-everywhere DoS; only admin disable (disabled_at) and password
+    change/reset call revoke_all_for. Record the reason in ARCHITECTURE §3.'
+- at: 2026-09-27 10:34
+  text: 'DONE: revoke (RFC 7009) = Doorkeeper + OAuth::RevocationRules (type-hint fallback, family revocation
+    via OAuth::Tokens.revoke_family!; 403 for a foreign token per user decision, 200 unknown). introspect
+    (RFC 7662) = OAuth::IntrospectionRules (client auth only, 401 invalid_client) + OAuth::Introspection
+    (allowed: confidential, approved, introspect scope; fields sub/aud/iss/jti/username on top of Doorkeeper''s;
+    refresh tokens inactive). OAuth::Tokens: revoke(token_or_jti, by:) owner/admin, revoke_family!, revoke_all_for(user:),
+    active_for keeps refresh-backed sessions + client_name. User after_update: password change/reset and
+    disabled_at -> revoke_all_for; lock does not (user decision). ARCHITECTURE §3 trade-off + §4 paragraph
+    + decisions row. Verified: spec/requests/oauth/revoke_spec.rb (9), introspect_spec.rb (10), spec/services/oauth/tokens_spec.rb
+    (13), spec/models/user_spec.rb sign-out-everywhere (5); userinfo_spec disabled case split (revoked
+    vs backstop). rspec 291/0, rubocop, brakeman clean, isolation spec passes. Commits 70284bf, 8f8dfe2,
+    ca7a87c, 1d6a1ef, 3c41740 (+53ed629 TODO T55 configurable lockout, user request). No per-token last-used
+    exists: active_for has no last_used (client-level oauth_applications.last_used_at is there for Phase
+    3).'
