@@ -106,3 +106,9 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - DONE: TASK-021 implemented and committed on task/021-discovery-documents-openid-configuration (99a9593 builder/controller/routes, 59ef3b6 CORS, e5fdf17 specs, 15da834 closing note): app/services/oauth/metadata.rb builds both well-known documents from HUB_ISSUER; WellKnownController#render_cached; config/initializers/cors.rb (discovery + jwks only); spec/requests/discovery_spec.rb. jwks_uri now /.well-known/jwks.json. rspec 257/0, rubocop, brakeman clean. Not yet reviewed/completed.
 - NEXT: /harness:complete-task TASK-021 (reviewer), merge into develop, then /harness:run-task TASK-022 (start-task first) -> 023/024/025; stop before TASK-026.
 - BLOCKERS/QUESTIONS: none. Run rspec with POSTGRES_HOST=localhost. The Bash deny-glob hook rejects any command text containing sensitive-sounding words (e.g. the cred*/sec* patterns) — use the Write tool for files that mention them.
+
+## 2026-09-27 — TASK-021 done: Discovery documents — openid-configuration and oauth-authorization-server
+- OAuth::Metadata.document(oidc:) is the single builder for /.well-known/openid-configuration and /.well-known/oauth-authorization-server; every URL comes from HUB_ISSUER (Host/X-Forwarded-Host spoofing covered). WellKnownController#render_cached: public max-age=300, ETag/304. jwks_uri is now /.well-known/jwks.json; registration_endpoint omitted until TASK-025.
+- rack-cors scoped to /.well-known/* and /oauth/discovery/keys (GET/OPTIONS, any origin); /oauth/token has no CORS. Full policy stays T28.
+- Commits 99a9593, 59ef3b6, e5fdf17, 15da834; branch also carries the user's docs/backlog commits 6c01e42..49f1844. rspec 257/0, rubocop, brakeman clean. Review: PASS, no findings.
+- User: merge task/021-discovery-documents-openid-configuration into develop (then develop -> main, push).

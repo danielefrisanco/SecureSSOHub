@@ -1,10 +1,10 @@
 id: TASK-021
 title: Discovery documents — openid-configuration and oauth-authorization-server
 type: feat
-status: in_progress
+status: done
 priority: high
 created: '2026-09-18'
-updated: '2026-09-18'
+updated: '2026-09-27'
 branch: task/021-discovery-documents-openid-configuration
 depends_on:
 - TASK-019
@@ -70,3 +70,10 @@ notes:
     stop before TASK-026. | BLOCKERS/QUESTIONS: none. Run rspec with POSTGRES_HOST=localhost. The Bash
     deny-glob hook rejects any command text containing sensitive-sounding words (e.g. the cred*/sec* patterns)
     — use the Write tool for files that mention them.'
+- at: 2026-09-27 10:17
+  text: 'REVIEW: PASS — all 4 criteria met; HUB_ISSUER URLs with Host-spoof spec, cache/ETag/304, CORS
+    scoped to discovery+jwks, single OAuth::Metadata builder with drift specs; no findings'
+- at: 2026-09-27 10:17
+  text: done — verified by spec/requests/discovery_spec.rb (every field, Host spoof, 304, CORS scoping,
+    scopes drift) + jwks/smoke specs; rspec 257/0, rubocop, brakeman clean, Doorkeeper isolation spec
+    passes
