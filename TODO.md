@@ -73,7 +73,7 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 
 | id | title | type | prio | placement | after | ref |
 |---|---|---|---|---|---|---|
-| T31 | Account page: profile edit, password change, connected apps with per-grant revoke, active sessions with "sign out everywhere"; system specs | feat | high | [app] | T15, T19 | §5.3 |
+| T31 | Account page: profile edit, password change, connected apps with per-grant revoke, active sessions with "sign out everywhere"; sessions show **"last active"** (not "last used": offline JWT verification downstream is invisible to the hub) = the latest of the family's last refresh (live row's `created_at`, already there), a hub API/MCP use and an introspection — `OAuth::Tokens.active_for` gains `last_active_at` backed by a throttled `oauth_access_tokens.last_used_at` write in `Api::BaseController` and introspection (or buffered in Redis once T23 lands); system specs | feat | high | [app] | T15, T19 | §5.3 |
 | T32 | Admin: OAuth clients CRUD with one-time client-key display and rotation, approval of pending registrations | feat | high | [app] | T13, T22 | §5.3 |
 | T33 | Admin: users list/search/disable/promote; tokens & grants view with revoke | feat | high | [app] | T19 | §5.3 |
 | T34 | Admin: audit log viewer with filters | feat | medium | [app] | T25 | §5.3 |
