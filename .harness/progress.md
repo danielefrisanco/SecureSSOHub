@@ -112,3 +112,9 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - rack-cors scoped to /.well-known/* and /oauth/discovery/keys (GET/OPTIONS, any origin); /oauth/token has no CORS. Full policy stays T28.
 - Commits 99a9593, 59ef3b6, e5fdf17, 15da834; branch also carries the user's docs/backlog commits 6c01e42..49f1844. rspec 257/0, rubocop, brakeman clean. Review: PASS, no findings.
 - User: merge task/021-discovery-documents-openid-configuration into develop (then develop -> main, push).
+
+## 2026-09-27 — TASK-022 done: Token revocation, introspection and sign-out-everywhere service
+- POST /oauth/revoke (RFC 7009): Doorkeeper + OAuth::RevocationRules — token_type_hint falls back, a revoked token takes its family (OAuth::Tokens.revoke_family!); 403 unauthorized_client for another client's token (user decision), 200 for unknown.
+- POST /oauth/introspect (RFC 7662): client authentication only (OAuth::IntrospectionRules, 401 invalid_client); confidential approved clients with the `introspect` scope get active/scope/client_id/username/token_type/exp/iat/sub/aud/iss/jti (OAuth::Introspection), everyone else and refresh tokens get active:false.
+- OAuth::Tokens: revoke(token_or_jti, by:), revoke_all_for(user:), active_for keeps refresh-backed sessions; User callback revokes everything on password change/reset and admin disable, not on a failed-attempts lock (user decision; T55 added for configurable lockout). ARCHITECTURE §3/§4/decisions updated.
+- Commits 53ed629, 70284bf, 8f8dfe2, ca7a87c, 1d6a1ef, 3c41740, 0ec9003. rspec 291/0, rubocop, brakeman clean. Review: PASS, no findings. User: merge develop -> main, push.

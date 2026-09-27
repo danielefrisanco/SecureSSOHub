@@ -1,7 +1,7 @@
 id: TASK-022
 title: Token revocation, introspection and sign-out-everywhere service
 type: feat
-status: in_progress
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-09-27'
@@ -123,3 +123,10 @@ notes:
     ca7a87c, 1d6a1ef, 3c41740 (+53ed629 TODO T55 configurable lockout, user request). No per-token last-used
     exists: active_for has no last_used (client-level oauth_applications.last_used_at is there for Phase
     3).'
+- at: 2026-09-27 10:38
+  text: 'REVIEW: PASS — all 4 criteria met; revoke/introspect per RFC 7009/7662 with user decisions honoured,
+    Tokens ops + password/disable callbacks specced, ARCHITECTURE §3 trade-off; no findings'
+- at: 2026-09-27 10:38
+  text: done — verified by revoke_spec (9), introspect_spec (10), tokens_spec (13), user_spec sign-out-everywhere
+    (5), userinfo_spec backstop split; rspec 291/0, rubocop, brakeman clean, Doorkeeper isolation spec
+    passes
