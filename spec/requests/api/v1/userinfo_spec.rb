@@ -146,9 +146,17 @@ RSpec.describe "GET /api/v1/userinfo", type: :request do
       expect_invalid_token("revoked")
     end
 
-    it "refuses a disabled user" do
+    it "refuses a disabled user's token, which disabling revoked" do
       token = token_for
       user.update!(disabled_at: Time.current)
+      userinfo(token)
+      expect_invalid_token("revoked")
+    end
+
+    it "refuses a disabled user even when the token was not revoked" do
+      token = token_for
+      # A write that skips callbacks (and so the sign-out-everywhere revocation).
+      user.update_column(:disabled_at, Time.current) # rubocop:disable Rails/SkipsModelValidations
       userinfo(token)
       expect_invalid_token("disabled")
     end
