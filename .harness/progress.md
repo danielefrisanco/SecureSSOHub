@@ -118,3 +118,9 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - POST /oauth/introspect (RFC 7662): client authentication only (OAuth::IntrospectionRules, 401 invalid_client); confidential approved clients with the `introspect` scope get active/scope/client_id/username/token_type/exp/iat/sub/aud/iss/jti (OAuth::Introspection), everyone else and refresh tokens get active:false.
 - OAuth::Tokens: revoke(token_or_jti, by:), revoke_all_for(user:), active_for keeps refresh-backed sessions; User callback revokes everything on password change/reset and admin disable, not on a failed-attempts lock (user decision; T55 added for configurable lockout). ARCHITECTURE §3/§4/decisions updated.
 - Commits 53ed629, 70284bf, 8f8dfe2, ca7a87c, 1d6a1ef, 3c41740, 0ec9003. rspec 291/0, rubocop, brakeman clean. Review: PASS, no findings. User: merge develop -> main, push.
+
+## 2026-09-27 — TASK-023 done: End-to-end spec — omniauth-ssoprovider client and rack-jwt-verifier against the hub
+- spec/integration/omniauth_ssoprovider_flow_spec.rb + spec/support/omniauth_client_flow.rb: omniauth-ssoprovider 0.1.2 (mounted by class, host app sets pkce/scope/resource) logs in end to end against the in-process hub; negatives csrf_detected, access_denied, pending client stopped at the hub (unauthorized_client is never redirected).
+- spec/integration/rack_jwt_verifier_flow_spec.rb: TASK-020 interop spec moved here and extended with the login's token and a signing-key rotation (running service refetches on the new kid; retired key refused).
+- Findings: gem finding 11 (token exchange sends redirect_uri with the callback query; hub tolerates it via Doorkeeper's URIChecker) — user decision: record, tighten later as hub row T56 after the T44 gem fix; gem doc contract corrected; T45 fixture lacks `credentials`.
+- Commits 9098346, eab6136, d10e2f4, 5762ea2. rspec 300/0 in 11.9 s, rubocop, brakeman clean. Review: PASS, no findings. User: merge develop -> main, push.

@@ -1,7 +1,7 @@
 id: TASK-023
 title: End-to-end spec — omniauth-ssoprovider client and rack-jwt-verifier against the hub
 type: test
-status: in_progress
+status: done
 priority: critical
 created: '2026-09-18'
 updated: '2026-09-27'
@@ -89,3 +89,9 @@ notes:
     at token exchange), unauthorized_client contract corrected; TODO T44/T45 notes, new hub row T56 (identical
     redirect_uri at /oauth/token after the gem fix, user decision). No gem source modified (../omniauth-ssoprovider
     clean). rspec 300/0 in 11.9 s, rubocop, brakeman clean. Commits 9098346, eab6136, d10e2f4.'
+- at: 2026-09-27 12:11
+  text: 'REVIEW: PASS — all 4 criteria met; real 0.1.2 login + negatives, rack-jwt-verifier flow spec
+    with originals carried over + rotation, no gem modified, gaps recorded (T44/T45/T56); no findings'
+- at: 2026-09-27 12:11
+  text: done — verified by spec/integration/omniauth_ssoprovider_flow_spec.rb (6) and rack_jwt_verifier_flow_spec.rb
+    (7); rspec 300/0 in 11.9 s, rubocop, brakeman clean; ../omniauth-ssoprovider untouched
