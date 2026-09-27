@@ -129,15 +129,24 @@ Doorkeeper.configure do
 
   # Access tokens are RS256 JWTs (payload: OAuth::TokenPayload, wired below).
   access_token_generator "::Doorkeeper::JWT"
+
+  # Introspection (RFC 7662): only a confidential, approved client registered
+  # with the `introspect` scope learns anything; every other authenticated
+  # client gets `active: false` (OAuth::Introspection). Client authentication
+  # itself is OAuth::IntrospectionRules.
+  allow_token_introspection { |_token, client, _bearer| OAuth::Introspection.allowed?(client) }
+  custom_introspection_response { |token, _controller| OAuth::Introspection.response_fields(token) }
 end
 
 # The hub's client-registry rules (client type, approval workflow, redirect
 # allow-list), authorization-request rules (PKCE, resource indicator, admin
-# scopes), the disabled-account guard, the consent page and the token-endpoint
-# rules (replay, refresh reuse and lifetime, id_token at_hash, last_used_at)
-# and the token record's `jti` — kept out of app/models and app/controllers
-# so nothing there names Doorkeeper. Wired once, after boot (a to_prepare
-# hook would re-register the validations on every code reload in development).
+# scopes), the disabled-account guard, the consent page, the token-endpoint
+# rules (replay, refresh reuse and lifetime, id_token at_hash, last_used_at),
+# the token record's `jti` and the revocation/introspection rules (type-hint
+# fallback, family revocation, client-only introspection) — kept out of
+# app/models and app/controllers so nothing there names Doorkeeper. Wired
+# once, after boot (a to_prepare hook would re-register the validations on
+# every code reload in development).
 Rails.application.config.after_initialize do
   Doorkeeper::Application.include(OAuth::ClientRules)
   Doorkeeper::AccessToken.prepend(OAuth::TokenRecord)
@@ -146,6 +155,8 @@ Rails.application.config.after_initialize do
   Doorkeeper::AuthorizationsController.prepend(OAuth::ConsentScreen)
   Doorkeeper::OAuth::AuthorizationCodeRequest.prepend(OAuth::TokenRules)
   Doorkeeper::OAuth::RefreshTokenRequest.prepend(OAuth::TokenRules)
+  Doorkeeper::TokensController.prepend(OAuth::RevocationRules)
+  Doorkeeper::OAuth::TokenIntrospection.prepend(OAuth::IntrospectionRules)
 end
 
 # Both blocks run per token, so the autoloaded OAuth::TokenPayload and
