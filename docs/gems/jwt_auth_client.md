@@ -4,6 +4,9 @@ Paste this whole file into a Claude session opened in the `jwt_auth_client`
 repository (`../jwt_auth_client`, last commit `a1aa5e3`, version 0.2.0).
 Priority: low. The first job is a decision, not code.
 
+**Decision (2026-09-27): option 1, park.** Revisit as option 3 after the hub's
+TASK-024 (machine grant) ships; see hub `TODO.md` T12.
+
 ---
 
 ## Who is asking and why

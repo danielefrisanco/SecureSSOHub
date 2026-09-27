@@ -129,7 +129,7 @@ JWKS mode against the hub's own document, as the proof downstream services need 
 
 | Gem | Where | Role |
 |---|---|---|
-| `jwt_auth_client` | services calling each other (not the hub today) | service → service calls with `HttpClient`. Removed from the hub in TASK-019: access tokens are minted by doorkeeper-jwt + `OAuth::TokenPayload`; it returns only if the hub itself calls services with signed requests (then with asymmetric signing, 0.3.0). |
+| `jwt_auth_client` | services calling each other (not the hub today) | service → service calls with `HttpClient`. Removed from the hub in TASK-019: access tokens are minted by doorkeeper-jwt + `OAuth::TokenPayload`; parked at 0.2.0 (HMAC only, TODO T12). If services later need hub-trusted tokens for machine calls, the planned direction is a `client_credentials` fetcher against the hub (TASK-024), not asymmetric signing in the gem. |
 | `rack-jwt-verifier` | hub's own API and MCP endpoint; every downstream service | verifies bearer tokens against the hub's JWKS with mandatory `iss`/`aud`, scopes and replay guard. |
 | `header_guard` | hub | HSTS, CSP (nonce-aware), frame/referrer/COOP/CORP/permissions headers. |
 | `omniauth-ssoprovider` | client applications; hub test suite and developer page | the reference login client — defines the contract the hub must honour (`/oauth/authorize`, `/oauth/token`, `/api/v1/userinfo`). |

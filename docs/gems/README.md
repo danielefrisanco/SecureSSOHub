@@ -11,7 +11,7 @@ the result against the hub before releasing.
 | rack-jwt-verifier | `../rack_jwt_verifier` | 0.3.0 | **high** (T52 is a security fix) | [rack-jwt-verifier.md](rack-jwt-verifier.md) |
 | omniauth-ssoprovider | `../omniauth-ssoprovider` | 0.1.2 | **high** (README example does not boot) | [omniauth-ssoprovider.md](omniauth-ssoprovider.md) |
 | header_guard | `../headerguard` | 0.3.1 | low | [header_guard.md](header_guard.md) |
-| jwt_auth_client | `../jwt_auth_client` | 0.2.0 | low (deferred) | [jwt_auth_client.md](jwt_auth_client.md) |
+| jwt_auth_client | `../jwt_auth_client` | 0.2.0 | low (parked 2026-09-27, T12) | [jwt_auth_client.md](jwt_auth_client.md) |
 | omniauth_syncer | `../omniauth_syncer` | 0.1.0 | low | [omniauth_syncer.md](omniauth_syncer.md) |
 
 Sources of truth on the hub side (state of `develop` after TASK-020, 2026-09-18):

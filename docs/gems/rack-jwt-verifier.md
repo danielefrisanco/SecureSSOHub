@@ -198,6 +198,39 @@ strip one trailing slash (do **not** decode percent-escapes or resolve dot
 segments; the router does not either). Document that skip rules see the
 normalised path. This is a behaviour change worth a CHANGELOG line.
 
+### 6. Stop promising a jwt_auth_client 0.3.0 — small, docs and CI
+
+`jwt_auth_client` is parked: 0.2.0 (or a docs-only 0.2.1) is its final
+HMAC-only release, and the asymmetric 0.3.0 this gem's docs announce will not
+ship. If it is ever revived, the planned direction is a `client_credentials`
+token fetcher against the hub, which drops `TokenIssuer`/`Issuable` (hub
+`TODO.md` T12, `docs/gems/jwt_auth_client.md`). The HMAC pairing keeps
+working, so nothing breaks today, but several places send users toward that
+0.3.0:
+
+- `lib/rack_jwt_verifier/jwt_helper.rb`: "Issue tokens with the
+  `jwt_auth_client` gem instead (HMAC today, RS256/ES256 from its 0.3.0)".
+  `JwtHelper` is removed in 0.4.0 anyway; make the removal's CHANGELOG line
+  and the README's "`JwtHelper` is deprecated" note point to an OAuth 2 / OIDC
+  issuer (for example the hub) for real tokens and to `JWT.encode` /
+  `spec/support/token_factory.rb` for tests.
+- gemspec `description`: "Pairs with the jwt_auth_client gem." Describe the
+  gem as the resource-server half for any issuer that publishes a JWKS;
+  mention `jwt_auth_client` at most as the HMAC option for internal services.
+- README: the intro ("the verifying half of a pair"), the "Pairing with
+  jwt_auth_client" section (asymmetric signing "planned for its 0.3.0") and
+  the `shared_secret` section ("move to asymmetric keys when the issuer
+  supports them"). Lead with JWKS against an OAuth issuer; keep the HMAC
+  pairing as a documented, secondary setup.
+- `spec/rack_jwt_verifier/interop_spec.rb`, block "asymmetric tokens with the
+  jwt_auth_client payload (0.3.0 preview)": keep the test (it proves the `kid`
+  and algorithm paths against a real claim shape), drop the "preview" label
+  and the "switch the signer to TokenIssuer once 0.3.0 ships" comment.
+- `.github/workflows/ci.yml` checks out `danielefrisanco/jwt_auth_client` at
+  its default branch. Pin the checkout to the released tag (`v0.2.0`, or
+  `v0.2.1` if it is cut) so a later rework of that gem cannot break this
+  gem's CI.
+
 ## Tests to add (RSpec, in this repo)
 
 Extend `spec/rack_jwt_verifier/verifier_spec.rb`, `middleware_spec.rb` and the
@@ -233,9 +266,10 @@ Keep the existing `spec/rack_jwt_verifier/interop_spec.rb` green.
 - Version `0.4.0` (new options; one behaviour change in `skip`). Ruby ≥ 3.1,
   `jwt >= 2.8, < 4`, `rack >= 2.2, < 4` unchanged. If jwt 3.x changed the JWKS
   loader signature or `JWT::JWK::Set`, guard it and add it to the CI matrix.
-- CHANGELOG entries for each of the five points; README sections: "In-process
+- CHANGELOG entries for each of the six points; README sections: "In-process
   key set", "Token type (`require_typ`)" with the confusion scenario, "MCP /
-  protected resource metadata", "Reading the token in your app", "Skip rules".
+  protected resource metadata", "Reading the token in your app", "Skip rules",
+  and the reworked pairing text from point 6.
 - Rubocop clean, full suite green, `gem build` clean.
 
 ## Verifying against the hub before release
@@ -261,7 +295,7 @@ version-bump task will commit.
 
 ## Definition of done
 
-- The five changes above implemented, spec'd, documented, released as 0.4.0.
+- The six changes above implemented, spec'd, documented, released as 0.4.0.
 - A short note back to the hub listing: the final option names, whether the
   `decode_options[:jwks]` pass-through raises or warns, and anything in the
   hub's token contract you found awkward to verify (that feeds the hub's
