@@ -47,3 +47,80 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - docs/PHASES.md: Phase 0 6/6 verified (CI only local — nothing pushed). Decisions: RS256 JWT access tokens via doorkeeper-jwt, Redis, approval-gated registration with policy switch, Ruby 3.4/Rails 8 upgrade first.
 - Phase 1 = TASK-013..025 (detailed specs) + gate TASK-026; TODO.md and ARCHITECTURE.md updated. Merged into develop.
 - Next: `/harness:start-task TASK-013` (upgrade). User must merge develop → main and push.
+
+## 2026-09-18 — TASK-013 done: Upgrade Ruby to 3.4 and Rails to 8.x; make security scanners blocking
+- Ruby 3.4.10, Rails 8.1.3.1 (load_defaults 8.1), Postgres 17 (new compose volume), Devise 5.0.4, Puma 7.2.1, json pinned 2.x (rack-session 2.1.2 vs json 3); unused Active Storage/Mailbox/Text engines removed; sassc-rails out, sprockets-rails explicit. brakeman 0 (no exclusions), bundler-audit clean, rubocop clean, rspec 23/0, docker build ok. Merged into develop.
+
+## 2026-09-18 — TASK-014 done: Install Doorkeeper, doorkeeper-openid_connect and doorkeeper-jwt behind a service layer
+- Gems + migrations; config verified against gem source (PKCE forced, hashed secrets, 10 min tokens, JWT generator); signing-key boot guard; OIDC issuer from HUB_ISSUER, subject = sso_id; app/services/oauth skeleton + isolation spec; 31 specs. Merged into develop.
+
+## 2026-09-18 — TASK-015 done: Signing keys with kid and rotation, JWKS endpoint, dev key tooling
+- OAuth::SigningKey (env PEM/base64, RFC 7638 kid, previous key for rotation, realm-ready accessor); ruby-jwt kid generator = Thumbprint; doorkeeper-jwt + openid_connect sign via it; JWKS at /.well-known/jwks.json and /oauth/discovery/keys with cache headers; hub:keys rake tasks; README runbook. 51 specs. Merged into develop.
+- STOPPED HERE at the user's request (handoff + compact). Next: /harness:start-task TASK-016 (client registry). Reminder: develop → main merge/push is the user's step; local test runs need DATABASE_URL pointing at the compose Postgres 17 on localhost.
+
+## 2026-09-18 — TASK-015 handoff (end of session)
+- DONE: TASK-013/014/015 reviewed PASS and merged into develop (0c52ebb); Ruby 3.4.10, Rails 8.1.3.1, Postgres 17, Doorkeeper/OIDC/JWT core behind app/services/oauth, SigningKey + JWKS + rotation; 51 specs, rubocop/brakeman/bundler-audit clean.
+- NEXT: /harness:start-task TASK-016 (client registry), then 017 → 018/019 → 020/021/022 → 023/024/025 → 026 gate. Env for local runs: compose Postgres 17 via DATABASE_URL, JWT_SERVICE_SECRET exported for bin/rails (until TASK-019), HUB_ISSUER defaults in specs.
+- BLOCKERS/QUESTIONS: none. User merges develop → main and pushes; first CI run pending.
+
+## 2026-09-18 — TASK-016 done: OAuth client registry on top of Doorkeeper applications
+- Migration 20260918170000 (client_type, approval_state+index, registered_via, owner_id FK, RFC 7591 metadata, last_used_at; secret nullable for public clients). OAuth::ClientRules included from the Doorkeeper initializer (redirect-URI allow-list: https anywhere, http loopback only, private-use schemes only for public clients, no fragment/userinfo/OOB; approval pending→approved/revoked, approved→revoked). OAuth::Scopes over the catalogue (introspect flagged machine). OAuth::Clients list/find/usable?/create/update/rotate_secret/approve/revoke (admin-only, one-time secrets) + no-actor register_dynamic (policy approval|open, no admin/machine scopes); revoke cascades via OAuth::Tokens.revoke_all. Factory :oauth_client (:public/:pending/:revoked).
+- Commits 5c14cda (feat), afd37c9 (docs). rspec 108/0, rubocop, brakeman clean. Reviewer PASS. Merged into develop.
+- Known: until TASK-019 adds jti, two JWT access tokens with identical claims in the same second collide on the unique token column.
+
+## 2026-09-18 — TASK-017 done: Authorization endpoint with PKCE, redirect allow-list and resource indicator
+- OAuth::AuthorizationRules (prepended into PreAuthorization: S256 PKCE mandatory for public clients, plain never, exact redirect_uri match with loopback port exception, RFC 8707 resource → invalid_target), OAuth::Resources (hub API + MCP), OAuth::AuthorizationGuard (disabled user → sign out + access_denied), OAuth::TokenRules (codes/refresh tokens of revoked clients or disabled users refused at POST /oauth/token). Migration adds code_challenge(_method) and resource to grants, resource to tokens. HUB_ISSUER now in config.x.oauth.issuer.
+- Commits db81f34, ac04e1f, a2db205, 0c435a5, 6a61c78 (review fix) + executor memory notes. rspec 147/0, rubocop, brakeman clean. Reviewer PASS on second round. Merged into develop.
+- Follow-up noted on TASK-022: disabling a user should revoke their tokens/grants at the source.
+
+## 2026-09-18 — TASK-017 handoff (session checkpoint before compaction)
+- DONE: TASK-016 and TASK-017 merged into develop (db02f51); alignment notes on TASK-018..025 and two criteria reworded; rspec 147/0, rubocop, brakeman clean.
+- NEXT: /harness:run-task TASK-018 (start-task steps first), then 019 -> 020/021/022 -> 023/024/025; stop before TASK-026. Local env: POSTGRES_HOST=localhost for rspec; JWT_SERVICE_SECRET exported for bin/rails until TASK-019.
+- BLOCKERS/QUESTIONS: none. User merges develop -> main and pushes.
+
+## 2026-09-18 — TASK-018 done: Consent screen, scope catalogue and persisted consents
+- OAuth::Scopes now exposes description/admin?/default?/machine?/admin_names over config/oauth_scopes.yml (completeness spec). Migration 20260918190000 oauth_consents (one live row per user+client, partial unique index), OAuthConsent model, OAuth::Consents (covers?/granted_scopes/grant merges/revoke closes + OAuth::Tokens.revoke_for/for). Doorkeeper skip_authorization → Consents.covers?; OAuth::ConsentScreen prepended into the authorizations controller (application layout, consent helper, records consent after authorization); app/views/doorkeeper/authorizations/new.html.erb carries resource + nonce, data-turbo=false. Admin scopes → invalid_scope for non-admins.
+- CSP decision to confirm: the authorizations controller alone widens img-src to https: (client logo) and form-action to the validated redirect target (browsers check form-action against the post-submit redirect). Not done (context only): machine-client scope allow-list for the machine grant flow.
+- Commits a7fe653, e5409bc, 99b08c4, c18e6ae, b44252a. rspec 182/0, rubocop, brakeman clean.
+- Review: PASS, no findings. Merged into develop.
+
+## 2026-09-18 — TASK-019 done: Token endpoint — JWT access tokens, refresh rotation, id_token, client auth
+- OAuth::TokenPayload builds the RS256 access token (iss, sub, aud = resource|client_id, azp, scope+scopes, jti, iat/nbf/exp, scope-gated name/email/email_verified, admin; header kid + typ at+jwt). OAuth::TokenRules: code replay → invalid_grant + revoke descendants (new oauth_access_tokens.access_grant_id = token family), refresh reuse → OAuth::Tokens.detect_reuse! revokes the (user, client) family, absolute refresh TTL (OAUTH_REFRESH_TOKEN_TTL, 30 days from the code), last_used_at touched. Refresh tokens only with offline_access; immediate rotation by dropping previous_refresh_token (Doorkeeper's deferred revocation never fires without its bearer lookup). OAuth::IdToken adds at_hash over the plaintext JWT; OIDC claims scope-gated. Legacy jwt_auth_client path removed (gem dropped; bin/rails no longer needs the JWT env var).
+- Commits 8f888f7, 2a938af, c4f0cf5, 09cca1c. rspec 214/0, rubocop, brakeman clean.
+- Decisions to confirm: strict rotation (no grace window), TTL in seconds from the code, email_verified from confirmed_at (false until confirmable), admin:false on client-only tokens.
+- Review: PASS, no findings. Merged into develop.
+
+## 2026-09-18 — TASK-020 done: Userinfo endpoints behind rack-jwt-verifier
+- `/api/**` guarded by rack-jwt-verifier (config/initializers/rack_jwt_verifier.rb): in-process keys (hub JWKS, active + previous, passed as the ruby-jwt `jwks` decode option next to a placeholder `public_key` — gem cannot take a key set, TODO T48), iss + hub-API aud, RS256, leeway 30, require_token, json_errors, skip everything outside /api; replay_cache off until Redis (T23). Api::BaseController (ActionController::API) adds revoked-token and disabled-user checks (401 invalid_token + RFC 6750 challenge); Api::V1::UserinfoController serves `{id, sub, name, email, email_verified, roles}` with profile/email gating. `/oauth/userinfo` (OIDC) works with the same JWT unchanged (Doorkeeper finds it by hash).
+- jti now chosen on the token row before generation (OAuth::TokenRecord, migration 20260918210000 adds indexed `oauth_access_tokens.jti`); OAuth::Tokens.active?(jti:) is the one-query revocation check; Token#jti is the claim.
+- Interop spec: gem as shipped in JWKS mode (WebMock to_rack to the real stack, `rack.session` stripped — WebMock/rack-session 2 quirk) and public_key mode accepts a hub token. Gem finding recorded as T52: an id_token passes a downstream verifier whose aud is its client_id; a `typ: at+jwt` check is needed in the gem.
+- Commits 4ad8fb7, 46b47a2, 2b6e270, 7fc521a. rspec 240/0, rubocop, brakeman clean.
+- Review: FAIL on a //api guard bypass, fixed in 82e388a (path normalised like the router, guard moved before Warden::Manager, fail-closed controller); re-review PASS. Merged into develop.
+
+## 2026-09-18 — TASK-020 handoff (session checkpoint)
+- DONE: TASK-018/019/020 merged into develop (7ad348d) + fix(docker) 57a0d4d; rspec 243/0, rubocop, brakeman clean.
+- NEXT: user prepares gem prompts (TODO.md T48/T52, interop spec, ARCHITECTURE section 3); then /harness:run-task TASK-021 (start-task steps first), 022 -> 023/024/025; stop before TASK-026.
+- BLOCKERS/QUESTIONS: none. User merges develop -> main and pushes.
+
+## 2026-09-18 20:41 — TASK-021 handoff
+- DONE: TASK-021 implemented and committed on task/021-discovery-documents-openid-configuration (99a9593 builder/controller/routes, 59ef3b6 CORS, e5fdf17 specs, 15da834 closing note): app/services/oauth/metadata.rb builds both well-known documents from HUB_ISSUER; WellKnownController#render_cached; config/initializers/cors.rb (discovery + jwks only); spec/requests/discovery_spec.rb. jwks_uri now /.well-known/jwks.json. rspec 257/0, rubocop, brakeman clean. Not yet reviewed/completed.
+- NEXT: /harness:complete-task TASK-021 (reviewer), merge into develop, then /harness:run-task TASK-022 (start-task first) -> 023/024/025; stop before TASK-026.
+- BLOCKERS/QUESTIONS: none. Run rspec with POSTGRES_HOST=localhost. The Bash deny-glob hook rejects any command text containing sensitive-sounding words (e.g. the cred*/sec* patterns) — use the Write tool for files that mention them.
+
+## 2026-09-27 — TASK-021 done: Discovery documents — openid-configuration and oauth-authorization-server
+- OAuth::Metadata.document(oidc:) is the single builder for /.well-known/openid-configuration and /.well-known/oauth-authorization-server; every URL comes from HUB_ISSUER (Host/X-Forwarded-Host spoofing covered). WellKnownController#render_cached: public max-age=300, ETag/304. jwks_uri is now /.well-known/jwks.json; registration_endpoint omitted until TASK-025.
+- rack-cors scoped to /.well-known/* and /oauth/discovery/keys (GET/OPTIONS, any origin); /oauth/token has no CORS. Full policy stays T28.
+- Commits 99a9593, 59ef3b6, e5fdf17, 15da834; branch also carries the user's docs/backlog commits 6c01e42..49f1844. rspec 257/0, rubocop, brakeman clean. Review: PASS, no findings.
+- User: merge task/021-discovery-documents-openid-configuration into develop (then develop -> main, push).
+
+## 2026-09-27 — TASK-022 done: Token revocation, introspection and sign-out-everywhere service
+- POST /oauth/revoke (RFC 7009): Doorkeeper + OAuth::RevocationRules — token_type_hint falls back, a revoked token takes its family (OAuth::Tokens.revoke_family!); 403 unauthorized_client for another client's token (user decision), 200 for unknown.
+- POST /oauth/introspect (RFC 7662): client authentication only (OAuth::IntrospectionRules, 401 invalid_client); confidential approved clients with the `introspect` scope get active/scope/client_id/username/token_type/exp/iat/sub/aud/iss/jti (OAuth::Introspection), everyone else and refresh tokens get active:false.
+- OAuth::Tokens: revoke(token_or_jti, by:), revoke_all_for(user:), active_for keeps refresh-backed sessions; User callback revokes everything on password change/reset and admin disable, not on a failed-attempts lock (user decision; T55 added for configurable lockout). ARCHITECTURE §3/§4/decisions updated.
+- Commits 53ed629, 70284bf, 8f8dfe2, ca7a87c, 1d6a1ef, 3c41740, 0ec9003. rspec 291/0, rubocop, brakeman clean. Review: PASS, no findings. User: merge develop -> main, push.
+
+## 2026-09-27 — TASK-023 done: End-to-end spec — omniauth-ssoprovider client and rack-jwt-verifier against the hub
+- spec/integration/omniauth_ssoprovider_flow_spec.rb + spec/support/omniauth_client_flow.rb: omniauth-ssoprovider 0.1.2 (mounted by class, host app sets pkce/scope/resource) logs in end to end against the in-process hub; negatives csrf_detected, access_denied, pending client stopped at the hub (unauthorized_client is never redirected).
+- spec/integration/rack_jwt_verifier_flow_spec.rb: TASK-020 interop spec moved here and extended with the login's token and a signing-key rotation (running service refetches on the new kid; retired key refused).
+- Findings: gem finding 11 (token exchange sends redirect_uri with the callback query; hub tolerates it via Doorkeeper's URIChecker) — user decision: record, tighten later as hub row T56 after the T44 gem fix; gem doc contract corrected; T45 fixture lacks `credentials`.
+- Commits 9098346, eab6136, d10e2f4, 5762ea2. rspec 300/0 in 11.9 s, rubocop, brakeman clean. Review: PASS, no findings. User: merge develop -> main, push.

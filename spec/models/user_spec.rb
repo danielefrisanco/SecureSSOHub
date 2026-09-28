@@ -32,30 +32,54 @@ RSpec.describe User, type: :model do
   end
 end
 
-RSpec.describe User, "#to_jwt", type: :model do
-  let(:user) { create(:user, name: "Ada") }
+RSpec.describe User, "sign out everywhere", type: :model do
+  let(:user) { create(:user) }
+  let(:clients) { create_list(:oauth_client, 2) }
 
-  it "returns a signed JWT carrying the hub claims" do
-    token = user.to_jwt
-    expect(token.split(".").length).to eq(3)
-
-    payload, header = JWT.decode(token, ENV.fetch("JWT_SERVICE_SECRET"), true, { algorithm: "HS256" })
-    expect(header["alg"]).to eq("HS256")
-    expect(payload).to include(
-      "sub" => user.sso_id,
-      "user_id" => user.sso_id,
-      "email" => user.email,
-      "name" => "Ada",
-      "admin" => false,
-      "iss" => JwtAuthClient.configuration.issuer
-    )
-    expect(payload["exp"]).to be_within(5).of(Time.now.to_i + 300)
-    expect(payload["jti"]).to be_present
+  before do
+    clients.each do |client|
+      client.access_tokens.create!(resource_owner_id: user.id, scopes: "openid", expires_in: 600,
+                                   use_refresh_token: true)
+    end
+    clients.first.access_grants.create!(resource_owner_id: user.id, scopes: "openid", expires_in: 60,
+                                        redirect_uri: clients.first.redirect_uri)
   end
 
-  it "rejects a token signed with another key" do
-    expect { JWT.decode(user.to_jwt, "x" * 32, true, { algorithm: "HS256" }) }
-      .to raise_error(JWT::VerificationError)
+  def live_codes
+    clients.first.access_grants.where(revoked_at: nil)
+  end
+
+  it "revokes every token and code of the user when the password is changed" do
+    user.update!(password: "a brand new passphrase")
+    expect(OAuth::Tokens.active_for(user: user)).to be_empty
+    expect(live_codes).to be_empty
+  end
+
+  it "revokes every token when the password is reset" do
+    user.reset_password("a brand new passphrase", "a brand new passphrase")
+    expect(OAuth::Tokens.active_for(user: user)).to be_empty
+  end
+
+  it "revokes every token when an administrator disables the account" do
+    user.update!(disabled_at: Time.current)
+    expect(OAuth::Tokens.active_for(user: user)).to be_empty
+    expect(live_codes).to be_empty
+  end
+
+  it "leaves other users' tokens alone" do
+    other = create(:user)
+    clients.first.access_tokens.create!(resource_owner_id: other.id, scopes: "openid", expires_in: 600)
+
+    user.update!(disabled_at: Time.current)
+    expect(OAuth::Tokens.active_for(user: other).size).to eq(1)
+  end
+
+  it "keeps tokens on a failed-attempts lock, sign-in tracking or a profile change" do
+    user.lock_access!(send_instructions: false)
+    user.update!(name: "Renamed", sign_in_count: 3, last_sign_in_at: Time.current)
+
+    expect(OAuth::Tokens.active_for(user: user).size).to eq(2)
+    expect(live_codes.size).to eq(1)
   end
 end
 
