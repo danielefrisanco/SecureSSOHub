@@ -53,6 +53,12 @@ module OAuth
     def self.prepended(base)
       base.layout "application"
       base.helper_method :consent
+      # With eager loading (CI, production) Rails has already built and cached
+      # this controller's view class from its parent's helpers; helper_method
+      # just gave the controller a helpers module of its own, which that class
+      # does not include. Clearing the view caches (what Rails does when views
+      # change) makes it rebuild the class, `consent` included, on first render.
+      ActionView::LookupContext::DetailsKey.clear
       base.content_security_policy do |policy|
         policy.img_src :self, :data, :https
         policy.form_action :self, -> { @consent ? [@consent.redirect_source] : [] }
