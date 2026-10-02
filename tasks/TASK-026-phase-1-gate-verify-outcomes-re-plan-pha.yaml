@@ -62,3 +62,13 @@ notes:
     — generic SMTP via env vars (no new gem, any provider); T29 proxy — Caddy (automatic Let''s Encrypt);
     T57 split — Phase 2: option to leave name/email out of access tokens; Phase 4: DPoP (RFC 9449) with
     the MCP endpoint; JWE and mTLS stay Future.'
+- at: 2026-10-02 16:30
+  text: 'CLOSING: docs/PHASES.md Phase 1 section (11 checks; 10 pass with evidence, CI recorded ''pass
+    locally / not yet on GitHub'' as at the Phase 0 gate — develop not pushed; user to push and send the
+    Actions link, then row 11 gets it). Audit corrections recorded (code single-use already in DB; rate
+    limiting via Rails 8 rate_limit; replay cache semantics vs reusable bearer tokens). TODO Phase 2 re-planned:
+    10 rows + G2, each annotated TASK-027..037; T56 -> Phase 3 (waits on T44), T59 -> Phase 4, T57 split
+    into T60 (Phase 2) and T61 DPoP (Phase 4). Tasks TASK-027..036 created with context, 4-5 criteria,
+    plans, depends_on per the after-column (T24, T29 -> TASK-027; T27 -> TASK-030); gate TASK-037 depends
+    on all ten. Blocking questions asked (CI, email, TLS proxy, T57) and answers in ARCHITECTURE decisions
+    log (4 rows). No application code changed. Phase 1 header marked DONE 2026-10-02.'

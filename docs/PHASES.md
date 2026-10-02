@@ -55,7 +55,7 @@ round: a trailing-slash bypass of the registration body limit, fixed).
 | 8 | Doorkeeper isolation spec passes | pass | `spec/architecture/doorkeeper_isolation_spec.rb` — 1 example, 0 failures |
 | 9 | Machine grant (added to Phase 1 as TASK-024) | pass | `spec/requests/oauth/machine_grant_spec.rb` — 19 examples, 0 failures |
 | 10 | Full suite and lint | pass | `bundle exec rspec` — 352 examples, 0 failures (seed 50360); rubocop `109 files inspected, no offenses detected` |
-| 11 | CI green on GitHub | pending | awaiting the Actions run for `develop` at `9ab4dec` (pushed by the user) |
+| 11 | CI green on GitHub | pass locally / **not yet on GitHub** | rspec, rubocop, brakeman and bundler-audit (the CI jobs) pass locally (rows 1 and 10); `develop` with TASK-024/025 is not pushed yet (`git ls-remote`: only `main`, at the TASK-023 merge). The user pushes `develop`; the Actions run link is added here when it exists |
 
 Deviations from the audit / things learned
 - §5.2 listed "authorization-code single-use" among the uses of a shared cache. Wrong: codes are
