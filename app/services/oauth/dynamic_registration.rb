@@ -28,8 +28,11 @@ module OAuth
   # including a duplicate (same client_name and redirect_uris registered in
   # the last 24 hours) and a confidential client under the open policy;
   # 429 `temporarily_unavailable` past the per-address hourly cap (until rate
-  # limiting, T24). Every registration is logged at info with its client_id
-  # and source address.
+  # limiting, T24) — every dynamic registration counts, pending or approved.
+  # Both the cap and the duplicate check are check-then-insert without a
+  # lock, so a burst of concurrent requests can overshoot them by a few;
+  # acceptable for a stopgap that T24 replaces. Every registration is logged
+  # at info with its client_id and source address.
   class DynamicRegistration
     Result = Struct.new(:status, :body, :headers, keyword_init: true)
 

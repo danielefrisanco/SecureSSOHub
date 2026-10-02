@@ -16,13 +16,21 @@ class RequestBodyLimit
   end
 
   def call(env)
-    return @app.call(env) unless @paths.include?(env["PATH_INFO"])
+    return @app.call(env) unless guarded?(env["PATH_INFO"])
     return too_large if too_large?(env)
 
     @app.call(env)
   end
 
   private
+
+  # The router squeezes repeated slashes and ignores a trailing one, so
+  # "//oauth//register/" reaches the same action; compare the same way.
+  def guarded?(path)
+    normalized = path.to_s.squeeze("/")
+    normalized = normalized.delete_suffix("/") unless normalized == "/"
+    @paths.include?(normalized)
+  end
 
   def too_large?(env)
     length = env["CONTENT_LENGTH"].to_s

@@ -151,10 +151,20 @@ RSpec.describe "OAuth dynamic client registration", type: :request do
       expect_error("invalid_client_metadata")
     end
 
-    it "refuses a body over 16 KiB with 413 before parsing it" do
-      register(public_metadata.merge(software_id: "x" * 17.kilobytes))
-      expect(response).to have_http_status(:content_too_large)
-      expect(response.parsed_body["error"]).to eq("invalid_request")
+    it "refuses a body over 16 KiB with 413 before parsing it, on every path that reaches the endpoint" do
+      large = public_metadata.merge(software_id: "x" * 17.kilobytes).to_json
+      %w[/oauth/register /oauth/register/ //oauth//register].each do |path|
+        expect do
+          post path, params: large, headers: { "CONTENT_TYPE" => "application/json" }
+        end.not_to(change { OAuth::Clients.list.size })
+        expect(response).to have_http_status(:content_too_large)
+        expect(response.parsed_body["error"]).to eq("invalid_request")
+      end
+    end
+
+    it "has no format-suffixed variant of the endpoint" do
+      post "/oauth/register.json", params: public_metadata.to_json, headers: { "CONTENT_TYPE" => "application/json" }
+      expect(response).to have_http_status(:not_found)
     end
 
     it "creates nothing when it refuses" do
