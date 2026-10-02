@@ -29,3 +29,5 @@
 
 en:
   hello: "Hello world"
+  rate_limits:
+    too_many_requests: "Too many attempts. Please wait a while and try again."

@@ -22,7 +22,8 @@ module OAuth
       current != :closed
     end
 
-    # Registrations accepted per source address and hour (OAUTH_REGISTRATION_IP_LIMIT).
+    # Registration attempts per source address and hour (OAUTH_REGISTRATION_IP_LIMIT),
+    # enforced by ClientRegistrationsController's rate limit.
     #
     # @return [Integer]
     def ip_limit

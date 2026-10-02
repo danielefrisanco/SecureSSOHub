@@ -8,8 +8,8 @@ require_relative "../../lib/middleware/request_body_limit"
 #                                pending until an administrator approves them;
 #                                open: approved at once, public (PKCE) clients
 #                                only; closed: no endpoint (404), not advertised.
-#   OAUTH_REGISTRATION_IP_LIMIT  registrations accepted per source address and
-#                                hour (default 20) until rate limiting (T24).
+#   OAUTH_REGISTRATION_IP_LIMIT  registration attempts per source address and
+#                                hour (default 20), a rate limit (TASK-028).
 registration_policies = %w[approval open closed]
 registration_policy = ENV.fetch("OAUTH_REGISTRATION_POLICY", "approval")
 unless registration_policies.include?(registration_policy)
@@ -17,7 +17,12 @@ unless registration_policies.include?(registration_policy)
         "got #{registration_policy.inspect}"
 end
 Rails.application.config.x.oauth.registration_policy = registration_policy.to_sym
-Rails.application.config.x.oauth.registration_ip_limit = Integer(ENV.fetch("OAUTH_REGISTRATION_IP_LIMIT", 20))
+registration_ip_limit = ENV.fetch("OAUTH_REGISTRATION_IP_LIMIT", "20")
+unless Integer(registration_ip_limit, 10, exception: false)&.positive?
+  raise "OAUTH_REGISTRATION_IP_LIMIT must be a positive integer (requests per window), " \
+        "got #{registration_ip_limit.inspect}"
+end
+Rails.application.config.x.oauth.registration_ip_limit = Integer(registration_ip_limit, 10)
 
 # Client metadata is a few hundred bytes; anything near this is not a client.
 Rails.application.config.middleware.insert_before 0, RequestBodyLimit, paths: ["/oauth/register"],

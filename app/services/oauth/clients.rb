@@ -123,16 +123,6 @@ module OAuth
               ))
     end
 
-    # Dynamic registrations from one address since a point in time (the
-    # registration endpoint's per-address cap).
-    #
-    # @param ip [String]
-    # @param since [Time]
-    # @return [Integer]
-    def dynamic_registrations_from(ip, since:)
-      Doorkeeper::Application.where(registered_via: "dynamic", registration_ip: ip, created_at: since..).count
-    end
-
     # Whether a client with this name and the same redirect URIs (in any
     # order) was registered dynamically since a point in time.
     #

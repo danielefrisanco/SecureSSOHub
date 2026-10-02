@@ -148,11 +148,11 @@ end
 # rules (replay, refresh reuse and lifetime, id_token at_hash, last_used_at),
 # the machine-grant rules (confidential clients, machine scopes, resource),
 # the token record's `jti` and the revocation/introspection rules (type-hint
-# fallback, family revocation, client-only introspection) — kept out of
-# app/models and app/controllers so nothing there names Doorkeeper. Doorkeeper's
-# models and request objects come from the gem's lib and load once, so they
-# are wired once, after boot (a to_prepare hook would re-register the
-# validations on every code reload in development).
+# fallback, family revocation, client-only introspection) and the token-endpoint
+# rate limits — kept out of app/models and app/controllers so nothing there
+# names Doorkeeper. Doorkeeper's models and request objects come from the gem's
+# lib and load once, so they are wired once, after boot (a to_prepare hook
+# would re-register the validations on every code reload in development).
 Rails.application.config.after_initialize do
   Doorkeeper::Application.include(OAuth::ClientRules)
   Doorkeeper::AccessToken.prepend(OAuth::TokenRecord)
@@ -171,6 +171,7 @@ Rails.application.config.to_prepare do
   Doorkeeper::AuthorizationsController.prepend(OAuth::AuthorizationGuard)
   Doorkeeper::AuthorizationsController.prepend(OAuth::ConsentScreen)
   Doorkeeper::TokensController.prepend(OAuth::RevocationRules)
+  Doorkeeper::TokensController.prepend(OAuth::TokenEndpointLimits)
 end
 
 # Both blocks run per token, so the autoloaded OAuth::TokenPayload and
