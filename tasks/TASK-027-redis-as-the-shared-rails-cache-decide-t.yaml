@@ -1,11 +1,11 @@
 id: TASK-027
 title: Redis as the shared Rails.cache; decide the rack-jwt-verifier replay cache
 type: feat
-status: todo
+status: in_progress
 priority: high
 created: '2026-10-02'
 updated: '2026-10-02'
-branch: null
+branch: task/027-redis-as-the-shared-rails-cache-decide-t
 depends_on: []
 context: "TODO T23. TODO T23 (audit §5.2, §10 Q2; decision 2026-09-18: Redis). Today `Rails.cache` is\
   \ unconfigured, so\nproduction falls back to a per-process store — wrong for anything shared across\
@@ -35,4 +35,6 @@ plan:
 - Compose service and README.
 - Read rack-jwt-verifier's replay_cache; decide, document, spec if enabled.
 - Suite; closing note.
-notes: []
+notes:
+- at: 2026-10-02 16:35
+  text: started on task/027-redis-as-the-shared-rails-cache-decide-t
