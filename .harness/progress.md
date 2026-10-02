@@ -136,3 +136,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - Abuse controls until T24: OAUTH_REGISTRATION_IP_LIMIT per address and hour (new column oauth_applications.registration_ip, 429 + Retry-After), duplicate name + redirect_uris within 24 h → 400 invalid_client_metadata, bodies > 16 KiB → 413 from lib/middleware/request_body_limit.rb (review round 1 found a trailing-slash bypass; fixed).
 - README (env vars, approval flow via console until the admin UI), ARCHITECTURE §4, TODO T59 (RFC 7592) and T28 (CORS for /oauth/register). New migration: run db:migrate on deploy.
 - Commits cf92d21, 82e7a79, 5094630, 0522a9b, cc50e9d, 47afc7e, dc18bb0. rspec 352/0, rubocop, brakeman clean. Review: PASS (second round).
+
+## 2026-10-02 — TASK-026 handoff
+- DONE: TASK-024/025 merged into develop (9ab4dec). TASK-026 committed on its branch: PHASES.md Phase 1 record (CI local-only until develop is pushed), Phase 2 re-plan in TODO.md, ARCHITECTURE decisions (SMTP env, Caddy, T57 split, re-plan), tasks TASK-027..036 + Phase 2 gate TASK-037. Status review; reviewer was running.
+- NEXT: finish TASK-026 (PASS → done, progress entry, merge into develop; FAIL → fix and re-review), then Phase 2 in order from TASK-027. Known for TASK-027: rack-jwt-verifier's replay guard rejects any reused jti, so it stays off on /api.
+- BLOCKERS/QUESTIONS: user pushes develop (`! git push -u origin develop`) and sends the Actions run link for PHASES.md Phase 1 row 11; develop → main merge is the user's. Tests need `docker compose up -d db` and POSTGRES_HOST=localhost.

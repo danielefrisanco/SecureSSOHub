@@ -1,7 +1,7 @@
 id: TASK-026
 title: Phase 1 gate — verify outcomes, re-plan Phase 2 and create its tasks
 type: docs
-status: in_progress
+status: review
 priority: high
 created: '2026-09-18'
 updated: '2026-10-02'
@@ -72,3 +72,18 @@ notes:
     plans, depends_on per the after-column (T24, T29 -> TASK-027; T27 -> TASK-030); gate TASK-037 depends
     on all ten. Blocking questions asked (CI, email, TLS proxy, T57) and answers in ARCHITECTURE decisions
     log (4 rows). No application code changed. Phase 1 header marked DONE 2026-10-02.'
+- at: 2026-10-02 16:31
+  text: 'handoff: DONE: TASK-024 and TASK-025 completed (review PASS) and fast-forwarded into develop
+    (9ab4dec). TASK-026 work committed on task/026-phase-1-gate-verify-outcomes-re-plan-pha: docs/PHASES.md
+    Phase 1 record (CI row ''pass locally / not yet on GitHub''), TODO Phase 2 re-plan (T56 -> Phase 3,
+    T59 -> Phase 4, T57 split into T60/T61), 4 ARCHITECTURE decision rows (SMTP env, Caddy, T57 split,
+    re-plan), tasks TASK-027..036 + gate TASK-037; status=review, reviewer run in progress when this was
+    written. Verified for TASK-027: rack-jwt-verifier 0.3.0 ReplayGuard raises ''Token has already been
+    used'' on a second jti -> must stay off for reusable bearer tokens on /api. | NEXT: on reviewer PASS:
+    REVIEW note, status=done, progress entry, chore(tasks): complete TASK-026, ff-merge into develop;
+    on FAIL: fix findings and re-review. Then /harness:start-task TASK-027 and continue Phase 2 in order
+    (027 -> 036, then gate 037), merging each into develop. | BLOCKERS/QUESTIONS: user must push develop
+    (! git push -u origin develop; only main exists on origin) and send the Actions run link -> fill docs/PHASES.md
+    Phase 1 row 11; merging develop -> main is the user''s. Local test env: docker compose up -d db, POSTGRES_HOST=localhost.
+    Harness guard blocks Bash commands containing the words ''secret''/''credential'' — use Edit/Write
+    for such text.'
