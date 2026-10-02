@@ -1,11 +1,11 @@
 id: TASK-024
 title: Machine token grant (RFC 6749 §4.4) for service clients
 type: feat
-status: todo
+status: in_progress
 priority: medium
 created: '2026-09-18'
-updated: '2026-09-18'
-branch: null
+updated: '2026-10-02'
+branch: task/024-machine-token-grant-rfc-6749-4-4-for-ser
 depends_on:
 - TASK-019
 context: "TODO T21 (audit §6.2). Machine-only agents and services (no human) obtain tokens with the OAuth\n\
@@ -49,3 +49,5 @@ notes:
     blocks — read it with the Read tool, not cat. custom_access_token_attributes [:resource] is configured;
     verify the client_credentials request honours a resource param with OAuth::Resources validation (AuthorizationRules
     only covers PreAuthorization). OAuth::Clients::Client has public?/usable?.'
+- at: 2026-10-02 15:58
+  text: started on task/024-machine-token-grant-rfc-6749-4-4-for-ser
