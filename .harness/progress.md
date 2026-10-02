@@ -141,3 +141,9 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - DONE: TASK-024/025 merged into develop (9ab4dec). TASK-026 committed on its branch: PHASES.md Phase 1 record (CI local-only until develop is pushed), Phase 2 re-plan in TODO.md, ARCHITECTURE decisions (SMTP env, Caddy, T57 split, re-plan), tasks TASK-027..036 + Phase 2 gate TASK-037. Status review; reviewer was running.
 - NEXT: finish TASK-026 (PASS → done, progress entry, merge into develop; FAIL → fix and re-review), then Phase 2 in order from TASK-027. Known for TASK-027: rack-jwt-verifier's replay guard rejects any reused jti, so it stays off on /api.
 - BLOCKERS/QUESTIONS: user pushes develop (`! git push -u origin develop`) and sends the Actions run link for PHASES.md Phase 1 row 11; develop → main merge is the user's. Tests need `docker compose up -d db` and POSTGRES_HOST=localhost.
+
+## 2026-10-02 — TASK-026 done: Phase 1 gate — verify outcomes, re-plan Phase 2 and create its tasks
+- docs/PHASES.md Phase 1 record: 11 checks pass with evidence; CI green on GitHub (develop 9ab4dec, run 37020526458; Phase 0 row 3 got its main run link as a follow-up).
+- Phase 2 re-planned in TODO.md; tasks TASK-027..036 + gate TASK-037; T56 → Phase 3, T59/T61 → Phase 4, T57 split (T60 Phase 2, T61 DPoP Phase 4, JWE/mTLS Future).
+- ARCHITECTURE decisions: SMTP via env, Caddy, T57 split, Phase 2 re-plan. Commits 7144063, 1837a90, da97a94, 92d9248, ba674b7, 2b09e7f. Review: PASS.
+- User: merge develop into main when convenient.

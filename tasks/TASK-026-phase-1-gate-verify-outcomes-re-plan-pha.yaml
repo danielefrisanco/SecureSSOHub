@@ -1,7 +1,7 @@
 id: TASK-026
 title: Phase 1 gate — verify outcomes, re-plan Phase 2 and create its tasks
 type: docs
-status: review
+status: done
 priority: high
 created: '2026-09-18'
 updated: '2026-10-02'
@@ -87,3 +87,9 @@ notes:
     Phase 1 row 11; merging develop -> main is the user''s. Local test env: docker compose up -d db, POSTGRES_HOST=localhost.
     Harness guard blocks Bash commands containing the words ''secret''/''credential'' — use Edit/Write
     for such text.'
+- at: 2026-10-02 16:32
+  text: 'REVIEW: PASS — 11 Phase 1 checks recorded with evidence, Phase 2 re-planned (TASK-027..036 +
+    gate TASK-037), 4 decisions logged; no application code changed'
+- at: 2026-10-02 16:34
+  text: done — PHASES.md Phase 1 record (11 checks, CI green on GitHub run 37020526458), Phase 2 re-planned
+    in TODO.md, TASK-027..037 created with depends_on, 4 decisions in ARCHITECTURE; reviewer PASS
