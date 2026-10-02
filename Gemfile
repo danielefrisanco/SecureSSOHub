@@ -12,6 +12,9 @@ gem "jbuilder"
 gem "pg", "~> 1.1" # Database adapter
 gem "puma", "~> 7.2", ">= 7.2.1"
 gem "rails", "~> 8.1"
+# Shared Rails.cache (redis_cache_store, ARCHITECTURE §4). 5.x: 6.0 (July 2026) is a
+# fresh major that switches the wire protocol to RESP3 by default.
+gem "redis", "~> 5.4"
 gem "sprockets-rails"
 gem "stimulus-rails"
 gem "turbo-rails"

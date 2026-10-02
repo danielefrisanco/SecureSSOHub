@@ -34,6 +34,24 @@ module OAuth
         .select { |token| live?(token) }
     end
 
+    # Every machine token (client_credentials, RFC 6749 §4.4) is issued here:
+    # Doorkeeper creates it in the block (OAuth::MachineGrantRules), so this is
+    # the one hook for machine-token issuance (the audit log, T25, records it
+    # here). The client's `last_used_at` is touched as for the other grants
+    # (OAuth::TokenRules). A client's earlier tokens are neither reused nor
+    # revoked — Doorkeeper's revoke_previous_client_credentials_token stays
+    # off — because a busy service may hold two while it rolls over.
+    #
+    # @param application [Doorkeeper::Application] the authenticated client
+    # @yieldreturn [Doorkeeper::AccessToken, nil] the token Doorkeeper created
+    # @return [Doorkeeper::AccessToken, nil]
+    def issue_client_token(application:)
+      token = yield
+      # Registry metadata only; validations and updated_at are deliberately untouched.
+      application.update_column(:last_used_at, Time.current) if token # rubocop:disable Rails/SkipsModelValidations
+      token
+    end
+
     # Revokes one token and its family. The token is found by its `jti`, its
     # JWT or its refresh token. Only its owner or an administrator may revoke
     # it (clients revoke through POST /oauth/revoke, where Doorkeeper checks

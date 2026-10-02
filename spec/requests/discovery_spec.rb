@@ -15,6 +15,7 @@ RSpec.describe "Discovery documents", type: :request do
       "revocation_endpoint" => "#{issuer}/oauth/revoke",
       "introspection_endpoint" => "#{issuer}/oauth/introspect",
       "jwks_uri" => "#{issuer}/.well-known/jwks.json",
+      "registration_endpoint" => "#{issuer}/oauth/register",
       "scopes_supported" => OAuth::Scopes.names,
       "response_types_supported" => ["code"],
       "grant_types_supported" => %w[authorization_code client_credentials refresh_token],
@@ -87,11 +88,6 @@ RSpec.describe "Discovery documents", type: :request do
     allow(OAuth::Scopes).to receive(:names).and_return(%w[openid custom])
     get "/.well-known/oauth-authorization-server"
     expect(response.parsed_body["scopes_supported"]).to eq(%w[openid custom])
-  end
-
-  it "does not advertise dynamic registration yet" do
-    get "/.well-known/openid-configuration"
-    expect(response.parsed_body).not_to have_key("registration_endpoint")
   end
 
   describe "CORS scope" do

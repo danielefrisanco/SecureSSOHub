@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_18_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -64,6 +64,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_18_210000) do
     t.bigint "owner_id"
     t.text "redirect_uri", null: false
     t.string "registered_via", default: "admin", null: false
+    t.inet "registration_ip"
     t.string "scopes", default: "", null: false
     t.string "secret"
     t.string "software_id"
@@ -72,6 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_18_210000) do
     t.datetime "updated_at", null: false
     t.index ["approval_state"], name: "index_oauth_applications_on_approval_state"
     t.index ["owner_id"], name: "index_oauth_applications_on_owner_id"
+    t.index ["registration_ip", "created_at"], name: "index_oauth_applications_on_registration_ip_and_created_at"
     t.index ["uid"], name: "index_oauth_applications_on_uid", unique: true
   end
 

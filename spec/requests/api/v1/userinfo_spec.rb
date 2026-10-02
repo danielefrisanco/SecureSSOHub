@@ -71,6 +71,16 @@ RSpec.describe "GET /api/v1/userinfo", type: :request do
       expect(response.headers["set-cookie"]).to be_nil
     end
 
+    # A bearer token is presented on every call for its whole life (RFC 6750),
+    # which is why rack-jwt-verifier's one-use jti guard stays off (TASK-027).
+    it "accepts the same token on repeated calls" do
+      token = token_for
+      3.times do
+        userinfo(token)
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
     it "still verifies a token signed by the previous key after a rotation" do
       token = token_for
       pems = Rails.configuration.x.oauth.signing_key_pems

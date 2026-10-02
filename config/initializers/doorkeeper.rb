@@ -85,6 +85,10 @@ Doorkeeper.configure do
     Doorkeeper::OAuth::Scopes.from_string(context.scopes.to_s).exists?("offline_access")
   end
 
+  # client_credentials is the machine grant (services, no user): confidential
+  # clients and machine scopes only, an optional resource — OAuth::MachineGrantRules.
+  # revoke_previous_client_credentials_token stays off: a busy service may
+  # hold two tokens while it rolls over (OAuth::Tokens.issue_client_token).
   grant_flows %w[authorization_code client_credentials]
 
   # Only approved clients (OAuth::ClientRules approval workflow) get a code or
@@ -142,6 +146,7 @@ end
 # allow-list), authorization-request rules (PKCE, resource indicator, admin
 # scopes), the disabled-account guard, the consent page, the token-endpoint
 # rules (replay, refresh reuse and lifetime, id_token at_hash, last_used_at),
+# the machine-grant rules (confidential clients, machine scopes, resource),
 # the token record's `jti` and the revocation/introspection rules (type-hint
 # fallback, family revocation, client-only introspection) — kept out of
 # app/models and app/controllers so nothing there names Doorkeeper. Wired
@@ -155,6 +160,8 @@ Rails.application.config.after_initialize do
   Doorkeeper::AuthorizationsController.prepend(OAuth::ConsentScreen)
   Doorkeeper::OAuth::AuthorizationCodeRequest.prepend(OAuth::TokenRules)
   Doorkeeper::OAuth::RefreshTokenRequest.prepend(OAuth::TokenRules)
+  Doorkeeper::OAuth::ClientCredentials::Validator.prepend(OAuth::MachineGrantRules)
+  Doorkeeper::OAuth::ClientCredentials::Creator.prepend(OAuth::MachineGrantRules::Issuance)
   Doorkeeper::TokensController.prepend(OAuth::RevocationRules)
   Doorkeeper::OAuth::TokenIntrospection.prepend(OAuth::IntrospectionRules)
 end

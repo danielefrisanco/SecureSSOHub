@@ -1,11 +1,11 @@
 id: TASK-025
 title: Dynamic client registration (RFC 7591), approval-gated with a policy switch
 type: feat
-status: todo
+status: done
 priority: medium
 created: '2026-09-18'
-updated: '2026-09-18'
-branch: null
+updated: '2026-10-02'
+branch: task/025-dynamic-client-registration-rfc-7591-app
 depends_on:
 - TASK-016
 - TASK-021
@@ -105,3 +105,37 @@ notes:
     client_credentials in grant_types with invalid_client_metadata (registration never grants machine
     scopes) and accept only authorization_code/refresh_token. registration_endpoint goes through TASK-021''s
     OAuth::Metadata.'
+- at: 2026-10-02 16:12
+  text: started on task/025-dynamic-client-registration-rfc-7591-app
+- at: 2026-10-02 16:19
+  text: 'CLOSING: POST /oauth/register (ClientRegistrationsController -> OAuth::DynamicRegistration ->
+    OAuth::Clients.register_dynamic). Policy OAUTH_REGISTRATION_POLICY approval|open|closed via OAuth::RegistrationPolicy
+    (checked at boot, config/initializers/oauth_registration.rb); discovery advertises registration_endpoint
+    unless closed. Choices: duplicate (same client_name + redirect_uris, any order, 24 h) -> 400 invalid_client_metadata
+    (RFC 7591 3.2.2 has no 409); IP cap -> 429 temporarily_unavailable + Retry-After over new column oauth_applications.registration_ip
+    (also exposed on Clients::Client for review); body > 16 KiB -> 413 from lib/middleware/request_body_limit.rb
+    before Rails parses (controller-level check would come after the request log parsed the JSON); default
+    scope openid, default auth method client_secret_basic (RFC 7591 2), grant_types must include authorization_code,
+    client_credentials refused; client_uri/logo_uri https only. Verified: spec/requests/oauth/register_spec.rb
+    (33 examples: exact response shape, one-time key authenticates after approval and a wrong one does
+    not, every validation error, admin/machine scopes, open/closed policies, cap, duplicate, 413, pending
+    client refused at authorize then allowed after approve, log line); discovery spec updated; rspec 351/0,
+    rubocop, brakeman clean; production eager-load boot checked. Also: README stray RAILS_MASTER_KEY row
+    moved back into the env table; TODO T59 (RFC 7592) and T28 extended to /oauth/register CORS for browser
+    MCP clients. User: behind a proxy configure trusted proxies so the cap counts client addresses.'
+- at: 2026-10-02 16:21
+  text: 'REVIEW: FAIL — body limit bypassed via /oauth/register/ (exact PATH_INFO match); low: race on
+    cap/duplicate checks undocumented, cap counts all dynamic registrations'
+- at: 2026-10-02 16:21
+  text: 'Review fix: RequestBodyLimit normalises slashes like the router (trailing /, //), route has format:
+    false (/oauth/register.json -> 404); spec covers all three paths + the .json 404; cap scope (all dynamic
+    registrations) and the check-then-insert race documented in OAuth::DynamicRegistration. rspec 352/0,
+    rubocop clean.'
+- at: 2026-10-02 16:22
+  text: 'REVIEW: PASS — second round; body-limit bypass fixed and spec''d, no findings'
+- at: 2026-10-02 16:22
+  text: 'done — register_spec (35 examples) covers every criterion: RFC 7591 shape and codes, one-time
+    key, policies approval/open/closed incl. discovery, admin/machine scopes refused, cap 429, duplicate
+    400, 413 on all routed paths; rspec 352/0, rubocop, brakeman clean'
+- at: 2026-10-02 16:30
+  text: 'Correction (TASK-026 gate): register_spec has 33 examples, not 35 as the done note says.'

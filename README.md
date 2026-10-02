@@ -30,7 +30,7 @@ The endpoints are being built phase by phase; see `TODO.md` for what exists toda
 ## Development
 
 ```bash
-docker compose up -d db                      # PostgreSQL 17 on localhost:5432
+docker compose up -d db redis                # PostgreSQL 17 on localhost:5432, Redis on 127.0.0.1:6379
 bundle install
 DATABASE_URL=postgres://postgres:<password>@localhost:5432/secure_sso_hub_test \
   bin/rails db:prepare                       # <password> = POSTGRES_PASSWORD from docker-compose.yml
@@ -46,10 +46,32 @@ All configuration comes from environment variables; there are no fallback values
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` / `SECURE_SSO_HUB_DATABASE_PASSWORD` | database connection |
+| `REDIS_URL` | Redis for the shared `Rails.cache` (rate limits, readiness), e.g. `redis://redis:6379/0`; required in production — the hub refuses to boot without it. Development defaults to `redis://localhost:6379/0` (the compose `redis` service); tests use an in-memory store |
 | `HUB_ISSUER` | canonical https URL of this hub, e.g. `https://sso.example.com` — the OAuth/OIDC `iss` and the base of every discovery URL; required outside development/test |
 | `OIDC_SIGNING_KEY` | active RSA private key (≥ 2048 bits) that signs access and id tokens — PEM, or the PEM base64-encoded on one line; required outside development/test (an ephemeral key is generated there) |
 | `OIDC_SIGNING_KEY_PREVIOUS` | the previous signing key during a rotation (same format); stays published in the JWKS so tokens it signed still verify |
 | `OAUTH_REFRESH_TOKEN_TTL` | absolute lifetime of a refresh token in seconds, counted from the authorization code it descends from (default 2592000 = 30 days); access tokens live 10 minutes, codes 1 minute |
+| `OAUTH_REGISTRATION_POLICY` | dynamic client registration (`POST /oauth/register`, RFC 7591): `approval` (default) — new clients wait for an administrator; `open` — public (PKCE) clients are usable at once; `closed` — no endpoint, not advertised in discovery. Any other value stops the boot |
+| `OAUTH_REGISTRATION_IP_LIMIT` | registrations accepted per source address and hour (default 20); beyond it `429`. Behind a reverse proxy, configure Rails' trusted proxies so the client's address — not the proxy's — is counted |
+| `RAILS_MASTER_KEY` | Rails credentials |
+
+### Dynamic client registration
+
+Clients — MCP agents above all — find `registration_endpoint` in the discovery documents and register
+themselves with RFC 7591 metadata (`client_name`, `redirect_uris`, `token_endpoint_auth_method`: `none` for
+a public PKCE client, `client_secret_basic`/`client_secret_post` for a confidential one, `scope`, …). A
+confidential client receives its `client_secret` once, in the response. Registration never grants
+`admin:*` or machine scopes, nor the machine grant; the same `client_name` with the same `redirect_uris`
+is refused for 24 hours.
+
+With the default `approval` policy the client is `pending`: it cannot sign anyone in or obtain tokens
+until an administrator approves it. Until the admin UI exists (Phase 3), from a console:
+
+```ruby
+OAuth::Clients.list(state: :pending)   # review: name, redirect URIs, scopes, contacts, registration_ip
+OAuth::Clients.approve("<client_id>", by: User.find_by!(email: "<admin email>"))
+OAuth::Clients.revoke("<client_id>", by: User.find_by!(email: "<admin email>"))   # refuse (final)
+```
 
 ### Key rotation
 
@@ -67,7 +89,6 @@ bin/rails hub:keys:show         # kids of the keys the running app has loaded
 2. Wait at least the longest token lifetime (refresh tokens included) plus the clients' JWKS cache
    TTL (5 minutes by default).
 3. Remove `OIDC_SIGNING_KEY_PREVIOUS`; deploy. The old key disappears from the JWKS.
-| `RAILS_MASTER_KEY` | Rails credentials |
 
 ## Task workflow
 

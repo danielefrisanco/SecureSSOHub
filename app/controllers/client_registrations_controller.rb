@@ -1,0 +1,21 @@
+# POST /oauth/register — RFC 7591 dynamic client registration, for clients
+# (MCP agents above all) that discover the hub and register themselves.
+# Unauthenticated JSON: the rules and the response are
+# OAuth::DynamicRegistration, the policy OAuth::RegistrationPolicy (closed →
+# 404). Oversized bodies are refused before they reach Rails (RequestBodyLimit,
+# config/initializers/oauth_registration.rb).
+class ClientRegistrationsController < ApplicationController
+  skip_forgery_protection
+  # The body is read raw by OAuth::DynamicRegistration, never as params.
+  wrap_parameters false
+
+  def create
+    return head(:not_found) unless OAuth::RegistrationPolicy.enabled?
+
+    result = OAuth::DynamicRegistration.call(request.raw_post, ip: request.remote_ip)
+    # The response may carry the one-time client_secret.
+    response.headers["Cache-Control"] = "no-store"
+    response.headers.merge!(result.headers)
+    render json: result.body, status: result.status
+  end
+end
