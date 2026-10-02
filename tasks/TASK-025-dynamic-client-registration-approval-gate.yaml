@@ -107,3 +107,19 @@ notes:
     OAuth::Metadata.'
 - at: 2026-10-02 16:12
   text: started on task/025-dynamic-client-registration-rfc-7591-app
+- at: 2026-10-02 16:19
+  text: 'CLOSING: POST /oauth/register (ClientRegistrationsController -> OAuth::DynamicRegistration ->
+    OAuth::Clients.register_dynamic). Policy OAUTH_REGISTRATION_POLICY approval|open|closed via OAuth::RegistrationPolicy
+    (checked at boot, config/initializers/oauth_registration.rb); discovery advertises registration_endpoint
+    unless closed. Choices: duplicate (same client_name + redirect_uris, any order, 24 h) -> 400 invalid_client_metadata
+    (RFC 7591 3.2.2 has no 409); IP cap -> 429 temporarily_unavailable + Retry-After over new column oauth_applications.registration_ip
+    (also exposed on Clients::Client for review); body > 16 KiB -> 413 from lib/middleware/request_body_limit.rb
+    before Rails parses (controller-level check would come after the request log parsed the JSON); default
+    scope openid, default auth method client_secret_basic (RFC 7591 2), grant_types must include authorization_code,
+    client_credentials refused; client_uri/logo_uri https only. Verified: spec/requests/oauth/register_spec.rb
+    (33 examples: exact response shape, one-time key authenticates after approval and a wrong one does
+    not, every validation error, admin/machine scopes, open/closed policies, cap, duplicate, 413, pending
+    client refused at authorize then allowed after approve, log line); discovery spec updated; rspec 351/0,
+    rubocop, brakeman clean; production eager-load boot checked. Also: README stray RAILS_MASTER_KEY row
+    moved back into the env table; TODO T59 (RFC 7592) and T28 extended to /oauth/register CORS for browser
+    MCP clients. User: behind a proxy configure trusted proxies so the cap counts client addresses.'
