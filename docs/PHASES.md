@@ -11,7 +11,7 @@ Tasks TASK-002 … TASK-011, all reviewed PASS and merged into `develop`.
 |---|---|---|---|
 | 1 | App boots | pass | `RAILS_ENV=test bin/rails runner` → `booted test rails 7.1.5.2` |
 | 2 | `bundle exec rspec` green | pass | `23 examples, 0 failures`, `Randomized with seed 8122` (run twice) |
-| 3 | CI green | pass locally / **not yet on GitHub** | rubocop `40 files inspected, no offenses`; brakeman `No warnings found` (EOL checks excluded, see below); `.github/workflows/ci.yml` present; nothing has been pushed, so no Actions run exists yet |
+| 3 | CI green | pass locally / **not yet on GitHub** | rubocop `40 files inspected, no offenses`; brakeman `No warnings found` (EOL checks excluded, see below); `.github/workflows/ci.yml` present; nothing has been pushed, so no Actions run exists yet. Follow-up (Phase 1 gate): the Phase 0 merge into `main` (`99e5afa`, includes TASK-012) is green in [run 35357004713](https://github.com/danielefrisanco/SecureSSOHub/actions/runs/35357004713) |
 | 4 | Devise sign-in works | pass | integration session `POST /users/sign_in` → `303 → /`; `sign_in_count` incremented (sessions_spec) |
 | 5 | header_guard headers present | pass | `strict-transport-security`, `x-frame-options: DENY`, `x-content-type-options: nosniff`, `referrer-policy`, `permissions-policy`, COOP/CORP on `/`; CSP with a per-request nonce on `script-src` |
 | 6 | Landing page renders | pass | `GET /` → 200; signed-in greeting rendered ("Hello, Gate") |
@@ -55,7 +55,7 @@ round: a trailing-slash bypass of the registration body limit, fixed).
 | 8 | Doorkeeper isolation spec passes | pass | `spec/architecture/doorkeeper_isolation_spec.rb` — 1 example, 0 failures |
 | 9 | Machine grant (added to Phase 1 as TASK-024) | pass | `spec/requests/oauth/machine_grant_spec.rb` — 19 examples, 0 failures |
 | 10 | Full suite and lint | pass | `bundle exec rspec` — 352 examples, 0 failures (seed 50360); rubocop `109 files inspected, no offenses detected` |
-| 11 | CI green on GitHub | pass locally / **not yet on GitHub** | rspec, rubocop, brakeman and bundler-audit (the CI jobs) pass locally (rows 1 and 10); `develop` with TASK-024/025 is not pushed yet (`git ls-remote`: only `main`, at the TASK-023 merge). The user pushes `develop`; the Actions run link is added here when it exists |
+| 11 | CI green on GitHub | pass | `develop` at `9ab4dec` (TASK-024/025 merged): [Actions run 37020526458](https://github.com/danielefrisanco/SecureSSOHub/actions/runs/37020526458) — RSpec, RuboCop, Brakeman & bundler-audit and Docker build all succeeded; `main` at the TASK-023 merge (`9235647`) green in [run 36390408126](https://github.com/danielefrisanco/SecureSSOHub/actions/runs/36390408126) |
 
 Deviations from the audit / things learned
 - §5.2 listed "authorization-code single-use" among the uses of a shared cache. Wrong: codes are
