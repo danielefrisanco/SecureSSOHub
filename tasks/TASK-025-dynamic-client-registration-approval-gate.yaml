@@ -1,11 +1,11 @@
 id: TASK-025
 title: Dynamic client registration (RFC 7591), approval-gated with a policy switch
 type: feat
-status: todo
+status: in_progress
 priority: medium
 created: '2026-09-18'
-updated: '2026-09-18'
-branch: null
+updated: '2026-10-02'
+branch: task/025-dynamic-client-registration-rfc-7591-app
 depends_on:
 - TASK-016
 - TASK-021
@@ -105,3 +105,5 @@ notes:
     client_credentials in grant_types with invalid_client_metadata (registration never grants machine
     scopes) and accept only authorization_code/refresh_token. registration_endpoint goes through TASK-021''s
     OAuth::Metadata.'
+- at: 2026-10-02 16:12
+  text: started on task/025-dynamic-client-registration-rfc-7591-app
