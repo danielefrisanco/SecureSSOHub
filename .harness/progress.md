@@ -124,3 +124,9 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - spec/integration/rack_jwt_verifier_flow_spec.rb: TASK-020 interop spec moved here and extended with the login's token and a signing-key rotation (running service refetches on the new kid; retired key refused).
 - Findings: gem finding 11 (token exchange sends redirect_uri with the callback query; hub tolerates it via Doorkeeper's URIChecker) — user decision: record, tighten later as hub row T56 after the T44 gem fix; gem doc contract corrected; T45 fixture lacks `credentials`.
 - Commits 9098346, eab6136, d10e2f4, 5762ea2. rspec 300/0 in 11.9 s, rubocop, brakeman clean. Review: PASS, no findings. User: merge develop -> main, push.
+
+## 2026-10-02 — TASK-024 done: Machine token grant (RFC 6749 §4.4) for service clients
+- OAuth::MachineGrantRules (prepended into Doorkeeper's grant validator): confidential approved clients only (public → unauthorized_client), registered machine-flagged scopes only (user/admin/none → invalid_scope; no new column), RFC 8707 resource → aud or invalid_target. Tokens created inside OAuth::Tokens.issue_client_token (touches last_used_at; earlier tokens stay live). TokenPayload drops `admin` when there is no user.
+- User decision: introspection stays client-authenticated (TASK-022); a machine token is never a Bearer caller credential there. ARCHITECTURE §3/§4 + decision row updated.
+- TODO: T57 token confidentiality options (JWE / DPoP / mTLS / claim minimisation — user request: stand out on MCP, ease of use, security, options); T58 Doorkeeper sends 401 for unauthorized_client. Re-plan note added on TASK-026.
+- Commits e802f62, 3bbe551, f976cff, 20e3dc5, f48ebfd, a86e7f8. rspec 320/0, rubocop, brakeman clean. Review: PASS.

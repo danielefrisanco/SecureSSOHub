@@ -1,7 +1,7 @@
 id: TASK-024
 title: Machine token grant (RFC 6749 §4.4) for service clients
 type: feat
-status: in_progress
+status: done
 priority: medium
 created: '2026-09-18'
 updated: '2026-10-02'
@@ -71,3 +71,8 @@ notes:
     included), rubocop, brakeman clean. Mutation check: disabling the prepends fails 6 specs. Findings:
     Doorkeeper answers unauthorized_client with 401 (RFC says 400) -> T58. Also added T57 (JWE/DPoP/mTLS
     options, user request) and a re-plan note on TASK-026. Local: docker compose up -d db, POSTGRES_HOST=localhost.'
+- at: 2026-10-02 16:12
+  text: 'REVIEW: PASS — all four criteria met (AC3 per the user''s client-auth decision); no code findings'
+- at: 2026-10-02 16:12
+  text: done — machine_grant_spec (19 examples) proves claims, refusals with RFC codes, resource, introspection
+    path and the OAuth::Tokens hook; rspec 320/0, rubocop, brakeman clean
