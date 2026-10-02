@@ -1,7 +1,7 @@
 id: TASK-025
 title: Dynamic client registration (RFC 7591), approval-gated with a policy switch
 type: feat
-status: in_progress
+status: review
 priority: medium
 created: '2026-09-18'
 updated: '2026-10-02'
@@ -123,3 +123,11 @@ notes:
     rubocop, brakeman clean; production eager-load boot checked. Also: README stray RAILS_MASTER_KEY row
     moved back into the env table; TODO T59 (RFC 7592) and T28 extended to /oauth/register CORS for browser
     MCP clients. User: behind a proxy configure trusted proxies so the cap counts client addresses.'
+- at: 2026-10-02 16:21
+  text: 'REVIEW: FAIL — body limit bypassed via /oauth/register/ (exact PATH_INFO match); low: race on
+    cap/duplicate checks undocumented, cap counts all dynamic registrations'
+- at: 2026-10-02 16:21
+  text: 'Review fix: RequestBodyLimit normalises slashes like the router (trailing /, //), route has format:
+    false (/oauth/register.json -> 404); spec covers all three paths + the .json 404; cap scope (all dynamic
+    registrations) and the check-then-insert race documented in OAuth::DynamicRegistration. rspec 352/0,
+    rubocop clean.'
