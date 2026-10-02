@@ -8,6 +8,9 @@ Rails.application.routes.draw do
   get "/.well-known/oauth-authorization-server", to: "well_known#oauth_authorization_server",
                                                  as: :oauth_authorization_server
 
+  # RFC 7591 dynamic client registration (Doorkeeper has none).
+  post "/oauth/register", to: "client_registrations#create", as: :oauth_registration
+
   use_doorkeeper_openid_connect
   use_doorkeeper
   devise_for :users
