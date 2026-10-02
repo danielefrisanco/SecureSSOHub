@@ -147,3 +147,9 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - Phase 2 re-planned in TODO.md; tasks TASK-027..036 + gate TASK-037; T56 → Phase 3, T59/T61 → Phase 4, T57 split (T60 Phase 2, T61 DPoP Phase 4, JWE/mTLS Future).
 - ARCHITECTURE decisions: SMTP via env, Caddy, T57 split, Phase 2 re-plan. Commits 7144063, 1837a90, da97a94, 92d9248, ba674b7, 2b09e7f. Review: PASS.
 - User: merge develop into main when convenient.
+
+## 2026-10-02 — TASK-027 done: Redis as the shared Rails.cache; decide the rack-jwt-verifier replay cache
+- Rails.cache = redis_cache_store from REDIS_URL (production refuses to boot without it; development defaults to redis://localhost:6379/0); memory_store in test, cleared per example. redis gem 5.4 (MIT). Compose `redis` service on 127.0.0.1:6379; Dockerfile precompile placeholder.
+- rack-jwt-verifier replay_cache stays off: one use per jti, incompatible with reused bearer tokens; documented (initializer, ARCHITECTURE §4/§5, TODO T23) and guarded by a userinfo reuse spec.
+- Commits d7c3f1e, fb91ec2. rspec 356/0, rubocop, brakeman, bundler-audit clean. Review: PASS.
+- User: `docker compose up -d redis` for local development; production needs REDIS_URL (prod service in TASK-033).

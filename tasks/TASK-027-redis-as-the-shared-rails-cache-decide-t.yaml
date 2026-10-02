@@ -1,7 +1,7 @@
 id: TASK-027
 title: Redis as the shared Rails.cache; decide the rack-jwt-verifier replay cache
 type: feat
-status: in_progress
+status: done
 priority: high
 created: '2026-10-02'
 updated: '2026-10-02'
@@ -50,3 +50,10 @@ notes:
     §4/§5, TODO T23; userinfo spec proves reuse (verified it fails with replay_cache on). rspec 356/0,
     rubocop, brakeman, bundler-audit clean. User: production needs REDIS_URL (TASK-033 adds the prod service);
     run ''docker compose up -d redis'' locally'
+- at: 2026-10-02 16:40
+  text: 'REVIEW: PASS — Redis cache per environment with boot refusal spec''d, compose service on loopback,
+    dependency check recorded, replay_cache left off with reason and reuse spec'
+- at: 2026-10-02 16:40
+  text: done — criteria verified by spec/config/cache_store_spec.rb (production boot with/without REDIS_URL,
+    test store), userinfo reuse spec (fails with the guard on), manual dev/prod runner checks against
+    compose Redis; rspec 356/0, rubocop, brakeman, bundler-audit clean
