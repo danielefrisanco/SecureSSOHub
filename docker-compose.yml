@@ -15,11 +15,13 @@ services:
       - "3000:3000"
     depends_on:
       - db
+      - redis
     environment:
       # Use same variables here as defined in the db service
       RAILS_ENV: development
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: development_password
+      REDIS_URL: redis://redis:6379/0
       # HUB_ISSUER and the OIDC signing keys come from .env (see README).
 
   # 2. PostgreSQL Database Service
@@ -35,6 +37,13 @@ services:
       POSTGRES_PASSWORD: development_password
     ports:
       - "5432:5432"
+
+  # 3. Redis — the shared Rails.cache (development only; production is TASK-033).
+  # No password, so the port is published on loopback only.
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
 
 volumes:
   postgres17_data:

@@ -34,10 +34,12 @@ COPY . .
 RUN bundle exec bootsnap precompile app/ lib/
 
 # Precompile assets without production configuration: SECRET_KEY_BASE_DUMMY
-# skips the signing-key requirement and HUB_ISSUER gets a reserved (.invalid)
-# placeholder. The runtime container still needs the real values to boot.
+# skips the signing-key requirement; HUB_ISSUER and REDIS_URL get reserved
+# (.invalid) placeholders (the cache connects lazily, so nothing dials it).
+# The runtime container still needs the real values to boot.
 RUN SECRET_KEY_BASE_DUMMY=1 \
     HUB_ISSUER=https://asset-precompile.invalid \
+    REDIS_URL=redis://asset-precompile.invalid:6379/0 \
     ./bin/rails assets:precompile
 
 

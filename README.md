@@ -30,7 +30,7 @@ The endpoints are being built phase by phase; see `TODO.md` for what exists toda
 ## Development
 
 ```bash
-docker compose up -d db                      # PostgreSQL 17 on localhost:5432
+docker compose up -d db redis                # PostgreSQL 17 on localhost:5432, Redis on 127.0.0.1:6379
 bundle install
 DATABASE_URL=postgres://postgres:<password>@localhost:5432/secure_sso_hub_test \
   bin/rails db:prepare                       # <password> = POSTGRES_PASSWORD from docker-compose.yml
@@ -46,6 +46,7 @@ All configuration comes from environment variables; there are no fallback values
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` / `SECURE_SSO_HUB_DATABASE_PASSWORD` | database connection |
+| `REDIS_URL` | Redis for the shared `Rails.cache` (rate limits, readiness), e.g. `redis://redis:6379/0`; required in production — the hub refuses to boot without it. Development defaults to `redis://localhost:6379/0` (the compose `redis` service); tests use an in-memory store |
 | `HUB_ISSUER` | canonical https URL of this hub, e.g. `https://sso.example.com` — the OAuth/OIDC `iss` and the base of every discovery URL; required outside development/test |
 | `OIDC_SIGNING_KEY` | active RSA private key (≥ 2048 bits) that signs access and id tokens — PEM, or the PEM base64-encoded on one line; required outside development/test (an ephemeral key is generated there) |
 | `OIDC_SIGNING_KEY_PREVIOUS` | the previous signing key during a rotation (same format); stays published in the JWKS so tokens it signed still verify |

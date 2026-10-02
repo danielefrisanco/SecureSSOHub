@@ -46,8 +46,11 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Replace the default in-process memory cache store with a durable alternative.
-  # config.cache_store = :mem_cache_store
+  # Redis is the shared cache: rate-limit counters and the readiness check must
+  # agree across Puma workers and hosts, which a per-process store cannot do.
+  config.cache_store = :redis_cache_store, {
+    url: ENV.fetch("REDIS_URL") { raise "REDIS_URL is not set: the hub refuses to boot without its shared cache" }
+  }
 
   # Replace the default in-process and non-durable queuing backend for Active Job.
   # config.active_job.queue_adapter = :resque
