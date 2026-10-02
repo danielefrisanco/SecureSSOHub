@@ -1,11 +1,11 @@
 id: TASK-028
 title: Rate limiting on token, revocation, introspection, sign-in, password reset and registration
 type: feat
-status: todo
+status: in_progress
 priority: high
 created: '2026-10-02'
 updated: '2026-10-02'
-branch: null
+branch: task/028-rate-limiting-on-token-revocation-intros
 depends_on:
 - TASK-027
 context: "TODO T24. TODO T24 (audit §5.1: per-client and per-IP limits on /oauth/token, sign-in and password\
@@ -22,8 +22,8 @@ context: "TODO T24. TODO T24 (audit §5.1: per-client and per-IP limits on /oaut
   \ as TASK-025 does), HTML forms show a flash.\n- Limits from env with documented defaults (README);\
   \ behind a proxy they depend on trusted-proxy\n  configuration (TASK-033 sets it)."
 acceptance_criteria:
-- 'Token, revoke and introspect endpoints are rate limited per client_id (per IP without one) through an OAuth:': module
-    wired in the Doorkeeper initializer; 429 + Retry-After + JSON error, spec'd
+- 'Token, revoke and introspect endpoints are rate limited per client_id (per IP without one) through
+  an OAuth:: module wired in the Doorkeeper initializer; 429 + Retry-After + JSON error, spec''d'
 - Sign-in and password reset are rate limited per IP (and per email for sign-in); spec'd
 - POST /oauth/register uses the same mechanism; the DB-count cap in OAuth::DynamicRegistration is removed
   and its specs adapted
@@ -34,4 +34,7 @@ plan:
 - OAuth endpoints module + initializer wiring; Devise controllers; registration.
 - Specs per endpoint (cache store in tests must count); README.
 - Suite; closing note.
-notes: []
+notes:
+- at: 2026-10-02 16:40
+  text: started on task/028-rate-limiting-on-token-revocation-intros; first criterion re-quoted (YAML
+    had parsed the OAuth module name as a mapping key)
