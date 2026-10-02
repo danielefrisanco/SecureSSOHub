@@ -51,3 +51,23 @@ notes:
     only covers PreAuthorization). OAuth::Clients::Client has public?/usable?.'
 - at: 2026-10-02 15:58
   text: started on task/024-machine-token-grant-rfc-6749-4-4-for-ser
+- at: 2026-10-02 16:03
+  text: 'DECISION (user, 2026-10-02): AC3 read under TASK-022''s client-auth-only introspection — the
+    service obtains a machine token with introspect and calls /oauth/introspect authenticated as itself
+    (Basic); the machine token introspects as active (sub = azp = client uid); the same token presented
+    as Bearer stays 401. No bearer path added.'
+- at: 2026-10-02 16:10
+  text: 'CLOSING: machine grant done. OAuth::MachineGrantRules (app/services/oauth/machine_grant_rules.rb)
+    prepended into Doorkeeper''s grant Validator: public clients -> unauthorized_client; scopes must be
+    registered AND machine-flagged (no new column, allow-list = registered scopes with machine: true),
+    user/admin/no scope -> invalid_scope; RFC 8707 resource via OAuth::Resources -> invalid_target. Issuance
+    goes through OAuth::Tokens.issue_client_token (Creator prepend), which also touches last_used_at;
+    revoke_previous left off (rollover spec). TokenPayload: no admin claim without a user (TASK-019 payload
+    spec updated). Verified: AC1 spec/requests/oauth/machine_grant_spec.rb exact header+claims (sub=azp=aud=uid,
+    exp=iat+600), no refresh_token, resource->aud, public/pending/revoked refused; AC2 scope specs (unregistered,
+    user, admin, unknown, none) + invalid_client/unauthorized_client/invalid_target specs; AC3 per user
+    decision: service introspects a user token and its own machine token with Basic auth, machine token
+    as Bearer -> 401, issuance spy on OAuth::Tokens.issue_client_token; AC4 rspec 320/0 (isolation spec
+    included), rubocop, brakeman clean. Mutation check: disabling the prepends fails 6 specs. Findings:
+    Doorkeeper answers unauthorized_client with 401 (RFC says 400) -> T58. Also added T57 (JWE/DPoP/mTLS
+    options, user request) and a re-plan note on TASK-026. Local: docker compose up -d db, POSTGRES_HOST=localhost.'
