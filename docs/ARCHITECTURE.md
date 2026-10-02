@@ -130,7 +130,9 @@ and previous key) is handed to ruby-jwt as the `jwks` decode option, resolved pe
 `OAuth::SigningKey` (gem follow-up T48). What a self-contained JWT cannot say is checked per request in
 `Api::BaseController`: the token's `jti` — chosen on the record before the JWT is generated
 (`OAuth::TokenRecord`, indexed `oauth_access_tokens.jti`) — must still be live (`OAuth::Tokens.active?`),
-and the user must not be disabled; both answer 401 `invalid_token`. `replay_cache` waits for Redis (T23).
+and the user must not be disabled; both answer 401 `invalid_token`. The gem's `replay_cache` stays off
+(TASK-027): it refuses a second use of any `jti`, and a bearer access token is presented on every call for its
+lifetime (RFC 6750) — a spec proves a token is accepted repeatedly. It fits one-time tokens (DPoP proofs, T61).
 The interop spec (`spec/integration/rack_jwt_verifier_flow_spec.rb`) runs the gem as shipped, in
 JWKS mode against the hub's own document, as the proof downstream services need nothing hub-specific.
 
@@ -211,6 +213,7 @@ registration is logged with its `client_id` and address. No RFC 7592 management 
 | 2026-10-02 | **Production TLS: Caddy** in `docker-compose.prod.yml` (TASK-026; implemented in TASK-033). | Automatic Let's Encrypt certificates and renewal with a ten-line config — the simplest secure default on one Docker host. | If more services share the host (Traefik) or the operator brings their own proxy. |
 | 2026-10-02 | **Token confidentiality options split** (TASK-026, from T57): Phase 2 adds an env switch to keep `name`/`email` out of access tokens (T60, TASK-036); **DPoP** (RFC 9449) arrives with the MCP endpoint in Phase 4 (T61), where the hub is issuer and resource server; JWE and mTLS-bound tokens stay in Future. Product goal (user): stand out on MCP functionality, ease of use, security and configurable options. | Claim minimisation is cheap and immediate; DPoP only pays off once resource servers verify proofs; JWE needs per-resource keys and gem work. | When a deployment needs encrypted claims or certificate-bound service tokens. |
 | 2026-10-02 | **Phase 2 re-plan** (TASK-026): rate limiting with Rails 8 `rate_limit` on the shared Redis cache instead of rack-attack; authorization-code single-use dropped from the Redis row (already enforced in the database, TASK-019 — audit §5.2 corrected); rack-jwt-verifier's `jti` replay cache is to be verified before use, because bearer access tokens are legitimately reused for their lifetime; T56 waits in Phase 3 for the omniauth-ssoprovider fix (T44); RFC 7592 (T59) moves to Phase 4. | Fewer dependencies; the audit's assumptions checked against the Phase 1 code (docs/PHASES.md). | At the Phase 2 gate (TASK-037). |
+| 2026-10-02 | **Redis is `Rails.cache`** in production and development (`redis_cache_store` from `REDIS_URL`; production refuses to boot without it), an in-memory store in test; `redis` gem 5.x; **rack-jwt-verifier's `replay_cache` stays off** (TASK-027). | Rate-limit counters and readiness must agree across Puma workers and hosts; any Redis-protocol server works (compose runs `redis:7`, production picks its image in TASK-033). The replay guard allows one use per `jti`, which bearer tokens reused for their 10-minute life cannot satisfy; revocation is checked per request in the database instead. | Move to `redis` 6 once its RESP3 default has settled; enable a replay guard only for one-time tokens (DPoP proofs, T61). |
 
 ## 6. Future directions (not scheduled)
 
