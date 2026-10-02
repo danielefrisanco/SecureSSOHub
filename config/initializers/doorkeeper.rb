@@ -149,21 +149,28 @@ end
 # the machine-grant rules (confidential clients, machine scopes, resource),
 # the token record's `jti` and the revocation/introspection rules (type-hint
 # fallback, family revocation, client-only introspection) — kept out of
-# app/models and app/controllers so nothing there names Doorkeeper. Wired
-# once, after boot (a to_prepare hook would re-register the validations on
-# every code reload in development).
+# app/models and app/controllers so nothing there names Doorkeeper. Doorkeeper's
+# models and request objects come from the gem's lib and load once, so they
+# are wired once, after boot (a to_prepare hook would re-register the
+# validations on every code reload in development).
 Rails.application.config.after_initialize do
   Doorkeeper::Application.include(OAuth::ClientRules)
   Doorkeeper::AccessToken.prepend(OAuth::TokenRecord)
   Doorkeeper::OAuth::PreAuthorization.prepend(OAuth::AuthorizationRules)
-  Doorkeeper::AuthorizationsController.prepend(OAuth::AuthorizationGuard)
-  Doorkeeper::AuthorizationsController.prepend(OAuth::ConsentScreen)
   Doorkeeper::OAuth::AuthorizationCodeRequest.prepend(OAuth::TokenRules)
   Doorkeeper::OAuth::RefreshTokenRequest.prepend(OAuth::TokenRules)
   Doorkeeper::OAuth::ClientCredentials::Validator.prepend(OAuth::MachineGrantRules)
   Doorkeeper::OAuth::ClientCredentials::Creator.prepend(OAuth::MachineGrantRules::Issuance)
-  Doorkeeper::TokensController.prepend(OAuth::RevocationRules)
   Doorkeeper::OAuth::TokenIntrospection.prepend(OAuth::IntrospectionRules)
+end
+
+# Doorkeeper's controllers live in the engine's app/ and are reloaded with the
+# app's code in development: wired on every prepare, or a reload would drop
+# them (production loads them once).
+Rails.application.config.to_prepare do
+  Doorkeeper::AuthorizationsController.prepend(OAuth::AuthorizationGuard)
+  Doorkeeper::AuthorizationsController.prepend(OAuth::ConsentScreen)
+  Doorkeeper::TokensController.prepend(OAuth::RevocationRules)
 end
 
 # Both blocks run per token, so the autoloaded OAuth::TokenPayload and
