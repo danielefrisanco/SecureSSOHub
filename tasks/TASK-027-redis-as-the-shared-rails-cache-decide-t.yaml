@@ -38,3 +38,15 @@ plan:
 notes:
 - at: 2026-10-02 16:35
   text: started on task/027-redis-as-the-shared-rails-cache-decide-t
+- at: 2026-10-02 16:39
+  text: 'dependency check: redis 5.4.1 (MIT, allowed by policy; pulls redis-client 0.30.1, MIT). 5.x chosen
+    over 6.0 (2026-07-31, new major, RESP3 by default). bundler-audit clean'
+- at: 2026-10-02 16:39
+  text: 'closing: Rails.cache = redis_cache_store from REDIS_URL in production (boot stops with ''REDIS_URL
+    is not set…'') and development (compose redis:7 on 127.0.0.1:6379, default redis://localhost:6379/0);
+    memory_store in test, cleared before each example (spec/config/cache_store_spec.rb boots production
+    via rails runner). Dockerfile precompile gets a .invalid REDIS_URL. replay_cache left off — ReplayGuard
+    allows one use per jti, incompatible with reused bearer tokens; recorded in the initializer, ARCHITECTURE
+    §4/§5, TODO T23; userinfo spec proves reuse (verified it fails with replay_cache on). rspec 356/0,
+    rubocop, brakeman, bundler-audit clean. User: production needs REDIS_URL (TASK-033 adds the prod service);
+    run ''docker compose up -d redis'' locally'
