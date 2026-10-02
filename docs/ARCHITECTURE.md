@@ -37,9 +37,10 @@ service in the ecosystem trusts. It does **not** own business authorization data
   | `iat`, `nbf`, `exp` | issued-at, not-before (= `iat`), expiry = `iat` + 10 minutes |
   | `name` | only with the `profile` scope |
   | `email`, `email_verified` | only with the `email` scope |
-  | `admin` | boolean, `true` only for administrators |
+  | `admin` | boolean, `true` only for administrators (user tokens only) |
 
-  Nothing else about the user is placed in an access token. The same scope gating applies to the
+  Nothing else about the user is placed in an access token, and a machine token (client-credentials,
+  no user) carries no user claim at all — not even `admin`. The same scope gating applies to the
   id_token (`openid` scope; `sub`, `iss`, `aud` = client_id, `nonce`, `auth_time`, `at_hash`) and to
   userinfo. Refresh tokens are opaque, hashed at rest, issued only with `offline_access`.
 - **Revocation vs self-contained tokens.** Revoking a token (RFC 7009 endpoint, sign out everywhere,
@@ -150,6 +151,21 @@ client_uid:)`, `revoke_all(client_uid:)` and `active_for(user:)` (live sessions,
 included). A password change or reset and an administrator setting `disabled_at` revoke every token and
 pending code of the user (`User` callback); signing out of the hub and a failed-attempts lock do not.
 
+**Machine grant (TASK-024):** `client_credentials` (RFC 6749 §4.4) gives a service with no user behind it
+a token for itself. `OAuth::MachineGrantRules`, prepended into Doorkeeper's grant validator, admits only
+confidential, approved clients (`unauthorized_client`; Doorkeeper answers it with 401 where RFC 6749 §5.2
+would say 400) and only machine scopes: a client's machine allow-list is its registered scopes carrying
+the `machine` flag in `config/oauth_scopes.yml` (no extra column); user and admin scopes are
+`invalid_scope` even when registered, and a request without `scope` falls back to the default `openid`
+and is refused too. An optional RFC 8707 `resource` is validated as at the authorization endpoint
+(`invalid_target`) and becomes `aud`; otherwise `aud` is the client's `client_id`. The token is the §3
+JWT with `sub` = `azp` = `client_id`, no user claims, 10 minutes, no refresh token. Doorkeeper creates it
+inside `OAuth::Tokens.issue_client_token`, the one hook for machine-token issuance (audit log, T25), which
+also touches `last_used_at`. A client's earlier token is neither reused nor revoked
+(`revoke_previous_client_credentials_token` off), so a service can roll over. Introspection is unchanged:
+a service holding `introspect` calls it with its own client credentials; its machine token is never a
+caller credential there.
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |
@@ -175,6 +191,7 @@ pending code of the user (`User` callback); signing out of the hub and a failed-
 | 2026-09-18 | **Ruby/Rails upgrade (Ruby 3.4, Rails 8.x) is the first Phase 1 task** (TASK-013). | EOL runtime + ~75 advisories; fewer moving parts before Doorkeeper. | — |
 | 2026-09-18 | **Refresh tokens rotate immediately** (no `previous_refresh_token` column) and have an **absolute lifetime** from the authorization code; **reuse revokes the (user, client) family**, a **replayed code revokes its descendants** (TASK-019). | Doorkeeper's deferred revocation only fires through its own bearer lookup, which the hub never uses; OAuth 2.1 §4.3.1 / RFC 6749 §4.1.2. | If a client cannot cope with strict rotation (concurrent refreshes), a short grace window would need the column back plus an explicit revocation hook. |
 | 2026-09-27 | **Revocation/introspection policy** (TASK-022): another client's token is refused with **403** (not a silent 200); **introspection is a scope** (`introspect`, machine), not a per-client flag, and needs client authentication; **password change/reset and admin disable sign the user out everywhere**, a **failed-attempts lock does not**. | RFC 7009 §2.1 says refuse and inform; one scope flag also serves TASK-024's machine clients; a lock can be triggered by anyone typing wrong passwords, so revoking on it would be a sign-out DoS. | If lockout becomes admin-driven or rate limiting (T24) makes brute-force locks rare, revisit revoking on lock; lockout thresholds become configurable in T55. |
+| 2026-10-02 | **Machine grant** (TASK-024): confidential, approved clients and machine-flagged scopes only (no `machine_scopes` column); earlier machine tokens stay live on reissue; **introspection stays client-authenticated**: a machine token with `introspect` is not accepted as a Bearer caller credential. | One scope flag already says what a service may hold; a service may hold two tokens during rollover; client authentication is the mainstream introspection guard (RFC 7662 §2.1), and a leaked Bearer token would become a token-scanning oracle. | If a deployment needs workers that never hold the client secret (a gateway fetching tokens for them), revisit a Bearer path limited to machine tokens carrying `introspect`. |
 
 ## 6. Future directions (not scheduled)
 
