@@ -153,3 +153,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - rack-jwt-verifier replay_cache stays off: one use per jti, incompatible with reused bearer tokens; documented (initializer, ARCHITECTURE §4/§5, TODO T23) and guarded by a userinfo reuse spec.
 - Commits d7c3f1e, fb91ec2. rspec 356/0, rubocop, brakeman, bundler-audit clean. Review: PASS.
 - User: `docker compose up -d redis` for local development; production needs REDIS_URL (prod service in TASK-033).
+
+## 2026-10-02 — TASK-028 handoff
+- DONE: d231f70 fix (Doorkeeper controller rules wired in to_prepare; a dev reload used to drop them). 349326e rate limits: token/revoke/introspect per approved client+address (else per address), sign-in per address + hashed email, password reset/unlock per address + email per hour, registration on the same mechanism; env limits validated at boot. rspec 372/0, rubocop, brakeman clean.
+- NEXT: docs (README env rows + section, ARCHITECTURE §4/decision row, TODO T24), closing note, review, complete, merge into develop; then TASK-029.
+- BLOCKERS/QUESTIONS: none. develop is 14 commits ahead of origin (TASK-026/027) — user pushes when convenient.

@@ -38,3 +38,16 @@ notes:
 - at: 2026-10-02 16:40
   text: started on task/028-rate-limiting-on-token-revocation-intros; first criterion re-quoted (YAML
     had parsed the OAuth module name as a mapping key)
+- at: 2026-10-02 16:50
+  text: 'handoff: DONE: d231f70 fix — Doorkeeper controller prepends moved to to_prepare (they were lost
+    after a dev reload); 349326e feat — rate limits: config/initializers/rate_limits.rb (7 env vars, boot
+    validation), OAuth::EndpointRateLimits + OAuth::TokenEndpointLimits (per approved client+address,
+    else address; 429 temporarily_unavailable JSON, Retry-After, no-store), AccountRateLimits concern
+    on Devise sessions/passwords/unlocks (per address + hashed email; 429 re-rendered form + flash), registration
+    cap moved from DB count to rate_limit (Clients.dynamic_registrations_from removed; registration_ip
+    column and index kept). Specs: spec/requests/rate_limits_spec.rb (12), spec/config/rate_limits_spec.rb
+    (3), register_spec adapted (34). rspec 372/0, rubocop, brakeman clean. | NEXT: README env rows + rate-limit
+    section (fail-open when Redis down, trusted proxies TASK-033), ARCHITECTURE §4 paragraph + decision
+    row (client+address key, not client_id alone: lockout DoS), TODO T24 note; closing note; reviewer;
+    complete; merge into develop. | BLOCKERS/QUESTIONS: none; AC1 says ''per client_id'' — implemented
+    per client AND address on purpose (record in ARCHITECTURE).'
