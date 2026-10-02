@@ -166,6 +166,21 @@ also touches `last_used_at`. A client's earlier token is neither reused nor revo
 a service holding `introspect` calls it with its own client credentials; its machine token is never a
 caller credential there.
 
+**Dynamic client registration (TASK-025):** `POST /oauth/register` (RFC 7591) is the hub's own
+`ClientRegistrationsController`; `OAuth::DynamicRegistration` validates the JSON metadata and calls
+`OAuth::Clients.register_dynamic`, the registry's only entry point without an administrator.
+`OAUTH_REGISTRATION_POLICY` (`OAuth::RegistrationPolicy`, validated at boot): `approval` (default) creates
+the client `pending` — refused at authorize and token until `OAuth::Clients.approve`; `open` approves at
+once but only public (PKCE) clients; `closed` answers 404 and drops `registration_endpoint` from both
+discovery documents. Registration never grants `admin:*` or machine scopes, nor `client_credentials`
+(`grant_types` ⊆ authorization_code, refresh_token). Redirect-URI problems are `invalid_redirect_uri`,
+everything else `invalid_client_metadata` (400, RFC 7591 §3.2.2) — including a duplicate (same
+`client_name` and `redirect_uris` within 24 hours; RFC 7591 defines no 409). Until rate limiting (T24): at
+most `OAUTH_REGISTRATION_IP_LIMIT` registrations per address and hour (`oauth_applications.registration_ip`,
+429 `temporarily_unavailable` with `Retry-After`), and bodies over 16 KiB get 413 from `RequestBodyLimit`
+before Rails parses them. The response is `no-store` (it may carry the one-time `client_secret`), and each
+registration is logged with its `client_id` and address. No RFC 7592 management endpoint yet (T59).
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |

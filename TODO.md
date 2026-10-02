@@ -68,7 +68,8 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 | T25 | Audit log table + service (sign-in, grant, token issue/revoke, admin actions, MCP tool calls) with `azp`/client attribution; hook points already exist in `OAuth::Clients`/`OAuth::Tokens`; specs | feat | high | [app] | T16 | §5.1, §6.3 |
 | T26 | Devise hardening: password length ≥ 12 + pwned-password check, `:confirmable` with a real mailer config, `mailer_sender`; specs. Until this lands `email_verified` is always false, so omniauth_syncer's `on_conflict: :link` always raises against the hub | feat | medium | [app] | T05, T10 | §5.1, §10 Q3 |
 | T27 | TOTP 2FA for admins (enrolment UI + sign-in step); specs | feat | medium | [app] | T26 | §5.1 |
-| T28 | rack-cors full policy (discovery/jwks done in TASK-021): token/userinfo/MCP endpoints; specs | feat | medium | [app] | T17 | §5.1 |
+| T28 | rack-cors full policy (discovery/jwks done in TASK-021): token/userinfo/MCP endpoints and `POST /oauth/register` (browser-based MCP clients such as inspectors register cross-origin; no cookies involved); specs | feat | medium | [app] | T17 | §5.1 |
+| T59 | RFC 7592 client configuration endpoint for dynamically registered clients: `registration_access_token` + `registration_client_uri` in the TASK-025 response; read/update/delete one's own registration (update re-enters approval when redirect URIs or scopes change); specs | feat | low | [app] | T22 | §6.2 |
 | T29 | Production deployment: `docker-compose.prod.yml` (web, db, redis, TLS-terminating proxy), env-only configuration, remove hardcoded dev DB password from the dev compose, readiness endpoint (DB + cache + signing key), JSON request logs | chore | high | [app] | T23 | §5.2, §4 |
 
 ## Phase 3 — user, admin and developer UI
