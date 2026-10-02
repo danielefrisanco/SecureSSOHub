@@ -1,11 +1,11 @@
 id: TASK-026
 title: Phase 1 gate — verify outcomes, re-plan Phase 2 and create its tasks
 type: docs
-status: todo
+status: in_progress
 priority: high
 created: '2026-09-18'
 updated: '2026-10-02'
-branch: null
+branch: task/026-phase-1-gate-verify-outcomes-re-plan-pha
 depends_on:
 - TASK-013
 - TASK-014
@@ -55,3 +55,5 @@ notes:
   text: 'Phase 2 re-plan input (user, 2026-10-02): the hub must stand out on MCP functionality, ease of
     use, security and configurable options. Weigh T57 (JWE / DPoP / mTLS / claim minimisation as opt-in
     options) for Phase 2 hardening, DPoP first for MCP agents.'
+- at: 2026-10-02 16:22
+  text: started on task/026-phase-1-gate-verify-outcomes-re-plan-pha
