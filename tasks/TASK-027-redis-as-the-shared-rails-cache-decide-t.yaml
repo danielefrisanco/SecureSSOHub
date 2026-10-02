@@ -1,0 +1,38 @@
+id: TASK-027
+title: Redis as the shared Rails.cache; decide the rack-jwt-verifier replay cache
+type: feat
+status: todo
+priority: high
+created: '2026-10-02'
+updated: '2026-10-02'
+branch: null
+depends_on: []
+context: "TODO T23. TODO T23 (audit §5.2, §10 Q2; decision 2026-09-18: Redis). Today `Rails.cache` is\
+  \ unconfigured, so\nproduction falls back to a per-process store — wrong for anything shared across\
+  \ Puma workers or\nhosts: rate-limit counters (T24, TASK-028), the readiness check (T29, TASK-033),\
+  \ later DPoP proof\nreplay (T61). Authorization-code single-use is NOT part of this task: codes are\
+  \ single-use in the\ndatabase and a replayed code revokes its descendants (OAuth::TokenRules, TASK-019;\
+  \ recorded as an\naudit correction in docs/PHASES.md).\n\nScope\n- `redis_cache_store` from `REDIS_URL`\
+  \ in production and development; production refuses to boot\n  without `REDIS_URL` (like HUB_ISSUER/OIDC_SIGNING_KEY);\
+  \ test keeps an in-memory store.\n- `redis` gem (Rails' Redis cache store needs it): run /harness:add-dependency\
+  \ first (license,\n  maintenance); compose gets a `redis` service for development (no password in the\
+  \ repo —\n  T29 owns production).\n- rack-jwt-verifier `replay_cache` (config/initializers/rack_jwt_verifier.rb\
+  \ leaves it off \"until\n  Redis\", T23). Verify its semantics in the gem before enabling: if it refuses\
+  \ a second use of the\n  same `jti`, it is incompatible with bearer access tokens that clients reuse\
+  \ for their 10-minute\n  life (RFC 6750) — then leave it off, and record why (it fits one-time tokens\
+  \ such as DPoP proofs,\n  T61) in the initializer comment and docs/ARCHITECTURE.md. Enable it only if\
+  \ it does something\n  else that is compatible, with a spec.\n- README configuration table: REDIS_URL."
+acceptance_criteria:
+- Production and development use a Redis cache store configured from REDIS_URL; production boot fails
+  with a clear message when REDIS_URL is missing; test uses an in-memory store
+- docker-compose.yml has a redis service the web service uses in development; README documents REDIS_URL
+- The redis gem passed the dependency check (recorded in the task notes)
+- The replay_cache decision (enabled with a spec, or left off with the reason) is recorded in the initializer
+  and docs/ARCHITECTURE.md
+- rspec/rubocop/brakeman pass; Doorkeeper isolation spec passes
+plan:
+- Dependency check for redis; Gemfile; cache store per environment with the boot check.
+- Compose service and README.
+- Read rack-jwt-verifier's replay_cache; decide, document, spec if enabled.
+- Suite; closing note.
+notes: []

@@ -57,3 +57,8 @@ notes:
     options) for Phase 2 hardening, DPoP first for MCP agents.'
 - at: 2026-10-02 16:22
   text: started on task/026-phase-1-gate-verify-outcomes-re-plan-pha
+- at: 2026-10-02 16:25
+  text: 'DECISIONS (user, 2026-10-02): CI — user pushes develop and sends the Actions run link; T26 email
+    — generic SMTP via env vars (no new gem, any provider); T29 proxy — Caddy (automatic Let''s Encrypt);
+    T57 split — Phase 2: option to leave name/email out of access tokens; Phase 4: DPoP (RFC 9449) with
+    the MCP endpoint; JWE and mTLS stay Future.'

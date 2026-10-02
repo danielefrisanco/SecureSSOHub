@@ -1,0 +1,33 @@
+id: TASK-035
+title: Token endpoint error statuses per RFC 6749 §5.2 (unauthorized_client is 400)
+type: fix
+status: todo
+priority: low
+created: '2026-10-02'
+updated: '2026-10-02'
+branch: null
+depends_on: []
+context: 'TODO T58. TODO T58 (TASK-024 finding). RFC 6749 §5.2: token-endpoint errors are 400 except `invalid_client`
+
+  (401 when the client authenticated through the Authorization header). Doorkeeper answers
+
+  `unauthorized_client` with 401; spec/requests/oauth/machine_grant_spec.rb pins today''s 401 with a
+
+  comment. Check every token-endpoint error the hub can produce (invalid_request, invalid_client,
+
+  invalid_grant, unauthorized_client, unsupported_grant_type, invalid_scope, invalid_target) and
+
+  correct the drift in one place under app/services/oauth (Doorkeeper isolation), wired from the
+
+  initializer. The authorization endpoint renders/redirects its errors and is out of scope.'
+acceptance_criteria:
+- unauthorized_client from the token endpoint is answered with 400; the machine grant spec is updated
+- A spec table covers the status of every token-endpoint error code the hub produces, matching RFC 6749
+  §5.2
+- The fix lives in app/services/oauth, wired from the Doorkeeper initializer; isolation spec passes
+- rspec/rubocop/brakeman pass
+plan:
+- Inventory the errors; find Doorkeeper's status mapping.
+- Override in one module; spec table.
+- Suite; closing note.
+notes: []

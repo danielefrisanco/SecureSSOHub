@@ -1,0 +1,38 @@
+id: TASK-034
+title: Configurable account lockout from environment
+type: feat
+status: todo
+priority: medium
+created: '2026-10-02'
+updated: '2026-10-02'
+branch: null
+depends_on: []
+context: 'TODO T55. TODO T55 (added in TASK-022). Devise `:lockable` is on with the hardcoded defaults
+  (20 attempts,
+
+  unlock after 1 hour, unlock by email and time). Operators should tune it without code changes —
+
+  part of the "configurable options" product goal (user, 2026-10-02).
+
+
+  Env: `DEVISE_MAX_ATTEMPTS` (default 20), `DEVISE_UNLOCK_IN` (seconds, default 3600),
+
+  `DEVISE_UNLOCK_STRATEGY` (email | time | both | none — default both). Validate at boot (a typo
+
+  must not silently disable lockout). A lock never revokes OAuth tokens (TASK-022 decision: anyone
+
+  can trigger a lock by typing wrong passwords — revoking on it would be a sign-out DoS); keep the
+
+  spec that proves it. Unlock-by-email depends on working mail (TASK-030) — document the interplay.'
+acceptance_criteria:
+- Max attempts, unlock delay and unlock strategy come from env with today's defaults; invalid values stop
+  the boot with a clear message
+- Specs prove the configured threshold locks the account and the configured delay unlocks it; a lock still
+  revokes no tokens
+- README documents the variables and their interplay with email delivery
+- rspec/rubocop/brakeman pass
+plan:
+- Read env in config/initializers/devise.rb with validation.
+- Specs; README.
+- Suite; closing note.
+notes: []
