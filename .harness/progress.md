@@ -158,3 +158,8 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - DONE: d231f70 fix (Doorkeeper controller rules wired in to_prepare; a dev reload used to drop them). 349326e rate limits: token/revoke/introspect per approved client+address (else per address), sign-in per address + hashed email, password reset/unlock per address + email per hour, registration on the same mechanism; env limits validated at boot. rspec 372/0, rubocop, brakeman clean.
 - NEXT: docs (README env rows + section, ARCHITECTURE §4/decision row, TODO T24), closing note, review, complete, merge into develop; then TASK-029.
 - BLOCKERS/QUESTIONS: none. develop is 14 commits ahead of origin (TASK-026/027) — user pushes when convenient.
+
+## 2026-10-04 — TASK-028 done: Rate limiting on token, revocation, introspection, sign-in, password reset and registration
+- Rails 8 `rate_limit` on the shared cache, limits from 7 env vars (+ OAUTH_REGISTRATION_IP_LIMIT) validated at boot. Token/revoke/introspect keyed by approved client + address, else address (not client_id alone: lockout DoS — ARCHITECTURE §4/§5, TODO T24); 429 temporarily_unavailable JSON + Retry-After + no-store. Sign-in per address + hashed email; password reset/unlock per address + email per hour. /oauth/register moved from the DB count to the same mechanism. Fail open when Redis is unreachable.
+- Commits d231f70 (Doorkeeper prepends in to_prepare), 349326e, 1b70fa2, b0c633e. rspec 372/0, rubocop, brakeman, bundler-audit clean. Review: PASS.
+- User: nothing required. Behind a proxy limits count the proxy's address until TASK-033 sets trusted_proxies. Local specs: `docker compose up -d db` and `POSTGRES_HOST=localhost bundle exec rspec`.

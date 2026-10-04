@@ -1,7 +1,7 @@
 id: TASK-028
 title: Rate limiting on token, revocation, introspection, sign-in, password reset and registration
 type: feat
-status: in_progress
+status: done
 priority: high
 created: '2026-10-02'
 updated: '2026-10-04'
@@ -65,3 +65,10 @@ notes:
     ARCHITECTURE §4 paragraph + decision row, TODO T24. rspec 372/0, rubocop, brakeman, bundler-audit
     clean. User: nothing required; behind a proxy limits count the proxy''s address until TASK-033 sets
     trusted_proxies; local specs need ''docker compose up -d db'' and POSTGRES_HOST=localhost.'
+- at: 2026-10-04 21:13
+  text: 'REVIEW: PASS — all five criteria met; AC1 key (approved client + address) judged satisfied in
+    substance and recorded; fail-open claim verified against Rails 8.1'
+- at: 2026-10-04 21:13
+  text: done — specs per endpoint in spec/requests/rate_limits_spec.rb, boot validation in spec/config/rate_limits_spec.rb,
+    register_spec adapted, isolation spec green; rspec 372/0 (POSTGRES_HOST=localhost), rubocop, brakeman,
+    bundler-audit clean; reviewer PASS
