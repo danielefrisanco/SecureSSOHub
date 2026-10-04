@@ -162,7 +162,7 @@ the `machine` flag in `config/oauth_scopes.yml` (no extra column); user and admi
 and is refused too. An optional RFC 8707 `resource` is validated as at the authorization endpoint
 (`invalid_target`) and becomes `aud`; otherwise `aud` is the client's `client_id`. The token is the §3
 JWT with `sub` = `azp` = `client_id`, no user claims, 10 minutes, no refresh token. Doorkeeper creates it
-inside `OAuth::Tokens.issue_client_token`, the one hook for machine-token issuance (audit log, T25), which
+inside `OAuth::Tokens.issue_client_token`, the one hook for machine-token issuance (and its audit event, TASK-029), which
 also touches `last_used_at`. A client's earlier token is neither reused nor revoked
 (`revoke_previous_client_credentials_token` off), so a service can roll over. Introspection is unchanged:
 a service holding `introspect` calls it with its own client credentials; its machine token is never a
@@ -201,6 +201,51 @@ callback, so refused requests count too. A cache that cannot be reached counts n
 lets a nil increment through): Redis down does not stop sign-in or token issuance, and readiness reports it
 (TASK-033). Behind a proxy the address is the client's only once `trusted_proxies` is set (TASK-033).
 
+**Audit log (TASK-029):** one `audit_events` row per security event, written only by `Audit.record`
+(`app/services/audit.rb`): `event`, `actor_id` (the user who acted; none for a client or the system),
+`subject_id` (the user it concerns), `client_uid` (the client involved — a token's `azp`), `jti`, `ip`,
+`request_id`, `metadata` (jsonb) and `created_at`. User and client columns are identifiers, not foreign keys,
+so the log outlives what it mentions. The address and request id come from `Current`, set per request by
+the `RequestContext` middleware (after `ActionDispatch::RemoteIp`); the actor defaults to the signed-in
+user (a Warden hook puts it on `Current`), and callers that know better name it (`by:`). **Append-only:**
+`AuditEvent` is read-only once saved and refuses `destroy`/`delete`; relation-level writes bypass the model,
+so the database grant — the app's role gets INSERT and SELECT only on `audit_events` — is the guarantee
+(TASK-033). **Fails closed:** a failed write raises; every hook that changes the database records inside
+the same transaction, so the change and its event commit together or not at all, and the request fails
+rather than go unrecorded. Token issuance is the exception in form only: Doorkeeper has saved the token
+before `OAuth::TokenRules#after_successful_response` runs, so a failed write turns into a 500 and the client
+never receives it. **No credentials:** tokens appear by `jti`, never as strings; codes, client secrets and
+passwords are never passed; metadata keys matching `filter_parameters` are stored as `[FILTERED]`; a
+failed sign-in names the account only when the email matches one and never stores what was typed (people
+type passwords into the email field). A request spec drives every flow and checks no credential reaches
+the log.
+
+| Event | Recorded by | Actor · subject · client · details |
+|---|---|---|
+| `user.signed_in` | Warden `after_set_user` (not on session reads) | user · user · — · `strategy` |
+| `user.sign_in_failed` | Warden `before_failure`, sign-in form POST only | — · the account if the email matches · — · `reason` |
+| `user.signed_out` | Warden `before_logout` (sign-out, session timeout) | user · user |
+| `user.locked` | `User` (failed-attempts lock) | — · user · — · `failed_attempts` |
+| `user.password_changed`, `user.disabled` | `User` | signed-in user, if any · user |
+| `consent.granted` | `OAuth::Consents.grant` — a new or widened consent, not a repeat | user · user · client · `scopes`, `added` |
+| `consent.revoked` | `OAuth::Consents.revoke` | signed-in user · user · client · `scopes` |
+| `token.issued` | `OAuth::TokenRules` (code, refresh), `OAuth::Tokens.issue_client_token` (machine) | — · owner (none for machine) · client · `jti`, `grant_type`, `scopes` |
+| `token.revoked` | `OAuth::Tokens.revoke_family!` — the account page (`by:`) or `POST /oauth/revoke` (no actor) | `by:` · owner · client · `jti`, `revoked` |
+| `token.refresh_reuse_detected`, `token.code_replay_detected` | `OAuth::Tokens.detect_reuse!`, `.revoke_issued_from!` | — · owner · client · `jti` (reuse), `revoked` |
+| `tokens.revoked_for_user`, `tokens.revoked_for_user_and_client`, `tokens.revoked_for_client` | `OAuth::Tokens.revoke_all_for`, `.revoke_for`, `.revoke_all` | signed-in user or `actor:` · user · client · `revoked` |
+| `client.created`, `client.registered` | `OAuth::Clients.create` (admin), `.register_dynamic` (no actor) | admin · — · client · `name`, `client_type`, `redirect_uris`, `scopes`, `approval_state` |
+| `client.updated` | `OAuth::Clients.update` | admin · — · client · as above + `fields` changed |
+| `client.secret_rotated`, `client.approved`, `client.revoked` | `OAuth::Clients.rotate_secret`, `.approve`, `.revoke` | admin · — · client · `from` (state changes) |
+
+One user action can record several events: revoking a client also records `tokens.revoked_for_client`, a
+password change `tokens.revoked_for_user`. Rate-limited requests (429) never reach the hooks and are not
+recorded. **Retention:** the hub never prunes the log. The expectation is at least 12 months online, for
+investigating an incident after the fact; after that, archive or prune per the operator's policy, as
+a deliberate operation with a database role that may delete (the app's may not). The log holds personal
+data — user ids and IP addresses, no emails or names — so the retention period belongs in the operator's
+privacy notice. Volume is dominated by `token.issued` (one per code exchange, refresh and machine token)
+and `user.signed_in`. The viewer is Phase 3 (T34); until then, `AuditEvent` from a console.
+
 **Role of each self-developed gem in the target architecture**
 
 | Gem | Where | Role |
@@ -232,6 +277,7 @@ lets a nil increment through): Redis down does not stop sign-in or token issuanc
 | 2026-10-02 | **Token confidentiality options split** (TASK-026, from T57): Phase 2 adds an env switch to keep `name`/`email` out of access tokens (T60, TASK-036); **DPoP** (RFC 9449) arrives with the MCP endpoint in Phase 4 (T61), where the hub is issuer and resource server; JWE and mTLS-bound tokens stay in Future. Product goal (user): stand out on MCP functionality, ease of use, security and configurable options. | Claim minimisation is cheap and immediate; DPoP only pays off once resource servers verify proofs; JWE needs per-resource keys and gem work. | When a deployment needs encrypted claims or certificate-bound service tokens. |
 | 2026-10-02 | **Phase 2 re-plan** (TASK-026): rate limiting with Rails 8 `rate_limit` on the shared Redis cache instead of rack-attack; authorization-code single-use dropped from the Redis row (already enforced in the database, TASK-019 — audit §5.2 corrected); rack-jwt-verifier's `jti` replay cache is to be verified before use, because bearer access tokens are legitimately reused for their lifetime; T56 waits in Phase 3 for the omniauth-ssoprovider fix (T44); RFC 7592 (T59) moves to Phase 4. | Fewer dependencies; the audit's assumptions checked against the Phase 1 code (docs/PHASES.md). | At the Phase 2 gate (TASK-037). |
 | 2026-10-02 | **Redis is `Rails.cache`** in production and development (`redis_cache_store` from `REDIS_URL`; production refuses to boot without it), an in-memory store in test; `redis` gem 5.x; **rack-jwt-verifier's `replay_cache` stays off** (TASK-027). | Rate-limit counters and readiness must agree across Puma workers and hosts; any Redis-protocol server works (compose runs `redis:7`, production picks its image in TASK-033). The replay guard allows one use per `jti`, which bearer tokens reused for their 10-minute life cannot satisfy; revocation is checked per request in the database instead. | Move to `redis` 6 once its RESP3 default has settled; enable a replay guard only for one-time tokens (DPoP proofs, T61). |
+| 2026-10-04 | **Audit log** (TASK-029): one `audit_events` table written only by `Audit.record`; **fails closed** (the event shares the change's transaction); **append-only** in the model now, enforced by an INSERT/SELECT-only grant for the app's role in production (TASK-033) rather than a trigger; tokens by `jti` only; no pruning by the app, at least 12 months expected. | An audit trail with silent gaps is worse than a failed request; a trigger would need `structure.sql` (schema.rb cannot hold it) and the local pg_dump is older than the server, while a grant is the standard control and comes with the production role anyway. | If audit writes ever fail in practice (e.g. a separate audit database); when the admin viewer (T34) needs retention settings. |
 | 2026-10-04 | **Rate limits** (TASK-028): Rails `rate_limit` in the shared cache; token, revoke and introspect keyed by **approved client + address** (else address), not `client_id` alone; account forms per address and per hashed email; registration's DB cap replaced; **fail open** when the cache is unreachable. | A public `client_id` is no secret: a per-client counter would let anyone lock a client's users out. Failing closed would turn a Redis outage into a sign-in outage; lockable and refresh rotation still hold without the counters. | If a distributed attack from many addresses needs a per-client ceiling as well; when readiness (TASK-033) can alert on the cache. |
 
 ## 6. Future directions (not scheduled)
