@@ -1,11 +1,11 @@
 id: TASK-029
 title: Audit log — sign-ins, consents, tokens, clients and admin actions
 type: feat
-status: todo
+status: in_progress
 priority: high
 created: '2026-10-02'
-updated: '2026-10-02'
-branch: null
+updated: '2026-10-04'
+branch: task/029-audit-log-sign-ins-consents-tokens-clien
 depends_on: []
 context: "TODO T25. TODO T25 (audit §5.1, §6.3: a structured audit log of sign-ins, grants, token issuance/revocation,\n\
   admin actions; §6.3 wants `azp`/client attribution). Phase 1 left one hook point per event so\nthis\
@@ -35,4 +35,6 @@ plan:
 - Wire the hook points; Devise/Warden hooks.
 - Specs per event; filter spec; docs.
 - Suite; closing note.
-notes: []
+notes:
+- at: 2026-10-04 21:17
+  text: started on task/029-audit-log-sign-ins-consents-tokens-clien
