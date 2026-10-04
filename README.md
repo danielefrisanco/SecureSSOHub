@@ -52,7 +52,14 @@ All configuration comes from environment variables; there are no fallback values
 | `OIDC_SIGNING_KEY_PREVIOUS` | the previous signing key during a rotation (same format); stays published in the JWKS so tokens it signed still verify |
 | `OAUTH_REFRESH_TOKEN_TTL` | absolute lifetime of a refresh token in seconds, counted from the authorization code it descends from (default 2592000 = 30 days); access tokens live 10 minutes, codes 1 minute |
 | `OAUTH_REGISTRATION_POLICY` | dynamic client registration (`POST /oauth/register`, RFC 7591): `approval` (default) — new clients wait for an administrator; `open` — public (PKCE) clients are usable at once; `closed` — no endpoint, not advertised in discovery. Any other value stops the boot |
-| `OAUTH_REGISTRATION_IP_LIMIT` | registrations accepted per source address and hour (default 20); beyond it `429`. Behind a reverse proxy, configure Rails' trusted proxies so the client's address — not the proxy's — is counted |
+| `OAUTH_REGISTRATION_IP_LIMIT` | registration attempts per source address and hour (default 20); beyond it `429` — see [Rate limits](#rate-limits) |
+| `OAUTH_TOKEN_RATE_LIMIT` | `POST /oauth/token` requests per client and address, per minute (default 300) |
+| `OAUTH_REVOKE_RATE_LIMIT` | `POST /oauth/revoke` requests per client and address, per minute (default 60) |
+| `OAUTH_INTROSPECT_RATE_LIMIT` | `POST /oauth/introspect` requests per client and address, per minute (default 1200) |
+| `SIGN_IN_RATE_LIMIT` | sign-in attempts per address, per minute (default 20) |
+| `SIGN_IN_EMAIL_RATE_LIMIT` | sign-in attempts per submitted email, per minute (default 10) |
+| `ACCOUNT_MAIL_RATE_LIMIT` | password-reset and unlock requests per address, per hour (default 20) |
+| `ACCOUNT_MAIL_EMAIL_RATE_LIMIT` | password-reset and unlock requests per submitted email, per hour (default 5) |
 | `RAILS_MASTER_KEY` | Rails credentials |
 
 ### Dynamic client registration
@@ -72,6 +79,25 @@ OAuth::Clients.list(state: :pending)   # review: name, redirect URIs, scopes, co
 OAuth::Clients.approve("<client_id>", by: User.find_by!(email: "<admin email>"))
 OAuth::Clients.revoke("<client_id>", by: User.find_by!(email: "<admin email>"))   # refuse (final)
 ```
+
+### Rate limits
+
+The token, revocation, introspection and registration endpoints and the sign-in, password-reset and
+unlock forms are rate limited with Rails' `rate_limit`, counted in the shared cache (Redis, `REDIS_URL`).
+Each limit is a positive integer of requests per key and window, set by the variables above; anything
+else stops the boot, so a typo cannot lift a limit.
+
+- **OAuth endpoints** count a request that names an approved client per client *and* address, everything
+  else (no `client_id`, an unknown or unapproved one) per address. Beyond the limit they answer `429`
+  with `{"error": "temporarily_unavailable"}`, `Retry-After` (the window, in seconds) and `no-store`.
+- **Account forms** count per address and per submitted email (hashed before it reaches the cache).
+  Beyond the limit the form is shown again with `429`, `Retry-After` and a message that says nothing about
+  whether the account exists. Failed-attempts lockout still applies on top.
+
+Every attempt counts, accepted or refused. If Redis cannot be reached, nothing is counted and requests
+go through: an outage of the cache does not stop sign-in or token issuance. Behind a reverse proxy,
+Rails must trust the proxy (`config.action_dispatch.trusted_proxies`, set up with the production
+deployment) so the client's address is counted, not the proxy's.
 
 ### Key rotation
 
