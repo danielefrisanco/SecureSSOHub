@@ -4,7 +4,7 @@ type: chore
 status: todo
 priority: high
 created: '2026-10-02'
-updated: '2026-10-02'
+updated: '2026-10-04'
 branch: null
 depends_on:
 - TASK-027
@@ -32,6 +32,8 @@ acceptance_criteria:
 - Trusted proxies are configured so remote_ip is the client address behind Caddy (spec); README has the
   deployment runbook
 - rspec/rubocop/brakeman pass; docker build succeeds
+- The app connects with its own database role that has INSERT and SELECT only on audit_events (no UPDATE/DELETE),
+  from TASK-029; spec'd or verified by a documented check
 plan:
 - Readiness endpoint + spec; trusted proxies + spec.
 - JSON logging + filter spec.
