@@ -4,7 +4,7 @@ type: feat
 status: in_progress
 priority: high
 created: '2026-10-02'
-updated: '2026-10-02'
+updated: '2026-10-04'
 branch: task/028-rate-limiting-on-token-revocation-intros
 depends_on:
 - TASK-027
@@ -51,3 +51,17 @@ notes:
     row (client+address key, not client_id alone: lockout DoS), TODO T24 note; closing note; reviewer;
     complete; merge into develop. | BLOCKERS/QUESTIONS: none; AC1 says ''per client_id'' — implemented
     per client AND address on purpose (record in ARCHITECTURE).'
+- at: 2026-10-04 21:12
+  text: 'closing: Rails 8 rate_limit on the shared cache, limits from 7 env vars validated at boot (config/initializers/rate_limits.rb)
+    plus OAUTH_REGISTRATION_IP_LIMIT. /oauth/token, /revoke, /introspect: OAuth::TokenEndpointLimits prepended
+    into Doorkeeper::TokensController in to_prepare (isolation spec passes); 429 temporarily_unavailable
+    JSON, Retry-After, no-store. AC1 says ''per client_id'': implemented as per approved client AND address
+    (else address) on purpose — client_id alone lets anyone lock a public client''s users out; recorded
+    in ARCHITECTURE §4/§5 and TODO T24. Sign-in per address + hashed email (per minute), password reset/unlock
+    per address + email (per hour): 429 re-rendered form + neutral flash. /oauth/register on the same
+    mechanism; DB count (Clients.dynamic_registrations_from) removed, registration_ip column kept, register_spec
+    adapted. Fail open when the cache is unreachable (documented). Also d231f70: Doorkeeper controller
+    prepends moved to to_prepare (lost after a dev reload). Docs: README env rows + Rate limits section,
+    ARCHITECTURE §4 paragraph + decision row, TODO T24. rspec 372/0, rubocop, brakeman, bundler-audit
+    clean. User: nothing required; behind a proxy limits count the proxy''s address until TASK-033 sets
+    trusted_proxies; local specs need ''docker compose up -d db'' and POSTGRES_HOST=localhost.'
