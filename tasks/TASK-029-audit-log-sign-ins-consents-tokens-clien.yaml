@@ -1,7 +1,7 @@
 id: TASK-029
 title: Audit log — sign-ins, consents, tokens, clients and admin actions
 type: feat
-status: in_progress
+status: done
 priority: high
 created: '2026-10-02'
 updated: '2026-10-04'
@@ -62,3 +62,11 @@ notes:
     POST /users/sign_in fails (422, no strategy) unless something loaded the routes first — likely Rails
     8 lazy routes delaying Devise''s Warden setup; dev/test only (production eager-loads). audit_log_spec
     posts via user_session_path like sessions_spec. User: run db:migrate on deploy (new table).'
+- at: 2026-10-04 21:46
+  text: 'REVIEW: PASS — all five criteria met; every hook point recorded and spec''d, no-credential check
+    over every flow, docs match code; minor: token.revoked also recorded when 0 tokens were live (count
+    in metadata)'
+- at: 2026-10-04 21:46
+  text: done — 39 new examples (models/audit_event, services/audit, services/audit_hook_points, requests/audit_log
+    incl. the credential check) + isolation spec; rspec 411/0 over 3 seeds, rubocop, brakeman clean; reviewer
+    PASS
