@@ -17,6 +17,12 @@ FactoryBot.define do
       secret { nil }
     end
 
+    # A service obtaining tokens for itself (client_credentials): confidential,
+    # registered with a machine scope only.
+    trait :machine do
+      scopes { "introspect" }
+    end
+
     trait :pending do
       approval_state { "pending" }
       registered_via { "dynamic" }

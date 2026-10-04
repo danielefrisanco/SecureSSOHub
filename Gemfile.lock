@@ -299,6 +299,10 @@ GEM
       prism (>= 1.6.0)
       rbs (>= 4.0.0)
       tsort
+    redis (5.4.1)
+      redis-client (>= 0.22.0)
+    redis-client (0.30.1)
+      connection_pool
     regexp_parser (2.12.0)
     reline (0.7.0)
       io-console (~> 0.5)
@@ -416,6 +420,7 @@ DEPENDENCIES
   rack-cors
   rack-jwt-verifier (~> 0.3)
   rails (~> 8.1)
+  redis (~> 5.4)
   rspec-rails (~> 6.0)
   rubocop
   rubocop-rails

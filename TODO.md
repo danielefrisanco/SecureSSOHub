@@ -11,7 +11,7 @@ Placement: `[app]` this repo · `[gem: x]` change in that gem · `[new gem]` ext
 phase: it verifies the phase's end state against the audit, re-plans the *next* phase's rows against
 the code as it actually is (split/merge/reorder/drop/add, ask blocking questions), creates one harness
 task per row, annotates the rows with their task ids, and creates the next gate. Phase 0 gate: TASK-012,
-Phase 1 gate: TASK-026. Verification records live in [`docs/PHASES.md`](docs/PHASES.md).
+Phase 1 gate: TASK-026, Phase 2 gate: TASK-037. Verification records live in [`docs/PHASES.md`](docs/PHASES.md).
 Only the current phase and its gate are ever instantiated as harness tasks; later phases stay as rows.
 Gem rows (`[gem: x]`) are worked in the gem's own repository; a hub task only bumps the version.
 
@@ -31,7 +31,7 @@ Gem rows (`[gem: x]`) are worked in the gem's own repository; a hub task only bu
 | T10 (TASK-011) | GitHub Actions CI: bundle, db:prepare, rspec, rubocop, brakeman, bundler-audit, docker build; add rubocop config and `checks.lint_command` in harness.yaml | ci | high | [app] | T03, T07 | §5.5 |
 | G0 (TASK-012) | Phase 0 gate — verify outcomes, re-plan Phase 1 and create its tasks | docs | high | [app] | T01–T10 | all |
 
-## Phase 1 — authorization server core
+## Phase 1 — authorization server core — DONE 2026-10-02
 
 Re-planned by the Phase 0 gate (TASK-012, 2026-09-18) around the decisions: Doorkeeper +
 doorkeeper-openid_connect core, **RS256 JWT access tokens via doorkeeper-jwt**, Redis as the shared
@@ -58,17 +58,23 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 
 ## Phase 2 — security hardening & operations
 
+Re-planned at the Phase 1 gate (TASK-026, 2026-10-02; record in `docs/PHASES.md`). T56 moved to
+Phase 3 (it waits on the omniauth-ssoprovider fix, T44, in another repository); T59 moved to Phase 4
+(client self-management belongs with agent onboarding); T57 split into T60 (here) and T61 (Phase 4).
+
 | id | title | type | prio | placement | after | ref |
 |---|---|---|---|---|---|---|
-| T23 | **Redis** (decided) as `Rails.cache` + compose service; enable rack-jwt-verifier `replay_cache` on `/api` and `/mcp`; authorization-code single-use via cache/DB | feat | high | [app] | T17 | §5.2, §10 Q2 |
-| T24 | Rate limiting (rack-attack or equivalent) on `/oauth/token`, sign-in, password reset, `/oauth/register` (replaces the DB cap from TASK-025); specs | feat | high | [app] | T23 | §5.1 |
-| T55 | Configurable account lockout: Devise `maximum_attempts`, `unlock_in` and `unlock_strategy` from env (e.g. `DEVISE_MAX_ATTEMPTS`, `DEVISE_UNLOCK_IN`), defaulting to today's hardcoded Devise defaults (20 attempts, 1 hour, email + time); a lock never revokes OAuth tokens (TASK-022 decision: failed attempts can be triggered by anyone); specs | feat | medium | [app] | T05 | §5.1 |
-| T56 | Token endpoint: require a `redirect_uri` **identical** to the authorization request's (RFC 6749 §4.1.3) in `OAuth::TokenRules`. Today Doorkeeper's `URIChecker` drops the query before comparing, and omniauth-ssoprovider 0.1.2 relies on it (it sends `?code=…&state=…`; TASK-023 decision: record, tighten later). Only once the hub runs the fixed gem (T44 release + bump); flow spec proves the fixed gem still logs in; specs | fix | medium | [app] | T44 | §5.4 |
-| T25 | Audit log table + service (sign-in, grant, token issue/revoke, admin actions, MCP tool calls) with `azp`/client attribution; hook points already exist in `OAuth::Clients`/`OAuth::Tokens`; specs | feat | high | [app] | T16 | §5.1, §6.3 |
-| T26 | Devise hardening: password length ≥ 12 + pwned-password check, `:confirmable` with a real mailer config, `mailer_sender`; specs. Until this lands `email_verified` is always false, so omniauth_syncer's `on_conflict: :link` always raises against the hub | feat | medium | [app] | T05, T10 | §5.1, §10 Q3 |
-| T27 | TOTP 2FA for admins (enrolment UI + sign-in step); specs | feat | medium | [app] | T26 | §5.1 |
-| T28 | rack-cors full policy (discovery/jwks done in TASK-021): token/userinfo/MCP endpoints; specs | feat | medium | [app] | T17 | §5.1 |
-| T29 | Production deployment: `docker-compose.prod.yml` (web, db, redis, TLS-terminating proxy), env-only configuration, remove hardcoded dev DB password from the dev compose, readiness endpoint (DB + cache + signing key), JSON request logs | chore | high | [app] | T23 | §5.2, §4 |
+| T23 (TASK-027) | **Redis** (decided) as the shared `Rails.cache` (`redis_cache_store`, `REDIS_URL`) + compose service; rack-jwt-verifier `replay_cache` **stays off** (it allows one use per `jti`; bearer tokens are reused for their lifetime — decided in TASK-027, fits DPoP proofs, T61). Authorization-code single-use is already enforced in the database (TASK-019) — dropped from this row | feat | high | [app] | — | §5.2, §10 Q2 |
+| T24 (TASK-028) | Rate limiting with Rails 8 `rate_limit` (no new gem; counters in the shared cache): `/oauth/token`, `/oauth/revoke`, `/oauth/introspect`, sign-in, password reset, `/oauth/register` (replaces TASK-025's DB cap; the `registration_ip` column stays for review); 429 with `Retry-After`, limits from env; specs | feat | high | [app] | T23 | §5.1 |
+| T25 (TASK-029) | Audit log table + `OAuth::Audit`/`Audit` service: sign-in success/failure, consent grant/revoke, token issue (incl. `OAuth::Tokens.issue_client_token`) and revocation, client registration/approval/revocation/rotation, admin actions; `azp`/client and actor attribution, request id, IP; append-only; specs | feat | high | [app] | — | §5.1, §6.3 |
+| T26 (TASK-030) | Devise hardening: password length ≥ 12 + pwned-password check (HIBP k-anonymity range API, no gem), `:confirmable` (so `email_verified` becomes true), real `mailer_sender`; **email over generic SMTP from env** (`SMTP_ADDRESS`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAILER_FROM`; gate decision); specs | feat | high | [app] | — | §5.1, §10 Q3 |
+| T27 (TASK-031) | TOTP 2FA for administrators: enrolment with QR code and recovery codes, second sign-in step, admins without 2FA prompted to enrol; new gems (`rotp`, `rqrcode`) go through the dependency check; specs | feat | medium | [app] | T26 | §5.1 |
+| T28 (TASK-032) | rack-cors full policy (discovery/jwks done in TASK-021): token, revoke, introspect, userinfo, `POST /oauth/register` (browser-based MCP clients register cross-origin) — no cookies, explicit methods/headers; MCP endpoint added when it lands; specs | feat | medium | [app] | — | §5.1 |
+| T29 (TASK-033) | Production deployment: `docker-compose.prod.yml` (web, db, redis, **Caddy** terminating TLS with automatic certificates — gate decision), env-only configuration, no hardcoded password in the dev compose, readiness endpoint (DB + cache + signing key) beside `/up`, JSON request logs with request id, trusted-proxy configuration (the registration cap and rate limits count client addresses); README runbook | chore | high | [app] | T23 | §5.2, §4 |
+| T55 (TASK-034) | Configurable account lockout: Devise `maximum_attempts`, `unlock_in` and `unlock_strategy` from env (e.g. `DEVISE_MAX_ATTEMPTS`, `DEVISE_UNLOCK_IN`), defaulting to today's Devise defaults (20 attempts, 1 hour, email + time); a lock never revokes OAuth tokens (TASK-022 decision); specs | feat | medium | [app] | — | §5.1 |
+| T58 (TASK-035) | Token endpoint: answer `unauthorized_client` with **400** (RFC 6749 §5.2 reserves 401 for `invalid_client`); Doorkeeper sends 401 today, pinned in `spec/requests/oauth/machine_grant_spec.rb` (TASK-024 finding). Check the other token-endpoint errors for the same drift; specs | fix | low | [app] | — | §5.4 |
+| T60 (TASK-036) | Access-token claim minimisation as an option (from T57): leave `name`/`email`/`email_verified` out of access tokens — services read them from userinfo — behind an env switch; the default and its compatibility impact (rack-jwt-verifier consumers, omniauth-ssoprovider) decided in the task; discovery/docs updated; specs | feat | medium | [app] | — | ARCH §3 |
+| G2 (TASK-037) | Phase 2 gate — verify outcomes, re-plan Phase 3 and create its tasks | docs | high | [app] | all of Phase 2 | all |
 
 ## Phase 3 — user, admin and developer UI
 
@@ -80,6 +86,7 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 | T34 | Admin: audit log viewer with filters | feat | medium | [app] | T25 | §5.3 |
 | T35 | Developer page: generated omniauth-ssoprovider initializer and rack-jwt-verifier snippet per client | feat | medium | [app] | T18 | §5.3 |
 | T36 | Error pages, flash styling, accessibility pass (labels, focus, contrast) over all views | feat | low | [app] | T31–T35 | §5.3 |
+| T56 | Token endpoint: require a `redirect_uri` **identical** to the authorization request's (RFC 6749 §4.1.3) in `OAuth::TokenRules`. Today Doorkeeper's `URIChecker` drops the query before comparing, and omniauth-ssoprovider 0.1.2 relies on it (it sends `?code=…&state=…`; TASK-023 decision: record, tighten later). Only once the hub runs the fixed gem (T44 release + bump); flow spec proves the fixed gem still logs in; specs | fix | medium | [app] | T44 | §5.4 |
 
 ## Phase 4 — MCP endpoint (agents)
 
@@ -89,9 +96,11 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 | T38 | MCP server endpoint `POST /mcp` (Streamable HTTP) using the official Ruby `mcp` gem; `initialize`, `tools/list`; specs | feat | high | [app] | T37 | §6 |
 | T39 | MCP authorization glue: rack-jwt-verifier on `/mcp` (`aud` = MCP resource, per-tool `require_scopes`), RFC 9728 `/.well-known/oauth-protected-resource`, `WWW-Authenticate … resource_metadata` challenge; end-to-end spec of an agent obtaining a token via the hub (dynamic registration → approval → PKCE) | feat | critical | [app] → candidate [new gem] `rack-mcp-auth` | T18, T22, T38 | §6.2, §6.3 |
 | T40 | rack-jwt-verifier: optional `resource_metadata` in the `WWW-Authenticate` challenge and a `current_token` helper (if T39 shows it is generic) | feat | medium | [gem: rack-jwt-verifier] | T39 | §3.2, §9 |
+| T61 | DPoP (RFC 9449) sender-constrained tokens, from T57: the token endpoint accepts a DPoP proof and binds the access token to the key (`cnf.jkt`, `token_type` DPoP); `/mcp` and `/api` verify proofs (rack-jwt-verifier support, gem row); per-client opt-in, required for MCP clients by policy; discovery `dpop_signing_alg_values_supported`; specs | feat | high | [app] [gem: rack-jwt-verifier] | T39 | ARCH §3, §6 |
 | T41 | MCP user tools: `whoami`, `get_profile`, `update_profile`, `list_grants`, `revoke_grant`, `list_sessions`, `revoke_sessions`, `integration_snippet`; specs | feat | high | [app] | T39 | §6.1 |
 | T42 | MCP admin tools: clients CRUD + rotate + approve, users list/get/disable/set_admin, tokens list/revoke, `search_audit_log`, `introspect_token`; MCP resources for discovery/JWKS/clients; specs | feat | high | [app] | T41 | §6.1 |
 | T43 | Agent onboarding docs: how an MCP client registers, authorizes and calls the hub (in docs/ and the developer page) | docs | medium | [app] | T42 | §6 |
+| T59 | RFC 7592 client configuration endpoint for dynamically registered clients: `registration_access_token` + `registration_client_uri` in the TASK-025 response; read/update/delete one's own registration (update re-enters approval when redirect URIs or scopes change); specs | feat | low | [app] | T22, T43 | §6.2 |
 | T54 | Production-readiness review before calling the roadmap done (run `/harness:audit`, one TODO row per gap). **Repo completeness**: LICENSE, SECURITY.md (disclosure), CONTRIBUTING, CHANGELOG + tagged releases, dependency update bot, operator runbook (deploy, key rotation, backup/restore). **Performance**: load test `/oauth/authorize`, `/oauth/token`, userinfo, JWKS/discovery with p95 targets; N+1 and missing-index check; Puma/DB pool sizing; cache hit rates. **Observability**: structured logs correlated by request id + `azp` + `sub`, no tokens/codes/passwords/PII in logs (`filter_parameters`), metrics + alerting (error rate, token failures, lockouts), tracing, audit-log coverage (T25). **Data protection**: PII inventory, encryption at rest (Active Record Encryption where useful, hashed secrets/tokens verified), TLS/HSTS, retention and purge of expired tokens/grants/codes/logs, user data export + deletion, encrypted backups, least-privilege DB role | docs | high | [app] | all of Phase 4 | §5 |
 
 ## Future (not scheduled — see docs/ARCHITECTURE.md §6)
@@ -102,6 +111,7 @@ upgrade first. Every task keeps Doorkeeper behind `app/services/oauth/` (isolati
 | T50 | Kubernetes deployment (manifests/Helm, probes, HPA, secrets store, managed Postgres/Redis) derived from the Dockerfile/compose; prerequisites are T29's readiness endpoint, JSON logs and env-only config | chore | low | [app] | T29 | ARCH §6 |
 | T51 | Federation: the hub as OmniAuth client of upstream IdPs (where `omniauth_syncer` returns) | feat | low | [app] | T49 | ARCH §6 |
 | T53 | Tenants / organizations inside a realm: orgs, memberships + org roles, org-owned OAuth clients, an `org` claim in tokens/userinfo, org admin UI. Distant future; first revisit the 2026-09-18 decision that tenancy lives in a separate service (ARCHITECTURE decision log) and decide hub vs that service | feat | low | [app] | Phase 4 | ARCH §6 |
+| T57 | Token confidentiality and sender-constrained tokens, as opt-in options with safe defaults — a differentiator, especially for MCP agents (some IdPs offer none, so operators fall back to TLS, which only protects each hop). Split at the Phase 1 gate: claim minimisation is T60 (Phase 2), DPoP is T61 (Phase 4). Remaining here: (1) **JWE** — access tokens encrypted to the resource server's key (RFC 9068), encrypted id_token/userinfo (OIDC Core §10.2); needs per-resource encryption keys, decryption in rack-jwt-verifier, a new dependency; (2) **mTLS certificate-bound tokens** (RFC 8705) for confidential service clients | feat | medium | [app] [gem: rack-jwt-verifier] | T61 | ARCH §3 |
 
 ## Gem follow-ups (other repos, not blocking the hub)
 

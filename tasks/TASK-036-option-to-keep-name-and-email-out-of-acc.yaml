@@ -1,0 +1,48 @@
+id: TASK-036
+title: Option to keep name and email out of access tokens
+type: feat
+status: todo
+priority: medium
+created: '2026-10-02'
+updated: '2026-10-02'
+branch: null
+depends_on: []
+context: 'TODO T60. TODO T60 (split from T57 at the Phase 1 gate; product goal: security and configurable
+  options).
+
+  Access tokens (OAuth::TokenPayload, docs/ARCHITECTURE.md §3) carry `name` with the `profile` scope
+
+  and `email`/`email_verified` with the `email` scope. A signed JWT is readable by anyone who holds
+
+  it — the client, the browser, logs, every proxy that terminates TLS — so personal data in it
+
+  travels further than the userinfo endpoint''s answer. Many deployments want access tokens to
+
+  carry only `sub`, `azp`, `scope` and `admin`, with services fetching profile data from userinfo.
+
+
+  Scope: an env switch (e.g. `OAUTH_ACCESS_TOKEN_PROFILE_CLAIMS` = include | omit) read at boot;
+
+  id_tokens and both userinfo endpoints are unaffected (scope-gated as today). Decide the default
+
+  in the task and ask the user if it is not obvious: `include` keeps today''s contract
+
+  (rack-jwt-verifier consumers that read `email` from the token keep working); `omit` is the
+
+  safer default for new deployments. Check what omniauth-ssoprovider and omniauth_syncer read (they
+
+  use /api/v1/userinfo — confirm). Discovery `claims_supported` stays accurate; ARCHITECTURE §3
+
+  table documents both modes.'
+acceptance_criteria:
+- An env switch, validated at boot, makes access tokens omit name, email and email_verified; id_token
+  and userinfo are unchanged (specs for both modes)
+- The default is decided and recorded with its compatibility impact in docs/ARCHITECTURE.md; README documents
+  the variable
+- The omniauth-ssoprovider flow spec and the rack-jwt-verifier flow spec pass in both modes
+- rspec/rubocop/brakeman pass
+plan:
+- Boot setting; TokenPayload honours it; specs in both modes.
+- Check gem consumers; decide default (ask if needed); docs.
+- Suite; closing note.
+notes: []

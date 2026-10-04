@@ -38,6 +38,7 @@ module OAuth
         "token_endpoint_auth_methods_supported" => token_endpoint_auth_methods_supported,
         "service_documentation" => SERVICE_DOCUMENTATION
       }
+      base["registration_endpoint"] = url(routes.oauth_registration_path) if OAuth::RegistrationPolicy.enabled?
       oidc ? base.merge(openid_fields) : base
     end
 

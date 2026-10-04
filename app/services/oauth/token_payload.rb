@@ -13,9 +13,10 @@ module OAuth
   #   name       with the `profile` scope
   #   email,
   #   email_verified  with the `email` scope
-  #   admin      whether the user is an administrator (always present, boolean)
+  #   admin      whether the user is an administrator (boolean, every user token)
   #
-  # Nothing else about the user is ever placed in a token.
+  # Nothing else about the user is ever placed in a token, and a machine token
+  # (client_credentials: no resource owner) carries no user claim at all.
   class TokenPayload
     TYPE = "at+jwt".freeze
 
@@ -67,9 +68,9 @@ module OAuth
     end
 
     def user_claims
-      claims = { admin: user&.is_admin == true }
-      return claims unless user
+      return {} unless user
 
+      claims = { admin: user.is_admin == true }
       claims[:name] = user.name if scopes.include?("profile")
       if scopes.include?("email")
         claims[:email] = user.email

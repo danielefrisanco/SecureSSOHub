@@ -20,7 +20,8 @@ module OAuth
   module Clients
     Client = Struct.new(:uid, :name, :redirect_uris, :scopes, :client_type, :confidential, :approval_state,
                         :registered_via, :owner_id, :software_id, :software_version, :client_uri, :logo_uri,
-                        :contacts, :last_used_at, :created_at, :updated_at, keyword_init: true) do
+                        :contacts, :registration_ip, :last_used_at, :created_at, :updated_at,
+                        keyword_init: true) do
       def public?
         client_type == "public"
       end
@@ -39,11 +40,14 @@ module OAuth
     class NotFound < Error; end
 
     # The record failed OAuth::ClientRules / Doorkeeper validation.
+    # `attributes` names the offending fields (e.g. :redirect_uri, :scopes)
+    # so callers such as the registration endpoint can pick an error code.
     class Invalid < Error
-      attr_reader :messages
+      attr_reader :messages, :attributes
 
-      def initialize(messages)
+      def initialize(messages, attributes: [])
         @messages = Array(messages)
+        @attributes = attributes
         super(@messages.join("; "))
       end
     end
@@ -100,19 +104,46 @@ module OAuth
     # scopes are never granted this way.
     #
     # @param policy [Symbol] :approval | :open
+    # @param registration_ip [String, nil] the requester's address (per-address cap)
     # @return [Registration]
-    def register_dynamic(name:, redirect_uris:, client_type:, scopes:, policy:, metadata: {})
+    def register_dynamic(name:, redirect_uris:, client_type:, scopes:, policy:, metadata: {}, registration_ip: nil)
       unless REGISTRATION_POLICIES.include?(policy)
         raise ArgumentError, "policy must be one of #{REGISTRATION_POLICIES.inspect}"
       end
 
       denied = Array(scopes).map(&:to_s) - OAuth::Scopes.dynamic_registration_names
-      raise Invalid, "scopes not available to dynamically registered clients: #{denied.join(', ')}" if denied.any?
+      if denied.any?
+        raise Invalid.new("scopes not available to dynamically registered clients: #{denied.join(', ')}",
+                          attributes: [:scopes])
+      end
 
       persist(attributes(name, redirect_uris, client_type, scopes, metadata).merge(
-                owner: nil, registered_via: "dynamic",
+                owner: nil, registered_via: "dynamic", registration_ip: registration_ip,
                 approval_state: policy == :open ? "approved" : "pending"
               ))
+    end
+
+    # Dynamic registrations from one address since a point in time (the
+    # registration endpoint's per-address cap).
+    #
+    # @param ip [String]
+    # @param since [Time]
+    # @return [Integer]
+    def dynamic_registrations_from(ip, since:)
+      Doorkeeper::Application.where(registered_via: "dynamic", registration_ip: ip, created_at: since..).count
+    end
+
+    # Whether a client with this name and the same redirect URIs (in any
+    # order) was registered dynamically since a point in time.
+    #
+    # @param name [String]
+    # @param redirect_uris [Array<String>]
+    # @param since [Time]
+    # @return [Boolean]
+    def dynamic_duplicate?(name:, redirect_uris:, since:)
+      wanted = Array(redirect_uris).sort
+      candidates = Doorkeeper::Application.where(registered_via: "dynamic", name: name, created_at: since..)
+      candidates.any? { |app| app.redirect_uri.to_s.split.sort == wanted }
     end
 
     # Changes name, redirect URIs, scopes and/or metadata. The client type is
@@ -208,7 +239,7 @@ module OAuth
     private_class_method :transition
 
     def save!(app)
-      raise Invalid, app.errors.full_messages unless app.save
+      raise Invalid.new(app.errors.full_messages, attributes: app.errors.attribute_names) unless app.save
 
       app
     end
@@ -230,6 +261,7 @@ module OAuth
         client_uri: app.client_uri,
         logo_uri: app.logo_uri,
         contacts: app.contacts,
+        registration_ip: app.registration_ip&.to_s,
         last_used_at: app.last_used_at,
         created_at: app.created_at,
         updated_at: app.updated_at

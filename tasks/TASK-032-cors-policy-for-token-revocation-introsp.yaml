@@ -1,0 +1,41 @@
+id: TASK-032
+title: CORS policy for token, revocation, introspection, userinfo and registration
+type: feat
+status: todo
+priority: medium
+created: '2026-10-02'
+updated: '2026-10-02'
+branch: null
+depends_on: []
+context: 'TODO T28. TODO T28 (audit §5.1: rack-cors only for the token/userinfo/MCP endpoints). config/initializers/cors.rb
+
+  opens only the discovery documents and the JWKS (TASK-021). Browser-based clients — SPAs using
+
+  PKCE and MCP inspectors — also need, cross-origin: `POST /oauth/token`, `POST /oauth/revoke`,
+
+  `GET /oauth/userinfo` and `GET /api/v1/userinfo` (Authorization header), and `POST /oauth/register`
+
+  (TASK-025) for agents registering from a browser. Product goal (user, 2026-10-02): MCP ease of use.
+
+
+  Rules: no cookies (`credentials: false`), explicit methods and headers (Authorization,
+
+  Content-Type, DPoP later), `max_age` 300; `/oauth/authorize` and Devise pages stay same-origin
+
+  (top-level navigations, not XHR). Introspection is server-to-server with client authentication —
+
+  decide whether it needs CORS at all (recommend not). The MCP endpoint joins when it lands (Phase 4).
+
+  Consider whether origins stay `*` or come from registered client URIs (recommend `*` without
+
+  credentials: tokens are never in cookies).'
+acceptance_criteria:
+- Preflight and actual cross-origin requests succeed for token, revoke, userinfo (both) and register,
+  with no credentials allowed (specs per endpoint)
+- Authorization endpoint, Devise pages and introspection get no CORS headers (spec)
+- The policy and its reasoning are documented in config/initializers/cors.rb and docs/ARCHITECTURE.md
+- rspec/rubocop/brakeman pass
+plan:
+- Extend cors.rb; specs for allowed and refused paths.
+- Docs; suite; closing note.
+notes: []

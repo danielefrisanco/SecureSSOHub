@@ -20,9 +20,13 @@ require "rack_jwt_verifier"
 # for the MCP endpoint is refused as invalid_token. RS256 only; 30 seconds of
 # clock skew; a request without a token is refused here (require_token) with
 # the RFC 6750 challenge; errors are JSON like every other API response.
-# replay_cache stays off until Redis is the shared cache (TODO.md T23):
-# revocation is checked per request against the database instead
-# (Api::BaseController), which the 10-minute lifetime keeps sufficient.
+# replay_cache stays off, by decision (TASK-027) rather than for want of
+# Redis: the gem's ReplayGuard remembers each jti and refuses any second use,
+# but an access token is a bearer token the client presents on every call for
+# its 10-minute life (RFC 6750) — the guard would break every client after its
+# first request. It fits one-time tokens such as DPoP proofs (TODO.md T61).
+# Revocation is checked per request against the database instead
+# (Api::BaseController).
 #
 # The key is read from config.x (set by doorkeeper.rb, which runs first)
 # because initializers cannot use autoloaded code; OAuth::SigningKey is only

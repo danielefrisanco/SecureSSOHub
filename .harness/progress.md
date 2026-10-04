@@ -124,3 +124,32 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - spec/integration/rack_jwt_verifier_flow_spec.rb: TASK-020 interop spec moved here and extended with the login's token and a signing-key rotation (running service refetches on the new kid; retired key refused).
 - Findings: gem finding 11 (token exchange sends redirect_uri with the callback query; hub tolerates it via Doorkeeper's URIChecker) — user decision: record, tighten later as hub row T56 after the T44 gem fix; gem doc contract corrected; T45 fixture lacks `credentials`.
 - Commits 9098346, eab6136, d10e2f4, 5762ea2. rspec 300/0 in 11.9 s, rubocop, brakeman clean. Review: PASS, no findings. User: merge develop -> main, push.
+
+## 2026-10-02 — TASK-024 done: Machine token grant (RFC 6749 §4.4) for service clients
+- OAuth::MachineGrantRules (prepended into Doorkeeper's grant validator): confidential approved clients only (public → unauthorized_client), registered machine-flagged scopes only (user/admin/none → invalid_scope; no new column), RFC 8707 resource → aud or invalid_target. Tokens created inside OAuth::Tokens.issue_client_token (touches last_used_at; earlier tokens stay live). TokenPayload drops `admin` when there is no user.
+- User decision: introspection stays client-authenticated (TASK-022); a machine token is never a Bearer caller credential there. ARCHITECTURE §3/§4 + decision row updated.
+- TODO: T57 token confidentiality options (JWE / DPoP / mTLS / claim minimisation — user request: stand out on MCP, ease of use, security, options); T58 Doorkeeper sends 401 for unauthorized_client. Re-plan note added on TASK-026.
+- Commits e802f62, 3bbe551, f976cff, 20e3dc5, f48ebfd, a86e7f8. rspec 320/0, rubocop, brakeman clean. Review: PASS.
+
+## 2026-10-02 — TASK-025 done: Dynamic client registration (RFC 7591), approval-gated with a policy switch
+- POST /oauth/register: ClientRegistrationsController → OAuth::DynamicRegistration → OAuth::Clients.register_dynamic. OAUTH_REGISTRATION_POLICY approval (default, pending until OAuth::Clients.approve) | open (public PKCE clients approved at once) | closed (404, not in discovery), checked at boot. Never admin/machine scopes or the machine grant.
+- Abuse controls until T24: OAUTH_REGISTRATION_IP_LIMIT per address and hour (new column oauth_applications.registration_ip, 429 + Retry-After), duplicate name + redirect_uris within 24 h → 400 invalid_client_metadata, bodies > 16 KiB → 413 from lib/middleware/request_body_limit.rb (review round 1 found a trailing-slash bypass; fixed).
+- README (env vars, approval flow via console until the admin UI), ARCHITECTURE §4, TODO T59 (RFC 7592) and T28 (CORS for /oauth/register). New migration: run db:migrate on deploy.
+- Commits cf92d21, 82e7a79, 5094630, 0522a9b, cc50e9d, 47afc7e, dc18bb0. rspec 352/0, rubocop, brakeman clean. Review: PASS (second round).
+
+## 2026-10-02 — TASK-026 handoff
+- DONE: TASK-024/025 merged into develop (9ab4dec). TASK-026 committed on its branch: PHASES.md Phase 1 record (CI local-only until develop is pushed), Phase 2 re-plan in TODO.md, ARCHITECTURE decisions (SMTP env, Caddy, T57 split, re-plan), tasks TASK-027..036 + Phase 2 gate TASK-037. Status review; reviewer was running.
+- NEXT: finish TASK-026 (PASS → done, progress entry, merge into develop; FAIL → fix and re-review), then Phase 2 in order from TASK-027. Known for TASK-027: rack-jwt-verifier's replay guard rejects any reused jti, so it stays off on /api.
+- BLOCKERS/QUESTIONS: user pushes develop (`! git push -u origin develop`) and sends the Actions run link for PHASES.md Phase 1 row 11; develop → main merge is the user's. Tests need `docker compose up -d db` and POSTGRES_HOST=localhost.
+
+## 2026-10-02 — TASK-026 done: Phase 1 gate — verify outcomes, re-plan Phase 2 and create its tasks
+- docs/PHASES.md Phase 1 record: 11 checks pass with evidence; CI green on GitHub (develop 9ab4dec, run 37020526458; Phase 0 row 3 got its main run link as a follow-up).
+- Phase 2 re-planned in TODO.md; tasks TASK-027..036 + gate TASK-037; T56 → Phase 3, T59/T61 → Phase 4, T57 split (T60 Phase 2, T61 DPoP Phase 4, JWE/mTLS Future).
+- ARCHITECTURE decisions: SMTP via env, Caddy, T57 split, Phase 2 re-plan. Commits 7144063, 1837a90, da97a94, 92d9248, ba674b7, 2b09e7f. Review: PASS.
+- User: merge develop into main when convenient.
+
+## 2026-10-02 — TASK-027 done: Redis as the shared Rails.cache; decide the rack-jwt-verifier replay cache
+- Rails.cache = redis_cache_store from REDIS_URL (production refuses to boot without it; development defaults to redis://localhost:6379/0); memory_store in test, cleared per example. redis gem 5.4 (MIT). Compose `redis` service on 127.0.0.1:6379; Dockerfile precompile placeholder.
+- rack-jwt-verifier replay_cache stays off: one use per jti, incompatible with reused bearer tokens; documented (initializer, ARCHITECTURE §4/§5, TODO T23) and guarded by a userinfo reuse spec.
+- Commits d7c3f1e, fb91ec2. rspec 356/0, rubocop, brakeman, bundler-audit clean. Review: PASS.
+- User: `docker compose up -d redis` for local development; production needs REDIS_URL (prod service in TASK-033).

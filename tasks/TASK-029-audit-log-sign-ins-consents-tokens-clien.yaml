@@ -1,0 +1,38 @@
+id: TASK-029
+title: Audit log — sign-ins, consents, tokens, clients and admin actions
+type: feat
+status: todo
+priority: high
+created: '2026-10-02'
+updated: '2026-10-02'
+branch: null
+depends_on: []
+context: "TODO T25. TODO T25 (audit §5.1, §6.3: a structured audit log of sign-ins, grants, token issuance/revocation,\n\
+  admin actions; §6.3 wants `azp`/client attribution). Phase 1 left one hook point per event so\nthis\
+  \ task only has to add the recording:\n- OAuth::Clients — create, register_dynamic, update, rotate_secret,\
+  \ approve, revoke (actor `by:`;\n  none for register_dynamic, which has the source IP).\n- OAuth::Tokens\
+  \ — issue_client_token (machine grant, TASK-024), revoke / revoke_all_for /\n  revoke_for / revoke_all\
+  \ / revoke_family!, detect_reuse! and revoke_issued_from! (security events).\n- OAuth::TokenRules#after_successful_response\
+  \ — code and refresh token issuance.\n- OAuth::Consents — grant / revoke.\n- Sign-in success, failure\
+  \ and lockout — Warden/Devise hooks; sign-out.\n- User — admin disable and password change (the callback\
+  \ that revokes everything).\n\nDesign points to settle in the task (ask if unclear): table `audit_events`\
+  \ (event, actor_id,\nsubject user, client_uid/azp, jti where relevant, ip, request_id, metadata jsonb,\
+  \ created_at),\nappend-only (no update/destroy paths; consider a DB trigger or at least model-level\
+  \ read-only);\nnever store tokens, codes, client secrets or passwords (filter like filter_parameters);\n\
+  `Audit.record` swallows nothing — a failed write must not silently drop the event (decide:\nraise inside\
+  \ the transaction vs. log loudly). Request context (ip, request_id) via\nActiveSupport::CurrentAttributes.\
+  \ The viewer is Phase 3 (T34); MCP tool calls are Phase 4."
+acceptance_criteria:
+- An append-only audit_events table and an Audit service record every event listed in the context with
+  actor, client (azp), IP and request id
+- No token, code, client key or password ever reaches the audit log (spec'd with a filter check)
+- Each hook point has a spec asserting its event; OAuth::Tokens.issue_client_token and the TokenRules
+  issuance are covered
+- docs/ARCHITECTURE.md documents the events and retention expectations
+- rspec/rubocop/brakeman pass; Doorkeeper isolation spec passes
+plan:
+- Migration + model (read-only after create) + Audit.record + Current attributes.
+- Wire the hook points; Devise/Warden hooks.
+- Specs per event; filter spec; docs.
+- Suite; closing note.
+notes: []

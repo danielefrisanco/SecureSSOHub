@@ -1,0 +1,40 @@
+id: TASK-033
+title: Production deployment — compose with Caddy, readiness check, JSON logs, trusted proxies
+type: chore
+status: todo
+priority: high
+created: '2026-10-02'
+updated: '2026-10-02'
+branch: null
+depends_on:
+- TASK-027
+context: "TODO T29. TODO T29 (audit §5.2, §4; deployment target: Docker on a single host, decided 2026-09-18).\
+  \ Gate\ndecision (2026-10-02): **Caddy** terminates TLS with automatic certificates.\n\nScope\n- `docker-compose.prod.yml`:\
+  \ web (the existing Dockerfile), db (Postgres 17, password from env),\n  redis (TASK-027), caddy (Caddyfile\
+  \ in the repo: reverse proxy to web, automatic HTTPS for\n  `HUB_HOST`, HSTS left to header_guard).\
+  \ Every secret and setting from env / an env file the\n  operator provides; nothing hardcoded.\n- Development\
+  \ compose: remove the hardcoded `POSTGRES_PASSWORD: development_password` (audit §5.1)\n  — read it\
+  \ from env with a documented local default in `.env.example` (never commit a real .env).\n- Readiness\
+  \ endpoint (e.g. `/ready`) beside `/up`: checks DB, cache and that the signing key is\n  loaded; no\
+  \ secrets in the response; used by compose healthchecks.\n- JSON request logs (one line per request:\
+  \ request_id, method, path, status, duration, client_id\n  / azp and sub when known) — Rails 8.1 structured\
+  \ event reporting or a small formatter; no new gem\n  unless the dependency check passes. Never log\
+  \ tokens, codes or passwords.\n- Trusted proxies: `config.action_dispatch.trusted_proxies` for the Caddy\
+  \ network so\n  `request.remote_ip` is the client's (TASK-025's registration cap and TASK-028's limits\
+  \ depend\n  on it); spec for remote_ip behind the proxy.\n- README runbook: first deploy, migrate, key\
+  \ rotation pointer, backup of the db volume."
+acceptance_criteria:
+- docker-compose.prod.yml runs web, db, redis and Caddy with TLS, configured only from env; the dev compose
+  no longer contains a hardcoded password
+- A readiness endpoint reports DB, cache and signing-key status (spec), and compose healthchecks use it
+- Production logs are JSON lines with request id and client/subject attribution and never contain tokens
+  or passwords (spec on the formatter/filter)
+- Trusted proxies are configured so remote_ip is the client address behind Caddy (spec); README has the
+  deployment runbook
+- rspec/rubocop/brakeman pass; docker build succeeds
+plan:
+- Readiness endpoint + spec; trusted proxies + spec.
+- JSON logging + filter spec.
+- Compose files, Caddyfile, .env.example; README runbook.
+- docker build; suite; closing note.
+notes: []

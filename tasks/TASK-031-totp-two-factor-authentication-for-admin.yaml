@@ -1,0 +1,36 @@
+id: TASK-031
+title: TOTP two-factor authentication for administrators
+type: feat
+status: todo
+priority: medium
+created: '2026-10-02'
+updated: '2026-10-02'
+branch: null
+depends_on:
+- TASK-030
+context: "TODO T27. TODO T27 (audit §5.1: optional TOTP 2FA, admins first). Administrators can approve\
+  \ clients,\nrevoke tokens and (Phase 3/4) act through admin scopes, so their accounts are the highest-value\n\
+  target. Depends on TASK-030 (confirmable + mail: recovery and enrolment notices).\n\nScope\n- Enrolment\
+  \ page: secret + QR code (otpauth URI), confirm with a first code, show one-time\n  recovery codes (stored\
+  \ hashed).\n- Second sign-in step after the password for users with 2FA enabled; recovery code accepted\
+  \ once;\n  remember-device is out of scope.\n- Administrators without 2FA are sent to enrolment after\
+  \ sign-in (they cannot use the hub as\n  admins until enrolled); `admin:*` consent requires an enrolled\
+  \ admin.\n- New gems (`rotp`, `rqrcode` — or a pure-Ruby alternative): run /harness:add-dependency for\
+  \ each\n  before adding; ask the user if either fails the policy.\n- Store the TOTP seed encrypted (Active\
+  \ Record Encryption — keys from env/credentials, documented).\n- Rate limiting of the second step reuses\
+  \ TASK-028's mechanism."
+acceptance_criteria:
+- An administrator can enrol (QR + confirmation code) and receives one-time recovery codes stored hashed;
+  the TOTP seed is encrypted at rest
+- Sign-in for an enrolled user requires a valid TOTP or an unused recovery code; wrong codes are refused
+  and rate limited (specs)
+- An administrator without 2FA is redirected to enrolment and cannot grant admin:* consent until enrolled
+  (spec)
+- New gems passed the dependency check (recorded); README documents the encryption key variables
+- rspec/rubocop/brakeman pass
+plan:
+- Dependency checks; migration (encrypted seed, recovery digests).
+- Enrolment and second-step flows (Devise/Warden integration).
+- Admin enforcement; specs; README.
+- Suite; closing note.
+notes: []
