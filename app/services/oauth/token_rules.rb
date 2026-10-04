@@ -24,8 +24,9 @@ module OAuth
   # Every token issued here carries `access_grant_id` — the code it descends
   # from, kept across refresh rotations — which is what "the tokens issued
   # from that code" means above. After a successful response the id_token
-  # (openid scope) gets the hub's `at_hash` and the client's `last_used_at`
-  # is touched.
+  # (openid scope) gets the hub's `at_hash`, the client's `last_used_at` is
+  # touched and the issuance is recorded in the audit log (TASK-029; machine
+  # tokens are recorded by OAuth::Tokens.issue_client_token).
   module TokenRules
     private
 
@@ -69,10 +70,19 @@ module OAuth
       end
       # Registry metadata only; validations and updated_at are deliberately untouched.
       access_token.application&.update_column(:last_used_at, Time.current) # rubocop:disable Rails/SkipsModelValidations
+      Audit.record("token.issued", actor: nil, subject_id: access_token.resource_owner_id,
+                                   client_uid: access_token.application&.uid, jti: access_token.jti,
+                                   grant_type: code_request? ? "authorization_code" : "refresh_token",
+                                   scopes: access_token.scopes.to_a)
     end
 
     def family_grant_id
-      respond_to?(:grant) ? grant.id : refresh_token.access_grant_id
+      code_request? ? grant.id : refresh_token.access_grant_id
+    end
+
+    # AuthorizationCodeRequest has the code's grant; RefreshTokenRequest does not.
+    def code_request?
+      respond_to?(:grant)
     end
 
     # `client` is a Doorkeeper::OAuth::Client wrapper here, an Application in

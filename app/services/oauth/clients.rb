@@ -16,7 +16,8 @@ module OAuth
   # they stay valid until they expire or are revoked; only new token requests
   # must present the new secret.
   #
-  # No audit log yet (T25) — every change goes through here so it can hook in.
+  # Every change is recorded in the audit log (TASK-029) in the same
+  # transaction as the change itself.
   module Clients
     Client = Struct.new(:uid, :name, :redirect_uris, :scopes, :client_type, :confidential, :approval_state,
                         :registered_via, :owner_id, :software_id, :software_version, :client_uri, :logo_uri,
@@ -93,9 +94,13 @@ module OAuth
     # @return [Registration] the client and its one-time secret
     def create(name:, redirect_uris:, client_type:, scopes:, by:, owner: by, registered_via: :admin, metadata: {})
       authorize!(by)
-      persist(attributes(name, redirect_uris, client_type, scopes, metadata).merge(
-                owner: owner, registered_via: registered_via.to_s, approval_state: "approved"
-              ))
+      Doorkeeper::Application.transaction do
+        registration = persist(attributes(name, redirect_uris, client_type, scopes, metadata).merge(
+                                 owner: owner, registered_via: registered_via.to_s, approval_state: "approved"
+                               ))
+        record("client.created", registration.client, actor: by)
+        registration
+      end
     end
 
     # The only entry point without an administrator: an unknown party asks to
@@ -117,10 +122,14 @@ module OAuth
                           attributes: [:scopes])
       end
 
-      persist(attributes(name, redirect_uris, client_type, scopes, metadata).merge(
-                owner: nil, registered_via: "dynamic", registration_ip: registration_ip,
-                approval_state: policy == :open ? "approved" : "pending"
-              ))
+      Doorkeeper::Application.transaction do
+        registration = persist(attributes(name, redirect_uris, client_type, scopes, metadata).merge(
+                                 owner: nil, registered_via: "dynamic", registration_ip: registration_ip,
+                                 approval_state: policy == :open ? "approved" : "pending"
+                               ))
+        record("client.registered", registration.client, actor: nil)
+        registration
+      end
     end
 
     # Whether a client with this name and the same redirect URIs (in any
@@ -150,8 +159,10 @@ module OAuth
       changes[:scopes] = Array(scopes).map(&:to_s) unless scopes.nil?
       changes.merge!(metadata.to_h.symbolize_keys.slice(*METADATA_FIELDS)) unless metadata.nil?
       app.assign_attributes(changes)
-      save!(app)
-      wrap(app)
+      Doorkeeper::Application.transaction do
+        save!(app)
+        record("client.updated", wrap(app), actor: by, fields: app.saved_changes.keys - %w[updated_at])
+      end
     end
 
     # Issues a new secret; the old one stops working immediately, issued
@@ -164,7 +175,10 @@ module OAuth
       raise Invalid, "a public client has no secret to rotate" if app.public_client?
 
       app.renew_secret
-      save!(app)
+      Doorkeeper::Application.transaction do
+        save!(app)
+        Audit.record("client.secret_rotated", actor: by, client_uid: app.uid)
+      end
       Registration.new(client: wrap(app), secret: app.plaintext_secret)
     end
 
@@ -177,9 +191,11 @@ module OAuth
     #
     # @return [Client]
     def revoke(uid, by:)
-      client = transition(uid, to: "revoked", by: by)
-      OAuth::Tokens.revoke_all(client_uid: uid)
-      client
+      Doorkeeper::Application.transaction do
+        client = transition(uid, to: "revoked", by: by)
+        OAuth::Tokens.revoke_all(client_uid: uid, actor: by)
+        client
+      end
     end
 
     def authorize!(by)
@@ -223,10 +239,24 @@ module OAuth
       end
 
       app.approval_state = to
-      save!(app)
+      Doorkeeper::Application.transaction do
+        save!(app)
+        Audit.record("client.#{to}", actor: by, client_uid: app.uid, from: from)
+      end
       wrap(app)
     end
     private_class_method :transition
+
+    # What the audit log keeps of a client: never its secret, nor its contacts.
+    #
+    # @return [Client] the client
+    def record(event, client, actor:, **)
+      Audit.record(event, actor: actor, client_uid: client.uid, name: client.name, client_type: client.client_type,
+                          redirect_uris: client.redirect_uris, scopes: client.scopes,
+                          approval_state: client.approval_state, **)
+      client
+    end
+    private_class_method :record
 
     def save!(app)
       raise Invalid.new(app.errors.full_messages, attributes: app.errors.attribute_names) unless app.save
