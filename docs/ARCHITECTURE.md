@@ -227,6 +227,7 @@ the log.
 | `user.signed_out` | Warden `before_logout` (sign-out, session timeout) | user · user |
 | `user.locked` | `User` (failed-attempts lock) | — · user · — · `failed_attempts` |
 | `user.password_changed`, `user.disabled` | `User` | signed-in user, if any · user |
+| `user.email_confirmed` | `User` (first confirmation, or a changed address confirmed) | signed-in user, if any · user · — · `reconfirmation` |
 | `consent.granted` | `OAuth::Consents.grant` — a new or widened consent, not a repeat | user · user · client · `scopes`, `added` |
 | `consent.revoked` | `OAuth::Consents.revoke` | signed-in user · user · client · `scopes` |
 | `token.issued` | `OAuth::TokenRules` (code, refresh), `OAuth::Tokens.issue_client_token` (machine) | — · owner (none for machine) · client · `jti`, `grant_type`, `scopes` |
@@ -245,6 +246,26 @@ a deliberate operation with a database role that may delete (the app's may not).
 data — user ids and IP addresses, no emails or names — so the retention period belongs in the operator's
 privacy notice. Volume is dominated by `token.issued` (one per code exchange, refresh and machine token)
 and `user.signed_in`. The viewer is Phase 3 (T34); until then, `AuditEvent` from a console.
+
+**Accounts and mail (TASK-030):** Devise with `:confirmable` (columns from TASK-006): no sign-in until the
+address is confirmed (`allow_unconfirmed_access_for` stays 0), links expire after 3 days
+(`confirm_within`), and a changed address waits in `unconfirmed_email` until its own link is followed
+(`reconfirmable`), so `email_verified` — `confirmed_at` present, read by `OAuth::TokenPayload`, the id_token
+claims and both userinfo endpoints — always describes the `email` actually served. Accounts that existed
+before were marked confirmed by a migration (decision below). Passwords: 12–128 characters, and
+`NotBreachedValidator` refuses one listed by Pwned Passwords (`PwnedPasswords`: SHA-1 prefix of 5 hex
+characters to `api.pwnedpasswords.com/range/`, `Add-Padding`, padding entries with count 0 ignored, 3 s
+connect/read/TLS timeouts, `Unavailable` on any network error or non-2xx). It runs only when
+`encrypted_password` is about to change and Devise's own rules passed — Devise keeps `password` on the
+record after a save, so an unrelated update must not ask again. `PASSWORD_BREACH_CHECK` (validated at
+boot) picks the outage behaviour: `warn` accepts and logs, `block` refuses, `off` never asks. Mail: SMTP
+from env in production (`SMTP_ADDRESS` and `MAILER_FROM` required at boot; `SMTP_PORT` validated;
+465 → implicit TLS, otherwise STARTTLS, `:always` when a username is set so a stripped STARTTLS cannot
+expose the password, `:auto` for an unauthenticated relay; HELO domain and link host from `HUB_ISSUER`;
+`raise_delivery_errors` on). Development delivers to `tmp/mails`, test to `:test`. `ApplicationMailer`
+and Devise share `MAILER_FROM`. The resend-confirmation form gets `AccountRateLimits::AccountMail`.
+Devise's `paranoid` mode is still off: the reset, unlock and confirmation forms say whether an address
+has an account (follow-up for the Phase 2 gate).
 
 **Role of each self-developed gem in the target architecture**
 
@@ -279,6 +300,7 @@ and `user.signed_in`. The viewer is Phase 3 (T34); until then, `AuditEvent` from
 | 2026-10-02 | **Redis is `Rails.cache`** in production and development (`redis_cache_store` from `REDIS_URL`; production refuses to boot without it), an in-memory store in test; `redis` gem 5.x; **rack-jwt-verifier's `replay_cache` stays off** (TASK-027). | Rate-limit counters and readiness must agree across Puma workers and hosts; any Redis-protocol server works (compose runs `redis:7`, production picks its image in TASK-033). The replay guard allows one use per `jti`, which bearer tokens reused for their 10-minute life cannot satisfy; revocation is checked per request in the database instead. | Move to `redis` 6 once its RESP3 default has settled; enable a replay guard only for one-time tokens (DPoP proofs, T61). |
 | 2026-10-04 | **Audit log** (TASK-029): one `audit_events` table written only by `Audit.record`; **fails closed** (the event shares the change's transaction); **append-only** in the model now, enforced by an INSERT/SELECT-only grant for the app's role in production (TASK-033) rather than a trigger; tokens by `jti` only; no pruning by the app, at least 12 months expected. | An audit trail with silent gaps is worse than a failed request; a trigger would need `structure.sql` (schema.rb cannot hold it) and the local pg_dump is older than the server, while a grant is the standard control and comes with the production role anyway. | If audit writes ever fail in practice (e.g. a separate audit database); when the admin viewer (T34) needs retention settings. |
 | 2026-10-04 | **Rate limits** (TASK-028): Rails `rate_limit` in the shared cache; token, revoke and introspect keyed by **approved client + address** (else address), not `client_id` alone; account forms per address and per hashed email; registration's DB cap replaced; **fail open** when the cache is unreachable. | A public `client_id` is no secret: a per-client counter would let anyone lock a client's users out. Failing closed would turn a Redis outage into a sign-in outage; lockable and refresh rotation still hold without the counters. | If a distributed attack from many addresses needs a per-client ceiling as well; when readiness (TASK-033) can alert on the cache. |
+| 2026-10-06 | **Devise hardening** (TASK-030): accounts that existed before `:confirmable` are **marked confirmed** by the migration; the breached-password check **fails open by default** with `PASSWORD_BREACH_CHECK` = `warn` (default) / `block` / `off`; SMTP **requires STARTTLS whenever a username is set** (port 465: implicit TLS); undeliverable mail fails the request. | No real users exist yet, and any existing account was created by an administrator — shutting them out until they answer a mail buys nothing. An HIBP outage must not stop password changes unless the operator prefers that (user decision); air-gapped hosts need `off`. Opportunistic STARTTLS lets anyone in the path strip it and read the SMTP password; a silently dropped reset mail looks like a hub bug. | Per-role or per-user breach-check mode (e.g. administrators always `block`) — raised for the Phase 2 gate (TASK-037) and T62; a self-hosted Pwned Passwords mirror for air-gapped hosts; Devise `paranoid` mode against account enumeration. |
 
 ## 6. Future directions (not scheduled)
 

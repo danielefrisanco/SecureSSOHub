@@ -58,9 +58,59 @@ All configuration comes from environment variables; there are no fallback values
 | `OAUTH_INTROSPECT_RATE_LIMIT` | `POST /oauth/introspect` requests per client and address, per minute (default 1200) |
 | `SIGN_IN_RATE_LIMIT` | sign-in attempts per address, per minute (default 20) |
 | `SIGN_IN_EMAIL_RATE_LIMIT` | sign-in attempts per submitted email, per minute (default 10) |
-| `ACCOUNT_MAIL_RATE_LIMIT` | password-reset and unlock requests per address, per hour (default 20) |
-| `ACCOUNT_MAIL_EMAIL_RATE_LIMIT` | password-reset and unlock requests per submitted email, per hour (default 5) |
+| `ACCOUNT_MAIL_RATE_LIMIT` | password-reset, unlock and confirmation requests per address, per hour (default 20) |
+| `ACCOUNT_MAIL_EMAIL_RATE_LIMIT` | password-reset, unlock and confirmation requests per submitted email, per hour (default 5) |
+| `SMTP_ADDRESS` | host of the SMTP server that sends the hub's mail (confirmation, password reset, unlock); required in production — the hub refuses to boot without it. See [Accounts and mail](#accounts-and-mail) |
+| `SMTP_PORT` | SMTP port (default 587, STARTTLS); `465` means TLS from the first byte |
+| `SMTP_USERNAME` / `SMTP_PASSWORD` | SMTP login, if the server wants one; with a username set, the connection must be encrypted (STARTTLS required) or nothing is sent |
+| `MAILER_FROM` | sender of the hub's mail, e.g. `Secure SSO Hub <no-reply@sso.example.com>`; required in production |
+| `PASSWORD_BREACH_CHECK` | what happens when the breached-password service cannot be reached: `warn` (default) — accept the password and log a warning; `block` — refuse it until the service answers; `off` — never check (hosts without internet access). Any other value stops the boot |
 | `RAILS_MASTER_KEY` | Rails credentials |
+
+### Accounts and mail
+
+**Creating an account.** There is no public sign-up: an administrator creates accounts from a console.
+The hub then mails the person a confirmation link, and they cannot sign in until they follow it — that
+is what lets every token and userinfo response say `email_verified: true`. A link works for 3 days;
+after that, "Didn't receive confirmation instructions?" on the sign-in page sends a new one. Changing
+an account's email works the same way: the new address gets a link, and the old one stays in use until
+it is confirmed.
+
+```ruby
+User.create!(email: "ada@example.com", name: "Ada Lovelace", password: "<12 or more characters>")
+# The very first administrator, before mail is set up — no confirmation needed:
+User.new(email: "admin@example.com", name: "Admin", password: "<…>", is_admin: true).tap(&:skip_confirmation!).save!
+```
+
+**Passwords.** At least 12 characters; length protects better than rules about digits and symbols.
+A new password is also refused if it has appeared in a known data breach — attackers try those first.
+The hub asks [Have I Been Pwned's Pwned Passwords](https://haveibeenpwned.com/Passwords) (free, no
+account) without ever sending the password: it sends only the first 5 characters of the password's
+SHA-1 hash, gets back every leaked hash that starts with them (padded with decoys, so even the size of
+the answer says nothing), and compares locally.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant H as Hub
+    participant P as Pwned Passwords API
+    U->>H: new password
+    H->>H: SHA-1 → 5BAA6 + 1E4C9B93F3F0682250B6CF8331B7EE68FD8
+    H->>P: GET /range/5BAA6 (only the first 5 characters)
+    P-->>H: ~800 hash endings + decoys
+    H->>H: is 1E4C9…FD8 among them?
+    H-->>U: accepted, or "appeared in a data breach"
+```
+
+If the service cannot be reached (3-second timeouts), `PASSWORD_BREACH_CHECK` decides: `warn` keeps
+password changes working during an outage and logs it; `block` refuses passwords until the check works
+again; `off` is for hosts that never reach the internet. We recommend `warn`.
+
+**Mail.** Any SMTP server works — your provider's, or a local relay — set with the `SMTP_*` variables
+and `MAILER_FROM`. Production refuses to boot without a server and a sender, because without mail no
+account could be confirmed or recovered; a mail that cannot be delivered fails the request rather than
+vanishing. Links in mail point at `HUB_ISSUER`. In development, mail is written to `tmp/mails/<address>`
+instead of being sent: open the file and follow the link.
 
 ### Dynamic client registration
 
@@ -82,8 +132,8 @@ OAuth::Clients.revoke("<client_id>", by: User.find_by!(email: "<admin email>")) 
 
 ### Rate limits
 
-The token, revocation, introspection and registration endpoints and the sign-in, password-reset and
-unlock forms are rate limited with Rails' `rate_limit`, counted in the shared cache (Redis, `REDIS_URL`).
+The token, revocation, introspection and registration endpoints and the sign-in, password-reset,
+unlock and confirmation forms are rate limited with Rails' `rate_limit`, counted in the shared cache (Redis, `REDIS_URL`).
 Each limit is a positive integer of requests per key and window, set by the variables above; anything
 else stops the boot, so a typo cannot lift a limit.
 
