@@ -158,6 +158,14 @@ RSpec.describe "Rate limits", type: :request do
       expect(response.body).to include("Too many attempts.")
     end
 
+    it "limits confirmation-instruction requests the same way" do
+      spend_rate_limit(scope: "devise/confirmations", name: "email", by: Digest::SHA256.hexdigest(user.email),
+                       count: rate_limits.account_mail_email, within: 1.hour)
+      expect { post user_confirmation_path, params: { user: { email: user.email } } }
+        .not_to(change { ActionMailer::Base.deliveries.size })
+      expect(response).to have_http_status(:too_many_requests)
+    end
+
     it "still sends a reset email below the limit" do
       expect { post user_password_path, params: { user: { email: user.email } } }
         .to change { ActionMailer::Base.deliveries.size }.by(1)

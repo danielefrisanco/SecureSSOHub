@@ -8,6 +8,7 @@
 class AuditEvent < ApplicationRecord
   EVENTS = %w[
     user.signed_in user.sign_in_failed user.signed_out user.locked user.password_changed user.disabled
+    user.email_confirmed
     consent.granted consent.revoked
     token.issued token.revoked token.refresh_reuse_detected token.code_replay_detected
     tokens.revoked_for_user tokens.revoked_for_user_and_client tokens.revoked_for_client

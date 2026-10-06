@@ -31,8 +31,8 @@ module AccountRateLimits
     end
   end
 
-  # POST /users/password and /users/unlock, per hour: each sends an email, so
-  # unthrottled they would flood someone's inbox.
+  # POST /users/password, /users/unlock and /users/confirmation, per hour: each
+  # sends an email, so unthrottled they would flood someone's inbox.
   module AccountMail
     extend ActiveSupport::Concern
     include AccountRateLimits

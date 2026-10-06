@@ -9,8 +9,8 @@
 #   OAUTH_INTROSPECT_RATE_LIMIT   POST /oauth/introspect, per client and address, per minute (1200)
 #   SIGN_IN_RATE_LIMIT            sign-in attempts per address, per minute (20)
 #   SIGN_IN_EMAIL_RATE_LIMIT      sign-in attempts per submitted email, per minute (10)
-#   ACCOUNT_MAIL_RATE_LIMIT       password-reset and unlock requests per address, per hour (20)
-#   ACCOUNT_MAIL_EMAIL_RATE_LIMIT password-reset and unlock requests per submitted email, per hour (5)
+#   ACCOUNT_MAIL_RATE_LIMIT       password-reset, unlock and confirmation requests per address, per hour (20)
+#   ACCOUNT_MAIL_EMAIL_RATE_LIMIT the same per submitted email, per hour (5)
 #
 # POST /oauth/register keeps OAUTH_REGISTRATION_IP_LIMIT (per address, per
 # hour; config/initializers/oauth_registration.rb).
@@ -39,4 +39,5 @@ Rails.application.config.to_prepare do
   Devise::SessionsController.include(AccountRateLimits::SignIn)
   Devise::PasswordsController.include(AccountRateLimits::AccountMail)
   Devise::UnlocksController.include(AccountRateLimits::AccountMail)
+  Devise::ConfirmationsController.include(AccountRateLimits::AccountMail)
 end

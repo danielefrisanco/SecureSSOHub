@@ -31,3 +31,7 @@ en:
   hello: "Hello world"
   rate_limits:
     too_many_requests: "Too many attempts. Please wait a while and try again."
+  errors:
+    messages:
+      breached: "has appeared in a data breach, so attackers try it first. Please choose a different one."
+      breach_check_unavailable: "could not be checked against known data breaches right now. Please try again in a few minutes."

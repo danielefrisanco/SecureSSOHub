@@ -159,6 +159,14 @@ RSpec.describe "Audit log hook points" do
       expect(last_event("user.locked").metadata).to include("failed_attempts" => 5)
     end
 
+    it "records an email confirmation, with no actor when the user follows the link" do
+      unconfirmed = create(:user, :unconfirmed)
+      unconfirmed.confirm
+
+      expect(last_event("user.email_confirmed")).to have_attributes(actor_id: nil, subject_id: unconfirmed.id)
+      expect(last_event("user.email_confirmed").metadata).to eq("reconfirmation" => false)
+    end
+
     it "records nothing for a profile change" do
       user.update!(name: "Renamed")
       expect(AuditEvent.where(subject_id: user.id)).to be_empty

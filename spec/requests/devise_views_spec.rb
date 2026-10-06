@@ -14,6 +14,7 @@ RSpec.describe "Devise views", type: :request do
   include_examples "a page in the application layout", :new_user_session_path
   include_examples "a page in the application layout", :new_user_password_path
   include_examples "a page in the application layout", :new_user_unlock_path
+  include_examples "a page in the application layout", :new_user_confirmation_path
 
   it "renders the sign-in form without a sign-up link" do
     get new_user_session_path

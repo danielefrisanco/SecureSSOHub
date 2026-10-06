@@ -24,7 +24,12 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = 'please-change-me-at-config-initializers-devise@example.com'
+  # MAILER_FROM (TASK-030), e.g. "Secure SSO Hub <no-reply@sso.example.com>";
+  # required outside development and test, like the SMTP server
+  # (config/environments/production.rb).
+  config.mailer_sender = ENV.fetch("MAILER_FROM") do
+    Rails.env.local? ? "Secure SSO Hub <no-reply@localhost>" : raise("MAILER_FROM is not set: the hub cannot send mail")
+  end
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'
@@ -151,7 +156,9 @@ Devise.setup do |config|
   # their account can't be confirmed with the token any more.
   # Default is nil, meaning there is no restriction on how long a user can take
   # before confirming their account.
-  # config.confirm_within = 3.days
+  # Whoever holds a confirmation link can confirm the address, and mailboxes
+  # keep mail for years; the link expires and the user can ask for a new one.
+  config.confirm_within = 3.days
 
   # If true, requires any email changes to be confirmed (exactly the same way as
   # initial account confirmation) to be applied. Requires additional unconfirmed_email
@@ -178,7 +185,10 @@ Devise.setup do |config|
 
   # ==> Configuration for :validatable
   # Range for password length.
-  config.password_length = 6..128
+  # At least 12 characters (TASK-030, NIST SP 800-63B favours length over
+  # composition rules); new passwords are also checked against known breaches
+  # (User, PASSWORD_BREACH_CHECK).
+  config.password_length = 12..128
 
   # Email regex used to validate email formats. It simply asserts that
   # one (and only one) @ exists in the given string. This is mainly

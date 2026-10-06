@@ -46,6 +46,11 @@ RSpec.configure do |config|
   config.include Devise::Test::ControllerHelpers, type: :controller
   # The test cache is an in-memory store shared by every example; start each one empty.
   config.before { Rails.cache.clear }
+  # Breached-password check (PwnedPasswords): every range comes back empty, so
+  # no password counts as breached unless a spec stubs its range.
+  config.before do
+    stub_request(:get, %r{\Ahttps://api\.pwnedpasswords\.com/range/\h{5}\z}).to_return(body: "")
+  end
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')

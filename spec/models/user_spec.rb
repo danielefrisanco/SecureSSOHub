@@ -27,8 +27,85 @@ RSpec.describe User, type: :model do
     expect(described_class.devise_modules).not_to include(:registerable)
   end
 
-  it "enables trackable, lockable and timeoutable" do
-    expect(described_class.devise_modules).to include(:trackable, :lockable, :timeoutable)
+  it "enables trackable, lockable, timeoutable and confirmable" do
+    expect(described_class.devise_modules).to include(:trackable, :lockable, :timeoutable, :confirmable)
+  end
+end
+
+RSpec.describe User, "password rules", type: :model do
+  let(:password) { "a long but famous passphrase" }
+  let(:digest) { Digest::SHA1.hexdigest(password).upcase }
+  let(:range_request) { a_request(:get, "https://api.pwnedpasswords.com/range/#{digest[0, 5]}") }
+
+  around do |example|
+    mode = Rails.configuration.x.password_breach_check
+    example.run
+  ensure
+    Rails.configuration.x.password_breach_check = mode
+  end
+
+  def breach_check(mode)
+    Rails.configuration.x.password_breach_check = mode
+  end
+
+  def stub_range(body)
+    stub_request(:get, "https://api.pwnedpasswords.com/range/#{digest[0, 5]}").to_return(body: body)
+  end
+
+  def errors_for(candidate)
+    user = build(:user, password: candidate)
+    user.validate
+    user.errors[:password]
+  end
+
+  it "needs at least 12 characters" do
+    expect(errors_for("a" * 11)).to include("is too short (minimum is 12 characters)")
+    expect(errors_for("abcdefghijkl")).to be_empty
+  end
+
+  it "refuses a password found in a known breach" do
+    stub_range("#{digest[5..]}:42")
+    expect(errors_for(password))
+      .to contain_exactly("has appeared in a data breach, so attackers try it first. Please choose a different one.")
+  end
+
+  it "asks nothing about a password that is too short already" do
+    errors_for("short")
+    expect(a_request(:get, /pwnedpasswords/)).not_to have_been_made
+  end
+
+  it "asks nothing when the password does not change, though Devise keeps it on the record" do
+    user = create(:user, password: password)
+    WebMock.reset_executed_requests!
+    user.update!(name: "Renamed")
+
+    expect(range_request).not_to have_been_made
+  end
+
+  it "accepts the password and logs a warning when the API cannot be reached, by default (warn)" do
+    breach_check(:warn)
+    stub_request(:get, /pwnedpasswords/).to_timeout
+    allow(Rails.logger).to receive(:warn)
+
+    expect(errors_for(password)).to be_empty
+    expect(Rails.logger).to have_received(:warn).with(/Breached-password check unavailable .*accepted unchecked/)
+  end
+
+  it "refuses the password when the API cannot be reached and the mode is block" do
+    breach_check(:block)
+    stub_request(:get, /pwnedpasswords/).to_return(status: 500)
+
+    expect(errors_for(password)).to contain_exactly(
+      "could not be checked against known data breaches right now. Please try again in a few minutes."
+    )
+  end
+
+  it "checks nothing when the mode is off" do
+    breach_check(:off)
+    stub_range("#{digest[5..]}:42")
+
+    expect(errors_for(password)).to be_empty
+    expect(range_request).not_to have_been_made
   end
 end
 

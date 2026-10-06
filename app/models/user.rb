@@ -1,8 +1,14 @@
 class User < ApplicationRecord
   # Accounts are created by an admin, so :registerable is deliberately off.
-  # :confirmable waits for a configured mailer (its columns already exist).
+  # :confirmable makes `email_verified` mean something (TASK-030): no sign-in
+  # until the address is confirmed, and a changed address is confirmed again.
   devise :database_authenticatable, :recoverable, :rememberable, :validatable,
-         :trackable, :lockable, :timeoutable
+         :trackable, :lockable, :timeoutable, :confirmable
+
+  # A new password must not appear in a known breach (TASK-030). Checked only
+  # when it is being stored (Devise keeps `password` on the record after a
+  # save) and has passed Devise's own rules, so a too-short one costs no API call.
+  validates :password, not_breached: true, if: :new_password_to_check?
 
   # Validation to ensure the sso_id is present and unique.
   validates :sso_id, presence: true, uniqueness: true
@@ -15,16 +21,23 @@ class User < ApplicationRecord
   # clients — when the password changes (reset or update) or an administrator
   # disables the account. Signing out of the hub revokes nothing, nor does a
   # failed-attempts lock, which anyone can trigger (docs/ARCHITECTURE.md §3).
-  # The audit log (TASK-029) records these changes, and a failed-attempts
-  # lock, in the same transaction as the update.
+  # The audit log (TASK-029) records these changes, a failed-attempts lock and
+  # an email confirmation, in the same transaction as the update.
   after_update :record_audit_events
   after_update :revoke_oauth_tokens, if: :oauth_tokens_invalidated?
 
   private
 
+  def new_password_to_check?
+    will_save_change_to_encrypted_password? && password.present? && errors[:password].empty?
+  end
+
   def record_audit_events
     Audit.record("user.password_changed", subject_id: id) if saved_change_to_encrypted_password?
     Audit.record("user.disabled", subject_id: id) if saved_change_to_disabled_at? && disabled_at.present?
+    if saved_change_to_confirmed_at? && confirmed_at.present?
+      Audit.record("user.email_confirmed", subject_id: id, reconfirmation: saved_change_to_email?)
+    end
     return unless saved_change_to_locked_at? && locked_at.present?
 
     Audit.record("user.locked", actor: nil, subject_id: id, failed_attempts: failed_attempts)
