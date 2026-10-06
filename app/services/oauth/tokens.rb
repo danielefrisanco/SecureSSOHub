@@ -13,6 +13,11 @@ module OAuth
   # Revocation reaches the hub's own API, introspection callers and the
   # refresh flow at once; a resource server verifying a JWT offline keeps
   # accepting it until `exp` (docs/ARCHITECTURE.md §3).
+  #
+  # Machine-token issuance and every revocation are recorded in the audit log
+  # (TASK-029) in the same transaction; tokens appear there by `jti` only.
+  # Issuance through the code and refresh grants is recorded by
+  # OAuth::TokenRules.
   module Tokens
     Token = Struct.new(:jti, :client_uid, :client_name, :subject_id, :scopes, :resource, :created_at, :expires_at,
                        :refresh_expires_at, :revoked_at, keyword_init: true)
@@ -36,8 +41,8 @@ module OAuth
 
     # Every machine token (client_credentials, RFC 6749 §4.4) is issued here:
     # Doorkeeper creates it in the block (OAuth::MachineGrantRules), so this is
-    # the one hook for machine-token issuance (the audit log, T25, records it
-    # here). The client's `last_used_at` is touched as for the other grants
+    # the one hook for machine-token issuance and its audit event. The
+    # client's `last_used_at` is touched as for the other grants
     # (OAuth::TokenRules). A client's earlier tokens are neither reused nor
     # revoked — Doorkeeper's revoke_previous_client_credentials_token stays
     # off — because a busy service may hold two while it rolls over.
@@ -46,10 +51,16 @@ module OAuth
     # @yieldreturn [Doorkeeper::AccessToken, nil] the token Doorkeeper created
     # @return [Doorkeeper::AccessToken, nil]
     def issue_client_token(application:)
-      token = yield
-      # Registry metadata only; validations and updated_at are deliberately untouched.
-      application.update_column(:last_used_at, Time.current) if token # rubocop:disable Rails/SkipsModelValidations
-      token
+      Doorkeeper::AccessToken.transaction do
+        token = yield
+        if token
+          # Registry metadata only; validations and updated_at are deliberately untouched.
+          application.update_column(:last_used_at, Time.current) # rubocop:disable Rails/SkipsModelValidations
+          Audit.record("token.issued", actor: nil, client_uid: application.uid, jti: token.jti,
+                                       grant_type: "client_credentials", scopes: token.scopes.to_a)
+        end
+        token
+      end
     end
 
     # Revokes one token and its family. The token is found by its `jti`, its
@@ -64,7 +75,7 @@ module OAuth
       record = find_record(token)
       return 0 unless record && (by.is_admin || record.resource_owner_id == by.id)
 
-      revoke_family!(record)
+      revoke_family!(record, actor: by)
     end
 
     # Revokes a token together with every live token issued from the same
@@ -73,13 +84,16 @@ module OAuth
     # revoked alone.
     #
     # @param record [Doorkeeper::AccessToken]
+    # @param actor [User, nil] who asks; none when the client revokes through POST /oauth/revoke
     # @return [Integer] number of access tokens revoked
-    def revoke_family!(record)
+    def revoke_family!(record, actor: nil)
       family = Doorkeeper::AccessToken.where(id: record.id)
       if record.access_grant_id
         family = family.or(Doorkeeper::AccessToken.where(access_grant_id: record.access_grant_id))
       end
-      revoke_live(Doorkeeper::AccessGrant.none, family)
+      revoke_recorded("token.revoked", Doorkeeper::AccessGrant.none, family,
+                      actor: actor, subject_id: record.resource_owner_id, client_uid: record.application&.uid,
+                      jti: record.jti)
     end
 
     # Sign out everywhere: every live access token, refresh token and pending
@@ -88,10 +102,12 @@ module OAuth
     # out of the hub itself revokes nothing.
     #
     # @param user [User]
+    # @param actor [User, nil] who asks; the signed-in user by default
     # @return [Integer] number of access tokens revoked
-    def revoke_all_for(user:)
-      revoke_live(Doorkeeper::AccessGrant.where(resource_owner_id: user.id),
-                  Doorkeeper::AccessToken.where(resource_owner_id: user.id))
+    def revoke_all_for(user:, actor: Current.user)
+      revoke_recorded("tokens.revoked_for_user", Doorkeeper::AccessGrant.where(resource_owner_id: user.id),
+                      Doorkeeper::AccessToken.where(resource_owner_id: user.id),
+                      actor: actor, subject_id: user.id)
     end
 
     # Whether the access token with this `jti` is still live: a row exists and
@@ -112,12 +128,14 @@ module OAuth
     # a client (client revocation, TASK-016).
     #
     # @param client_uid [String]
+    # @param actor [User, nil] who asks; the signed-in user by default
     # @return [Integer] number of access tokens revoked
-    def revoke_all(client_uid:)
+    def revoke_all(client_uid:, actor: Current.user)
       app = Doorkeeper::Application.find_by(uid: client_uid)
       return 0 unless app
 
-      revoke_live(app.access_grants, app.access_tokens)
+      revoke_recorded("tokens.revoked_for_client", app.access_grants, app.access_tokens,
+                      actor: actor, client_uid: app.uid)
     end
 
     # Revokes the live tokens and codes one client holds for one user (consent
@@ -125,13 +143,15 @@ module OAuth
     #
     # @param user [User]
     # @param client_uid [String]
+    # @param actor [User, nil] who asks; the signed-in user by default
     # @return [Integer] number of access tokens revoked
-    def revoke_for(user:, client_uid:)
+    def revoke_for(user:, client_uid:, actor: Current.user)
       app = Doorkeeper::Application.find_by(uid: client_uid)
       return 0 unless app
 
-      revoke_live(app.access_grants.where(resource_owner_id: user.id),
-                  app.access_tokens.where(resource_owner_id: user.id))
+      revoke_recorded("tokens.revoked_for_user_and_client", app.access_grants.where(resource_owner_id: user.id),
+                      app.access_tokens.where(resource_owner_id: user.id),
+                      actor: actor, subject_id: user.id, client_uid: app.uid)
     end
 
     # Absolute lifetime of a refresh token, counted from the authorization
@@ -162,8 +182,10 @@ module OAuth
       return false unless token&.revoked?
 
       app = token.application
-      revoke_live(app.access_grants.where(resource_owner_id: token.resource_owner_id),
-                  app.access_tokens.where(resource_owner_id: token.resource_owner_id))
+      owner_id = token.resource_owner_id
+      revoke_recorded("token.refresh_reuse_detected", app.access_grants.where(resource_owner_id: owner_id),
+                      app.access_tokens.where(resource_owner_id: owner_id),
+                      actor: nil, subject_id: owner_id, client_uid: app.uid, jti: token.jti)
       true
     end
 
@@ -174,8 +196,20 @@ module OAuth
     # @param grant [Doorkeeper::AccessGrant]
     # @return [Integer] number of access tokens revoked
     def revoke_issued_from!(grant)
-      revoke_live(Doorkeeper::AccessGrant.none, Doorkeeper::AccessToken.where(access_grant_id: grant.id))
+      revoke_recorded("token.code_replay_detected", Doorkeeper::AccessGrant.none,
+                      Doorkeeper::AccessToken.where(access_grant_id: grant.id),
+                      actor: nil, subject_id: grant.resource_owner_id, client_uid: grant.application&.uid)
     end
+
+    # Revokes and records the revocation, together or not at all.
+    def revoke_recorded(event, grants, tokens, actor:, **)
+      Doorkeeper::AccessToken.transaction do
+        revoked = revoke_live(grants, tokens)
+        Audit.record(event, actor: actor, revoked: revoked, **)
+        revoked
+      end
+    end
+    private_class_method :revoke_recorded
 
     def revoke_live(grants, tokens)
       grants.where(revoked_at: nil).find_each(&:revoke)

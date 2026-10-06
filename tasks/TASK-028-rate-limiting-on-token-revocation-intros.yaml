@@ -1,11 +1,11 @@
 id: TASK-028
 title: Rate limiting on token, revocation, introspection, sign-in, password reset and registration
 type: feat
-status: todo
+status: done
 priority: high
 created: '2026-10-02'
-updated: '2026-10-02'
-branch: null
+updated: '2026-10-04'
+branch: task/028-rate-limiting-on-token-revocation-intros
 depends_on:
 - TASK-027
 context: "TODO T24. TODO T24 (audit §5.1: per-client and per-IP limits on /oauth/token, sign-in and password\
@@ -22,8 +22,8 @@ context: "TODO T24. TODO T24 (audit §5.1: per-client and per-IP limits on /oaut
   \ as TASK-025 does), HTML forms show a flash.\n- Limits from env with documented defaults (README);\
   \ behind a proxy they depend on trusted-proxy\n  configuration (TASK-033 sets it)."
 acceptance_criteria:
-- 'Token, revoke and introspect endpoints are rate limited per client_id (per IP without one) through an OAuth:': module
-    wired in the Doorkeeper initializer; 429 + Retry-After + JSON error, spec'd
+- 'Token, revoke and introspect endpoints are rate limited per client_id (per IP without one) through
+  an OAuth:: module wired in the Doorkeeper initializer; 429 + Retry-After + JSON error, spec''d'
 - Sign-in and password reset are rate limited per IP (and per email for sign-in); spec'd
 - POST /oauth/register uses the same mechanism; the DB-count cap in OAuth::DynamicRegistration is removed
   and its specs adapted
@@ -34,4 +34,41 @@ plan:
 - OAuth endpoints module + initializer wiring; Devise controllers; registration.
 - Specs per endpoint (cache store in tests must count); README.
 - Suite; closing note.
-notes: []
+notes:
+- at: 2026-10-02 16:40
+  text: started on task/028-rate-limiting-on-token-revocation-intros; first criterion re-quoted (YAML
+    had parsed the OAuth module name as a mapping key)
+- at: 2026-10-02 16:50
+  text: 'handoff: DONE: d231f70 fix — Doorkeeper controller prepends moved to to_prepare (they were lost
+    after a dev reload); 349326e feat — rate limits: config/initializers/rate_limits.rb (7 env vars, boot
+    validation), OAuth::EndpointRateLimits + OAuth::TokenEndpointLimits (per approved client+address,
+    else address; 429 temporarily_unavailable JSON, Retry-After, no-store), AccountRateLimits concern
+    on Devise sessions/passwords/unlocks (per address + hashed email; 429 re-rendered form + flash), registration
+    cap moved from DB count to rate_limit (Clients.dynamic_registrations_from removed; registration_ip
+    column and index kept). Specs: spec/requests/rate_limits_spec.rb (12), spec/config/rate_limits_spec.rb
+    (3), register_spec adapted (34). rspec 372/0, rubocop, brakeman clean. | NEXT: README env rows + rate-limit
+    section (fail-open when Redis down, trusted proxies TASK-033), ARCHITECTURE §4 paragraph + decision
+    row (client+address key, not client_id alone: lockout DoS), TODO T24 note; closing note; reviewer;
+    complete; merge into develop. | BLOCKERS/QUESTIONS: none; AC1 says ''per client_id'' — implemented
+    per client AND address on purpose (record in ARCHITECTURE).'
+- at: 2026-10-04 21:12
+  text: 'closing: Rails 8 rate_limit on the shared cache, limits from 7 env vars validated at boot (config/initializers/rate_limits.rb)
+    plus OAUTH_REGISTRATION_IP_LIMIT. /oauth/token, /revoke, /introspect: OAuth::TokenEndpointLimits prepended
+    into Doorkeeper::TokensController in to_prepare (isolation spec passes); 429 temporarily_unavailable
+    JSON, Retry-After, no-store. AC1 says ''per client_id'': implemented as per approved client AND address
+    (else address) on purpose — client_id alone lets anyone lock a public client''s users out; recorded
+    in ARCHITECTURE §4/§5 and TODO T24. Sign-in per address + hashed email (per minute), password reset/unlock
+    per address + email (per hour): 429 re-rendered form + neutral flash. /oauth/register on the same
+    mechanism; DB count (Clients.dynamic_registrations_from) removed, registration_ip column kept, register_spec
+    adapted. Fail open when the cache is unreachable (documented). Also d231f70: Doorkeeper controller
+    prepends moved to to_prepare (lost after a dev reload). Docs: README env rows + Rate limits section,
+    ARCHITECTURE §4 paragraph + decision row, TODO T24. rspec 372/0, rubocop, brakeman, bundler-audit
+    clean. User: nothing required; behind a proxy limits count the proxy''s address until TASK-033 sets
+    trusted_proxies; local specs need ''docker compose up -d db'' and POSTGRES_HOST=localhost.'
+- at: 2026-10-04 21:13
+  text: 'REVIEW: PASS — all five criteria met; AC1 key (approved client + address) judged satisfied in
+    substance and recorded; fail-open claim verified against Rails 8.1'
+- at: 2026-10-04 21:13
+  text: done — specs per endpoint in spec/requests/rate_limits_spec.rb, boot validation in spec/config/rate_limits_spec.rb,
+    register_spec adapted, isolation spec green; rspec 372/0 (POSTGRES_HOST=localhost), rubocop, brakeman,
+    bundler-audit clean; reviewer PASS

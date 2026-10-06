@@ -28,8 +28,10 @@ Rails.application.configure do
   # Same store as production so rate limits behave alike; compose runs the redis service.
   config.cache_store = :redis_cache_store, { url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0") }
 
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  # Mail is written to tmp/mails/<recipient> instead of being sent (TASK-030):
+  # open the file to follow a confirmation or password-reset link.
+  config.action_mailer.delivery_method = :file
+  config.action_mailer.raise_delivery_errors = true
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false

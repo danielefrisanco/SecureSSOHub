@@ -26,15 +26,13 @@ module OAuth
   # Refusals: 400 `invalid_redirect_uri` for a redirect URI problem,
   # 400 `invalid_client_metadata` for everything else (RFC 7591 §3.2.2) —
   # including a duplicate (same client_name and redirect_uris registered in
-  # the last 24 hours) and a confidential client under the open policy;
-  # 429 `temporarily_unavailable` past the per-address hourly cap (until rate
-  # limiting, T24) — every dynamic registration counts, pending or approved.
-  # Both the cap and the duplicate check are check-then-insert without a
-  # lock, so a burst of concurrent requests can overshoot them by a few;
-  # acceptable for a stopgap that T24 replaces. Every registration is logged
-  # at info with its client_id and source address.
+  # the last 24 hours) and a confidential client under the open policy. The
+  # duplicate check is check-then-insert without a lock, so a burst of
+  # concurrent requests can slip a few through; the per-address rate limit
+  # (ClientRegistrationsController, TASK-028) bounds that burst. Every
+  # registration is logged at info with its client_id and source address.
   class DynamicRegistration
-    Result = Struct.new(:status, :body, :headers, keyword_init: true)
+    Result = Struct.new(:status, :body, keyword_init: true)
 
     class Refused < StandardError
       attr_reader :code
@@ -50,7 +48,6 @@ module OAuth
     GRANT_TYPES = %w[authorization_code refresh_token].freeze
     RESPONSE_TYPES = %w[code].freeze
     DUPLICATE_WINDOW = 24.hours
-    CAP_WINDOW = 1.hour
     MAX_STRING = 255
     APPROVAL_MESSAGES = {
       "pending" => "Registration received. An administrator must approve this client before it can sign users in.",
@@ -70,12 +67,10 @@ module OAuth
     end
 
     def call
-      return too_many if Clients.dynamic_registrations_from(ip, since: CAP_WINDOW.ago) >= RegistrationPolicy.ip_limit
-
       request = validated_request
       registration = register(request)
       log(registration.client)
-      Result.new(status: :created, body: response_body(registration, request), headers: {})
+      Result.new(status: :created, body: response_body(registration, request))
     rescue Refused => e
       error(e.code, e.message)
     rescue Clients::Invalid => e
@@ -225,13 +220,8 @@ module OAuth
       { client_id: client.uid, client_secret: registration.secret, client_secret_expires_at: 0 }.merge(body)
     end
 
-    def too_many
-      error("temporarily_unavailable", "too many registrations from this address; try again later",
-            status: :too_many_requests, headers: { "Retry-After" => CAP_WINDOW.to_i.to_s })
-    end
-
-    def error(code, description, status: :bad_request, headers: {})
-      Result.new(status: status, body: { error: code, error_description: description }, headers: headers)
+    def error(code, description)
+      Result.new(status: :bad_request, body: { error: code, error_description: description })
     end
 
     def log(client)

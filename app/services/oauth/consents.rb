@@ -7,6 +7,9 @@ module OAuth
   # Doorkeeper's `skip_authorization` consults `covers?` so a repeat
   # authorization for the same client and a subset of the consented scopes
   # skips the consent page (config/initializers/doorkeeper.rb).
+  #
+  # A new or widened consent and a revocation are recorded in the audit log
+  # (TASK-029) in the same transaction.
   module Consents
     Consent = Struct.new(:client_uid, :subject_id, :scopes, :granted_at, :revoked_at, keyword_init: true)
 
@@ -36,9 +39,17 @@ module OAuth
     def grant(user:, client_uid:, scopes:)
       app = fetch_application(client_uid)
       record = OAuthConsent.live.find_or_initialize_by(user: user, oauth_application_id: app.id)
-      record.scope_list = record.scope_list | Array(scopes).map(&:to_s)
+      added = Array(scopes).map(&:to_s) - record.scope_list
+      widened = record.new_record? || added.any?
+      record.scope_list = record.scope_list | added
       record.granted_at = Time.current
-      record.save!
+      OAuthConsent.transaction do
+        record.save!
+        if widened
+          Audit.record("consent.granted", actor: user, subject_id: user.id, client_uid: app.uid,
+                                          scopes: record.scope_list, added: added)
+        end
+      end
       wrap(record, app.uid)
     end
 
@@ -50,8 +61,11 @@ module OAuth
       record = live_record(user, client_uid)
       return nil unless record
 
-      record.update!(revoked_at: Time.current)
-      OAuth::Tokens.revoke_for(user: user, client_uid: client_uid)
+      OAuthConsent.transaction do
+        record.update!(revoked_at: Time.current)
+        Audit.record("consent.revoked", subject_id: user.id, client_uid: client_uid, scopes: record.scope_list)
+        OAuth::Tokens.revoke_for(user: user, client_uid: client_uid)
+      end
       wrap(record, client_uid)
     end
 

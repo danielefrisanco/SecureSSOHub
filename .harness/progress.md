@@ -153,3 +153,25 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - rack-jwt-verifier replay_cache stays off: one use per jti, incompatible with reused bearer tokens; documented (initializer, ARCHITECTURE §4/§5, TODO T23) and guarded by a userinfo reuse spec.
 - Commits d7c3f1e, fb91ec2. rspec 356/0, rubocop, brakeman, bundler-audit clean. Review: PASS.
 - User: `docker compose up -d redis` for local development; production needs REDIS_URL (prod service in TASK-033).
+
+## 2026-10-02 — TASK-028 handoff
+- DONE: d231f70 fix (Doorkeeper controller rules wired in to_prepare; a dev reload used to drop them). 349326e rate limits: token/revoke/introspect per approved client+address (else per address), sign-in per address + hashed email, password reset/unlock per address + email per hour, registration on the same mechanism; env limits validated at boot. rspec 372/0, rubocop, brakeman clean.
+- NEXT: docs (README env rows + section, ARCHITECTURE §4/decision row, TODO T24), closing note, review, complete, merge into develop; then TASK-029.
+- BLOCKERS/QUESTIONS: none. develop is 14 commits ahead of origin (TASK-026/027) — user pushes when convenient.
+
+## 2026-10-04 — TASK-028 done: Rate limiting on token, revocation, introspection, sign-in, password reset and registration
+- Rails 8 `rate_limit` on the shared cache, limits from 7 env vars (+ OAUTH_REGISTRATION_IP_LIMIT) validated at boot. Token/revoke/introspect keyed by approved client + address, else address (not client_id alone: lockout DoS — ARCHITECTURE §4/§5, TODO T24); 429 temporarily_unavailable JSON + Retry-After + no-store. Sign-in per address + hashed email; password reset/unlock per address + email per hour. /oauth/register moved from the DB count to the same mechanism. Fail open when Redis is unreachable.
+- Commits d231f70 (Doorkeeper prepends in to_prepare), 349326e, 1b70fa2, b0c633e. rspec 372/0, rubocop, brakeman, bundler-audit clean. Review: PASS.
+- User: nothing required. Behind a proxy limits count the proxy's address until TASK-033 sets trusted_proxies. Local specs: `docker compose up -d db` and `POSTGRES_HOST=localhost bundle exec rspec`.
+
+## 2026-10-04 — TASK-029 done: Audit log — sign-ins, consents, tokens, clients and admin actions
+- audit_events table + Audit.record: actor, subject, client (azp), jti, ip, request id, filtered jsonb metadata. 21 events across sign-in/out/failure/lock, password change/disable, consents, token issuance (code, refresh, machine) and every revocation path incl. refresh reuse and code replay, client registry. Fails closed (event shares the change's transaction); read-only model; tokens by jti only, spec'd that no credential reaches the log.
+- User decisions: append-only in the model now, INSERT/SELECT-only DB grant in TASK-033 (criterion added); fail closed. Retention documented: no pruning by the app, ≥12 months expected.
+- Commits c409d72, 20ed5e1, eb11767, 0300ac7. rspec 411/0, rubocop, brakeman clean. Review: PASS.
+- User: run db:migrate on deploy (new table). Pre-existing, not fixed: on a cold dev/test process the first POST /users/sign_in fails (422) until routes are loaded — likely Rails 8 lazy routes vs Devise's Warden setup.
+
+## 2026-10-06 — TASK-030 done: Devise hardening — 12+ char passwords, breached-password check, confirmable, SMTP mailer
+- Passwords 12–128 chars and checked against HIBP Pwned Passwords (k-anonymity, padded, 3 s timeouts, no gem); `PASSWORD_BREACH_CHECK` warn (default) | block | off. `:confirmable` (3-day links, reconfirmation on email change), existing users marked confirmed by migration; `email_verified` now true for confirmed users everywhere. Mail over SMTP from env (`SMTP_*`, `MAILER_FROM`), STARTTLS required with a username, production refuses to boot without server/sender; dev writes `tmp/mails`. New audit event `user.email_confirmed`; resend-confirmation form rate limited.
+- User decisions: existing users confirmed; breach-check outage behaviour configurable (warn/block/off), per-role/per-user mode left for the Phase 2 gate. Also on develop: roadmap row T62 (final review of decisions, plain-English + Mermaid docs, in-app explanations, guided steps — design open).
+- Commits 4a6e411, 70a4c89, 14b2ec2. rspec 437/0, rubocop, brakeman clean. Review: PASS.
+- User: before deploying set `SMTP_ADDRESS`, `MAILER_FROM` (+ `SMTP_PORT`/`SMTP_USERNAME`/`SMTP_PASSWORD` as needed) and run db:migrate. Follow-ups for TASK-037: per-role breach-check mode, Devise paranoid mode, optional self-hosted Pwned Passwords mirror.

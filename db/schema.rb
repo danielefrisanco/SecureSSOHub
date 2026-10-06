@@ -10,9 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "audit_events", force: :cascade do |t|
+    t.bigint "actor_id"
+    t.string "client_uid"
+    t.datetime "created_at", null: false
+    t.string "event", null: false
+    t.inet "ip"
+    t.string "jti"
+    t.jsonb "metadata", default: {}, null: false
+    t.string "request_id"
+    t.bigint "subject_id"
+    t.index ["actor_id", "created_at"], name: "index_audit_events_on_actor_id_and_created_at"
+    t.index ["client_uid", "created_at"], name: "index_audit_events_on_client_uid_and_created_at"
+    t.index ["created_at"], name: "index_audit_events_on_created_at"
+    t.index ["event", "created_at"], name: "index_audit_events_on_event_and_created_at"
+    t.index ["subject_id", "created_at"], name: "index_audit_events_on_subject_id_and_created_at"
+  end
 
   create_table "oauth_access_grants", force: :cascade do |t|
     t.bigint "application_id", null: false

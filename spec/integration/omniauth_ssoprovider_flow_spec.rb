@@ -63,7 +63,7 @@ RSpec.describe "omniauth-ssoprovider login against the hub", type: :request do
                             "info" => { "name" => "Ada Lovelace", "email" => user.email })
     expect(auth.dig("extra", "raw_info")).to eq(
       "id" => user.sso_id, "sub" => user.sso_id, "name" => "Ada Lovelace", "email" => user.email,
-      "email_verified" => false, "roles" => []
+      "email_verified" => true, "roles" => []
     )
     expect(verify_with_jwks(auth.dig("extra", "access_token"))).to include(
       "iss" => "https://hub.test", "sub" => user.sso_id, "aud" => hub_api, "azp" => client.uid,

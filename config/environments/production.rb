@@ -55,21 +55,44 @@ Rails.application.configure do
   # Replace the default in-process and non-durable queuing backend for Active Job.
   # config.active_job.queue_adapter = :resque
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # Mail (TASK-030): Devise's confirmation, password-reset and unlock mails go
+  # out through any SMTP server, configured from env. Without SMTP_ADDRESS (or
+  # MAILER_FROM, config/initializers/devise.rb) the hub refuses to boot: no
+  # account could be confirmed or recovered. A mail that cannot be delivered
+  # fails the request instead of vanishing.
+  smtp_port = ENV.fetch("SMTP_PORT", "587")
+  unless Integer(smtp_port, 10, exception: false)&.between?(1, 65_535)
+    raise "SMTP_PORT must be a TCP port number, got #{smtp_port.inspect}"
+  end
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
-
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  smtp_port = Integer(smtp_port, 10)
+  smtp_username = ENV["SMTP_USERNAME"].presence
+  # Links in mail point at the hub's canonical URL (HUB_ISSUER, required here
+  # anyway — config/initializers/doorkeeper.rb).
+  hub_url = URI(ENV.fetch("HUB_ISSUER") { raise "HUB_ISSUER is not set" })
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.default_url_options = { host: hub_url.host, port: hub_url.port, protocol: hub_url.scheme }
+  smtp_address = ENV.fetch("SMTP_ADDRESS") do
+    raise "SMTP_ADDRESS is not set: the hub refuses to boot without a mail server"
+  end
+  smtp_settings = {
+    address: smtp_address,
+    port: smtp_port,
+    domain: hub_url.host,
+    user_name: smtp_username,
+    password: ENV["SMTP_PASSWORD"].presence,
+    authentication: (:plain if smtp_username)
+  }
+  # Port 465 is TLS from the first byte. Elsewhere STARTTLS, required when there
+  # is a password to send, so a server (or an attacker in between) that drops
+  # STARTTLS cannot make the password travel in clear text.
+  if smtp_port == 465
+    smtp_settings[:tls] = true
+  else
+    smtp_settings[:enable_starttls] = smtp_username ? :always : :auto
+  end
+  config.action_mailer.smtp_settings = smtp_settings.compact
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

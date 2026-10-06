@@ -1,11 +1,13 @@
 require "rails_helper"
 require "base64"
 require "support/hub_access_token"
+require "support/rate_limits"
 
 # POST /oauth/register — RFC 7591 dynamic client registration (TASK-025),
 # approval-gated by default behind OAUTH_REGISTRATION_POLICY.
 RSpec.describe "OAuth dynamic client registration", type: :request do
   include HubAccessToken
+  include RateLimits
 
   let(:admin) { create(:user, :admin) }
   let(:public_metadata) do
@@ -183,18 +185,29 @@ RSpec.describe "OAuth dynamic client registration", type: :request do
       expect(response).to have_http_status(:created)
     end
 
-    it "caps registrations per source address and hour with 429" do
-      with_config(:registration_ip_limit, 2) do
-        2.times { |n| register(public_metadata.merge(client_name: "Agent #{n}")) }
-        expect(response).to have_http_status(:created)
+    # Rate limit (TASK-028): every attempt from an address counts, refused ones too.
+    it "limits registration attempts per source address and hour with 429" do
+      spend_rate_limit(scope: "client_registrations", name: "create", by: "127.0.0.1",
+                       count: OAuth::RegistrationPolicy.ip_limit - 2, within: 1.hour)
+      register(public_metadata.merge(scope: "admin:users"))
+      expect_error("invalid_client_metadata")
+      register(public_metadata)
+      expect(response).to have_http_status(:created)
 
-        register(public_metadata.merge(client_name: "Agent 3"))
-        expect_error("temporarily_unavailable", status: :too_many_requests)
-        expect(response.headers["retry-after"]).to eq("3600")
+      register(public_metadata.merge(client_name: "Agent 2"))
+      expect_error("temporarily_unavailable", status: :too_many_requests)
+      expect(response.headers["retry-after"]).to eq("3600")
+      expect(response.headers["cache-control"]).to include("no-store")
 
-        Timecop.travel(61.minutes.from_now) { register(public_metadata.merge(client_name: "Agent 4")) }
-        expect(response).to have_http_status(:created)
-      end
+      Timecop.travel(61.minutes.from_now) { register(public_metadata.merge(client_name: "Agent 3")) }
+      expect(response).to have_http_status(:created)
+    end
+
+    it "is not limited while registration is closed (404, not 429)" do
+      spend_rate_limit(scope: "client_registrations", name: "create", by: "127.0.0.1",
+                       count: OAuth::RegistrationPolicy.ip_limit, within: 1.hour)
+      with_config(:registration_policy, :closed) { register(public_metadata) }
+      expect(response).to have_http_status(:not_found)
     end
   end
 

@@ -4,7 +4,7 @@ type: docs
 status: todo
 priority: high
 created: '2026-10-02'
-updated: '2026-10-02'
+updated: '2026-10-06'
 branch: null
 depends_on:
 - TASK-027
@@ -45,4 +45,9 @@ plan:
 - Re-plan Phase 3 rows; ask the blocking questions.
 - Write the task files and the gate; annotate TODO.md; update ARCHITECTURE.md.
 - Review and complete.
-notes: []
+notes:
+- at: 2026-10-06 15:41
+  text: 'User request (2026-10-06): T62 — final review of decisions, plain-English + Mermaid + technical
+    docs, in-app explanations of every option with our recommendation, and guided operator steps (design
+    still open, ask the user). When re-planning Phase 3, decide whether the in-app explanations are built
+    into the Phase 3 UI rows (T31–T36) rather than retrofitted at the end.'

@@ -45,7 +45,7 @@ RSpec.describe "GET /api/v1/userinfo", type: :request do
       expect(response.media_type).to eq("application/json")
       expect(response.parsed_body).to eq(
         "id" => user.sso_id, "sub" => user.sso_id, "name" => "Ada Lovelace", "email" => user.email,
-        "email_verified" => false, "roles" => []
+        "email_verified" => true, "roles" => []
       )
     end
 
@@ -215,7 +215,7 @@ RSpec.describe "GET /api/v1/userinfo", type: :request do
       get "/oauth/userinfo", headers: { "Authorization" => "Bearer #{token_for}" }
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body).to eq("sub" => user.sso_id, "name" => "Ada Lovelace", "email" => user.email,
-                                         "email_verified" => false)
+                                         "email_verified" => true)
 
       get "/oauth/userinfo", headers: { "Authorization" => "Bearer #{token_for(scope: 'openid')}" }
       expect(response.parsed_body).to eq("sub" => user.sso_id)

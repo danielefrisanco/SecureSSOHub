@@ -1,11 +1,11 @@
 id: TASK-029
 title: Audit log — sign-ins, consents, tokens, clients and admin actions
 type: feat
-status: todo
+status: done
 priority: high
 created: '2026-10-02'
-updated: '2026-10-02'
-branch: null
+updated: '2026-10-04'
+branch: task/029-audit-log-sign-ins-consents-tokens-clien
 depends_on: []
 context: "TODO T25. TODO T25 (audit §5.1, §6.3: a structured audit log of sign-ins, grants, token issuance/revocation,\n\
   admin actions; §6.3 wants `azp`/client attribution). Phase 1 left one hook point per event so\nthis\
@@ -35,4 +35,38 @@ plan:
 - Wire the hook points; Devise/Warden hooks.
 - Specs per event; filter spec; docs.
 - Suite; closing note.
-notes: []
+notes:
+- at: 2026-10-04 21:17
+  text: started on task/029-audit-log-sign-ins-consents-tokens-clien
+- at: 2026-10-04 21:32
+  text: 'ANSWER: append-only enforcement → model-level read-only now (spec''d); DB-level INSERT/SELECT-only
+    grant for the app role goes to TASK-033'
+- at: 2026-10-04 21:32
+  text: 'ANSWER: audit write failure → fail closed: Audit.record raises; audited DB change and its event
+    share one transaction'
+- at: 2026-10-04 21:45
+  text: 'closing: audit_events table + AuditEvent (read-only once saved; destroy/delete raise) + Audit.record
+    (actor defaults to Current.user; ip/request_id from Current via RequestContext middleware after RemoteIp;
+    metadata keys matching filter_parameters → [FILTERED]; raises on failure). Fail closed: Clients/Tokens/Consents/User
+    hooks record inside the change''s transaction (Clients.revoke and Consents.revoke now transactional
+    too). Events: user.signed_in/sign_in_failed/signed_out (Warden hooks, config/initializers/audit.rb;
+    failure only for the sign-in POST; unknown email stores nothing), user.locked/password_changed/disabled
+    (User after_update), consent.granted (new or widened only)/revoked, token.issued (TokenRules code+refresh;
+    issue_client_token), token.revoked (revoke_family!, actor: by or none for /oauth/revoke), token.refresh_reuse_detected,
+    token.code_replay_detected, tokens.revoked_for_user/_user_and_client/_client, client.created/registered/updated/secret_rotated/approved/revoked.
+    Specs: models/audit_event_spec (4), services/audit_spec (6, incl. rollback when the write fails),
+    services/audit_hook_points_spec (16), requests/audit_log_spec (13, incl. the no-credential check over
+    every flow). Docs: ARCHITECTURE §4 catalogue + retention (no pruning, ≥12 months expected), §5 decision
+    row, TODO T25/T29; TASK-033 got a criterion for the INSERT/SELECT-only DB grant. rspec 411/0 (3 seeds),
+    rubocop, brakeman clean. Found, pre-existing (also on develop), not fixed: on a cold process the first
+    POST /users/sign_in fails (422, no strategy) unless something loaded the routes first — likely Rails
+    8 lazy routes delaying Devise''s Warden setup; dev/test only (production eager-loads). audit_log_spec
+    posts via user_session_path like sessions_spec. User: run db:migrate on deploy (new table).'
+- at: 2026-10-04 21:46
+  text: 'REVIEW: PASS — all five criteria met; every hook point recorded and spec''d, no-credential check
+    over every flow, docs match code; minor: token.revoked also recorded when 0 tokens were live (count
+    in metadata)'
+- at: 2026-10-04 21:46
+  text: done — 39 new examples (models/audit_event, services/audit, services/audit_hook_points, requests/audit_log
+    incl. the credential check) + isolation spec; rspec 411/0 over 3 seeds, rubocop, brakeman clean; reviewer
+    PASS

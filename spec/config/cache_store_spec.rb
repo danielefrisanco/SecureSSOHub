@@ -1,29 +1,23 @@
 require "rails_helper"
-require "open3"
+require "support/production_boot"
 
 # Rails.cache must be shared across processes in production (TASK-027): rate
 # limits and readiness would silently disagree between Puma workers on a
-# per-process store. Booting production is the only honest check of
-# config/environments/production.rb, so this spawns `rails runner`;
-# SECRET_KEY_BASE_DUMMY stands in for the signing key and nothing dials Redis
-# (the store connects on first use).
+# per-process store.
 RSpec.describe "Cache store" do
-  def boot_production(env)
-    base = { "RAILS_ENV" => "production", "SECRET_KEY_BASE_DUMMY" => "1",
-             "HUB_ISSUER" => "https://hub.test", "REDIS_URL" => nil }
-    script = "print Rails.cache.class.name, ' ', Rails.application.config.cache_store.last[:url]"
-    Open3.capture2e(base.merge(env), "bin/rails", "runner", script, chdir: Rails.root.to_s)
-  end
+  include ProductionBoot
+
+  let(:script) { "print Rails.cache.class.name, ' ', Rails.application.config.cache_store.last[:url]" }
 
   it "is Redis from REDIS_URL in production" do
-    output, status = boot_production("REDIS_URL" => "redis://cache.invalid:6379/0")
+    output, status = boot_production(script)
 
     expect(status).to be_success, output
     expect(output).to include("ActiveSupport::Cache::RedisCacheStore redis://cache.invalid:6379/0")
   end
 
   it "stops the production boot when REDIS_URL is missing" do
-    output, status = boot_production({})
+    output, status = boot_production(script, "REDIS_URL" => nil)
 
     expect(status).not_to be_success
     expect(output).to include("REDIS_URL is not set: the hub refuses to boot without its shared cache")

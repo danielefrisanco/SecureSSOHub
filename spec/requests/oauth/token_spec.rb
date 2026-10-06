@@ -99,7 +99,7 @@ RSpec.describe "OAuth token endpoint", type: :request do
       expect(payload).to include(
         "iss" => "https://hub.test", "sub" => user.sso_id, "aud" => client.uid, "azp" => client.uid,
         "scope" => all_scopes, "scopes" => all_scopes.split, "name" => "Ada Lovelace", "email" => user.email,
-        "email_verified" => false, "admin" => false
+        "email_verified" => true, "admin" => false
       )
       expect(payload["jti"]).to match(/\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/)
       expect(payload["iat"]).to be_within(5).of(Time.now.to_i)
@@ -232,7 +232,7 @@ RSpec.describe "OAuth token endpoint", type: :request do
     it "carries name and email only with the profile and email scopes" do
       redeem(issue_code(scope: all_scopes))
       claims, = decode(response.parsed_body["id_token"])
-      expect(claims).to include("name" => "Ada Lovelace", "email" => user.email, "email_verified" => false)
+      expect(claims).to include("name" => "Ada Lovelace", "email" => user.email, "email_verified" => true)
 
       redeem(issue_code(scope: "openid"))
       claims, = decode(response.parsed_body["id_token"])
