@@ -169,3 +169,9 @@ Append-only. Newest entry at the bottom. Written by `/harness:handoff` and `/har
 - User decisions: append-only in the model now, INSERT/SELECT-only DB grant in TASK-033 (criterion added); fail closed. Retention documented: no pruning by the app, ≥12 months expected.
 - Commits c409d72, 20ed5e1, eb11767, 0300ac7. rspec 411/0, rubocop, brakeman clean. Review: PASS.
 - User: run db:migrate on deploy (new table). Pre-existing, not fixed: on a cold dev/test process the first POST /users/sign_in fails (422) until routes are loaded — likely Rails 8 lazy routes vs Devise's Warden setup.
+
+## 2026-10-06 — TASK-030 done: Devise hardening — 12+ char passwords, breached-password check, confirmable, SMTP mailer
+- Passwords 12–128 chars and checked against HIBP Pwned Passwords (k-anonymity, padded, 3 s timeouts, no gem); `PASSWORD_BREACH_CHECK` warn (default) | block | off. `:confirmable` (3-day links, reconfirmation on email change), existing users marked confirmed by migration; `email_verified` now true for confirmed users everywhere. Mail over SMTP from env (`SMTP_*`, `MAILER_FROM`), STARTTLS required with a username, production refuses to boot without server/sender; dev writes `tmp/mails`. New audit event `user.email_confirmed`; resend-confirmation form rate limited.
+- User decisions: existing users confirmed; breach-check outage behaviour configurable (warn/block/off), per-role/per-user mode left for the Phase 2 gate. Also on develop: roadmap row T62 (final review of decisions, plain-English + Mermaid docs, in-app explanations, guided steps — design open).
+- Commits 4a6e411, 70a4c89, 14b2ec2. rspec 437/0, rubocop, brakeman clean. Review: PASS.
+- User: before deploying set `SMTP_ADDRESS`, `MAILER_FROM` (+ `SMTP_PORT`/`SMTP_USERNAME`/`SMTP_PASSWORD` as needed) and run db:migrate. Follow-ups for TASK-037: per-role breach-check mode, Devise paranoid mode, optional self-hosted Pwned Passwords mirror.
